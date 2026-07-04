@@ -35,7 +35,7 @@ exports.handler = async function (event) {
 
   const payload = JSON.stringify({
     model: "claude-sonnet-4-6",
-    max_tokens: 1500,
+    max_tokens: 4000,
     messages: [{ role: "user", content: prompt }]
   });
 
