@@ -1,302 +1,373 @@
 {
   "Math": {
-    "Quarter 1": [
-      "Angles (Right, Acute, Obtuse)",
-      "Measuring Angles with a Protractor",
-      "Triangles and Quadrilaterals",
-      "Classifying Triangles and Quadrilaterals",
-      "Perimeter of Quadrilaterals",
-      "Perimeter of Composite Figures",
-      "Reading and Writing Numbers up to 1 000 000",
-      "Place Value of 6-Digit Numbers",
-      "Comparing Numbers using =, <, >",
-      "Rounding to the Nearest Hundred Thousand",
-      "Estimating Sums and Differences",
-      "Addition and Subtraction up to 1 000 000"
-    ],
-    "Quarter 2": [
-      "Multiplication with Products up to 1 000 000",
-      "Estimating Products",
-      "Division of 3- to 4-Digit Numbers",
-      "Estimating Quotients",
-      "MDAS Rules",
-      "Multi-Step Word Problems (Including Money)",
-      "Converting Units of Length, Mass, and Capacity",
-      "Converting Units of Time",
-      "Elapsed Time Problems",
-      "Similar Fractions (Proper, Improper, Mixed)",
-      "Adding and Subtracting Similar Fractions"
-    ],
-    "Quarter 3": [
-      "Dissimilar Fractions",
-      "Comparing and Ordering Dissimilar Fractions",
-      "Equivalent Fractions",
-      "Factors and Multiples up to 100",
-      "Reducing Fractions to Simplest Form",
-      "Adding and Subtracting Dissimilar Fractions",
-      "Multi-Step Fraction Problems",
-      "Line Symmetry",
-      "Reflection of Figures"
-    ],
-    "Quarter 4": [
-      "Collecting and Presenting Data in Tables",
-      "Single Line Graphs",
-      "Interpreting Data",
-      "Simple Patterns",
-      "Number Sentences",
-      "Decimal Numbers and Fractions",
-      "Place Value of Decimals to Hundredths",
-      "Comparing and Ordering Decimals",
-      "Rounding Decimals"
-    ]
+    "Grade 4": {
+      "Quarter 1": [
+        "Angles (Right, Acute, Obtuse)",
+        "Measuring Angles with a Protractor",
+        "Triangles and Quadrilaterals",
+        "Classifying Triangles and Quadrilaterals",
+        "Perimeter of Quadrilaterals",
+        "Perimeter of Composite Figures",
+        "Reading and Writing Numbers up to 1 000 000",
+        "Place Value of 6-Digit Numbers",
+        "Comparing Numbers using =, <, >",
+        "Rounding to the Nearest Hundred Thousand",
+        "Estimating Sums and Differences",
+        "Addition and Subtraction up to 1 000 000"
+      ],
+      "Quarter 2": [
+        "Multiplication with Products up to 1 000 000",
+        "Estimating Products",
+        "Division of 3- to 4-Digit Numbers",
+        "Estimating Quotients",
+        "MDAS Rules",
+        "Multi-Step Word Problems (Including Money)",
+        "Converting Units of Length, Mass, and Capacity",
+        "Converting Units of Time",
+        "Elapsed Time Problems",
+        "Similar Fractions (Proper, Improper, Mixed)",
+        "Adding and Subtracting Similar Fractions"
+      ],
+      "Quarter 3": [
+        "Dissimilar Fractions",
+        "Comparing and Ordering Dissimilar Fractions",
+        "Equivalent Fractions",
+        "Factors and Multiples up to 100",
+        "Reducing Fractions to Simplest Form",
+        "Adding and Subtracting Dissimilar Fractions",
+        "Multi-Step Fraction Problems",
+        "Line Symmetry",
+        "Reflection of Figures"
+      ],
+      "Quarter 4": [
+        "Collecting and Presenting Data in Tables",
+        "Single Line Graphs",
+        "Interpreting Data",
+        "Simple Patterns",
+        "Number Sentences",
+        "Decimal Numbers and Fractions",
+        "Place Value of Decimals to Hundredths",
+        "Comparing and Ordering Decimals",
+        "Rounding Decimals"
+      ]
+    },
+	"Grade 1": {
+      "Quarter 1": [
+        "Simple 2-Dimensional Shapes",
+        "Comparing 2-Dimensional Shapes",
+        "Composing and Decomposing Shapes",
+        "Whole Numbers up to 100",
+        "Counting Numbers up to 100",
+        "Reading and Writing Numbers up to 100",
+        "Comparing Numbers up to 20",
+        "Ordering Numbers up to 20",
+        "Ordinal Numbers up to 10th",
+        "Addition with Sums up to 20",
+        "Properties of Addition",
+        "One-Step Addition Problems up to 20"
+      ],
+
+      "Quarter 2": [
+        "Measuring Length and Distance Using Non-Standard Units",
+        "Comparing Lengths and Distances",
+        "Place Value in 2-Digit Numbers",
+        "Tens and Ones",
+        "Expanded Form of 2-Digit Numbers",
+        "Ordering Numbers up to 100",
+        "Counting by 2s, 5s, and 10s up to 100",
+        "Odd and Even Numbers",
+        "Addition with Sums up to 100 Without Regrouping",
+        "One-Step Addition Problems up to 100"
+      ],
+
+      "Quarter 3": [
+        "Collecting Data Through a Simple Interview",
+        "Pictographs Without a Scale",
+        "Interpreting Pictographs",
+        "Organizing Data in Tables",
+        "Subtraction of Numbers Less Than 20",
+        "Subtraction of Numbers Less Than 100 Without Regrouping",
+        "Writing Equivalent Addition and Subtraction Expressions",
+        "One-Step Subtraction Problems",
+        "Repeating Patterns",
+        "Extending and Creating Patterns"
+      ],
+
+      "Quarter 4": [
+        "Fractions: One-Half and One-Fourth",
+        "Comparing One-Half and One-Fourth",
+        "Counting Halves and Quarters",
+        "Philippine Coins and Bills up to ₱100",
+        "Comparing Values of Philippine Money",
+        "Addition and Subtraction of Money up to ₱100",
+        "One-Step Problems Involving Money",
+        "Half Turn and Quarter Turn",
+        "Clockwise and Counterclockwise Direction",
+        "Telling Time by Hour, Half Hour, and Quarter Hour",
+        "Days of the Week and Months of the Year",
+        "Using a Calendar",
+        "Problems Involving Time"
+      ]
+    }
   },
   "Science": {
-    "Quarter 1": [
-      "Science Inventions and Filipino Scientists",
-      "Science Inventions in Everyday Life",
-      "Chemical Properties of Materials",
-      "Changes in Materials Due to Temperature",
-      "Minimizing Harmful Changes in Materials",
-      "Science and Community Environmental Issues",
-      "Gathering Scientific Information"
-    ],
-    "Quarter 2": [
-      "Human Body Systems",
-      "Root and Shoot Systems of Plants",
-      "Philippine Animals and Their Habitats",
-      "Animals and Plants in Local Habitats",
-      "Life Cycles of Animals",
-      "Herbivores, Carnivores, and Omnivores",
-      "Food Chains"
-    ],
-    "Quarter 3": [
-      "Forces and Movement",
-      "Measuring Distance and Time",
-      "Speed",
-      "Pushes and Pulls",
-      "How Forces Change the Shape of Objects",
-      "Properties of Magnets",
-      "Light, Sound, and Heat Energy",
-      "Sources and Uses of Energy"
-    ],
-    "Quarter 4": [
-      "Types of Soil",
-      "Soil and Plant Growth",
-      "Water as a Basic Need",
-      "Characteristics of Weather",
-      "Weather Instruments",
-      "Weather Charts and Safety",
-      "The Sun",
-      "Shadows and the Sun's Position"
-    ]
+    "Grade 4": {
+      "Quarter 1": [
+        "Science Inventions and Filipino Scientists",
+        "Science Inventions in Everyday Life",
+        "Chemical Properties of Materials",
+        "Changes in Materials Due to Temperature",
+        "Minimizing Harmful Changes in Materials",
+        "Science and Community Environmental Issues",
+        "Gathering Scientific Information"
+      ],
+      "Quarter 2": [
+        "Human Body Systems",
+        "Root and Shoot Systems of Plants",
+        "Philippine Animals and Their Habitats",
+        "Animals and Plants in Local Habitats",
+        "Life Cycles of Animals",
+        "Herbivores, Carnivores, and Omnivores",
+        "Food Chains"
+      ],
+      "Quarter 3": [
+        "Forces and Movement",
+        "Measuring Distance and Time",
+        "Speed",
+        "Pushes and Pulls",
+        "How Forces Change the Shape of Objects",
+        "Properties of Magnets",
+        "Light, Sound, and Heat Energy",
+        "Sources and Uses of Energy"
+      ],
+      "Quarter 4": [
+        "Types of Soil",
+        "Soil and Plant Growth",
+        "Water as a Basic Need",
+        "Characteristics of Weather",
+        "Weather Instruments",
+        "Weather Charts and Safety",
+        "The Sun",
+        "Shadows and the Sun's Position"
+      ]
+    }
   },
   "Araling Panlipunan": {
-    "Quarter 1": [
-      "Ang Heograpiya ng Pilipinas",
-      "Paggamit ng Mapa at Globo",
-      "Tiyak (Absolute) na Lokasyon",
-      "Relatibong Lokasyon",
-      "Ang Pambansang Teritoryo",
-      "Saligan ng Teritoryo",
-      "Teritoryo Ayon sa Kasaysayan",
-      "Teritoryo Ayon sa Saligang Batas",
-      "Teritoryo Ayon sa Atas ng Pangulo",
-      "Doktrinang Pangkapuluan (Archipelagic Doctrine-UNCLOS)",
-      "Pagkakakilanlang Heograpikal",
-      "Heograpiyang Pisikal",
-      "Heograpiyang Pantao",
-      "Kahalagahan ng Katangiang Heograpikal sa Pag-unlad ng Bansa"
-    ],
-    "Quarter 2": [
-      "Mga Pinagkukunang-Yaman ng Bansa",
-      "Likas na Yaman",
-      "Yamang Lupa",
-      "Yamang Tubig",
-      "Yamang Gubat",
-      "Enerhiyang Mineral",
-      "Yamang Tao",
-      "Gawaing Pangkabuhayan ng Bansa",
-      "Mga Hamon at Pagtugon sa mga Gawaing Pangkabuhayan ng Bansa",
-      "Pangangalaga sa mga Pinagkukunang-Yaman ng Bansa",
-      "Mga Hamon sa Paggamit ng Likas-kayang Pag-unlad"
-    ],
-    "Quarter 3": [
-      "Elemento ng Pagkabansa",
-      "Tao, Teritoryo, Pamahalaan, at Soberanya",
-      "Ang Pambansang Pamahalaan",
-      "Unitary Presidential System",
-      "Separation of Powers",
-      "Serbisyo ng Pamahalaan",
-      "Pambansang Badyet ng Pilipinas",
-      "Serbisyong Panlipunan",
-      "Edukasyon, Kultura, at Pagpapaunlad ng Manpower",
-      "Panlipunang Kaligtasan, Kagalingan at Empleyo",
-      "Kalusugan",
-      "Serbisyong Pang-ekonomiya",
-      "Komunikasyon, mga Kalsada, at iba pang Transportasyon",
-      "Agrikultura, Repormang Pansakahan, at Likas na Yaman at Kapaligiran",
-      "Pagpapaunlad ng mga Yamang Tubig at Pagkontrol sa Baha",
-      "Pangkalahatang Serbisyong Publiko",
-      "Kaayusang Publiko at Kaligtasan",
-      "Pangkalahatang Administrasyon"
-    ],
-    "Quarter 4": [
-      "Mga Sagisag ng Pagkakakilanlang Pilipino",
-      "Pagkamamamayan",
-      "Karapatan at Tungkulin ng Mamamayang Pilipino",
-      "Kahulugan at Uri ng Karapatan",
-      "Karapatang Sibil",
-      "Karapatang Politikal",
-      "Karapatang Panlipunan at Pangkabuhayan",
-      "Mga Kaakibat na Tungkulin",
-      "Kagalingang Pansibiko"
-    ]
+    "Grade 4": {
+      "Quarter 1": [
+        "Ang Heograpiya ng Pilipinas",
+        "Paggamit ng Mapa at Globo",
+        "Tiyak (Absolute) na Lokasyon",
+        "Relatibong Lokasyon",
+        "Ang Pambansang Teritoryo",
+        "Saligan ng Teritoryo",
+        "Teritoryo Ayon sa Kasaysayan",
+        "Teritoryo Ayon sa Saligang Batas",
+        "Teritoryo Ayon sa Atas ng Pangulo",
+        "Doktrinang Pangkapuluan (Archipelagic Doctrine-UNCLOS)",
+        "Pagkakakilanlang Heograpikal",
+        "Heograpiyang Pisikal",
+        "Heograpiyang Pantao",
+        "Kahalagahan ng Katangiang Heograpikal sa Pag-unlad ng Bansa"
+      ],
+      "Quarter 2": [
+        "Mga Pinagkukunang-Yaman ng Bansa",
+        "Likas na Yaman",
+        "Yamang Lupa",
+        "Yamang Tubig",
+        "Yamang Gubat",
+        "Enerhiyang Mineral",
+        "Yamang Tao",
+        "Gawaing Pangkabuhayan ng Bansa",
+        "Mga Hamon at Pagtugon sa mga Gawaing Pangkabuhayan ng Bansa",
+        "Pangangalaga sa mga Pinagkukunang-Yaman ng Bansa",
+        "Mga Hamon sa Paggamit ng Likas-kayang Pag-unlad"
+      ],
+      "Quarter 3": [
+        "Elemento ng Pagkabansa",
+        "Tao, Teritoryo, Pamahalaan, at Soberanya",
+        "Ang Pambansang Pamahalaan",
+        "Unitary Presidential System",
+        "Separation of Powers",
+        "Serbisyo ng Pamahalaan",
+        "Pambansang Badyet ng Pilipinas",
+        "Serbisyong Panlipunan",
+        "Edukasyon, Kultura, at Pagpapaunlad ng Manpower",
+        "Panlipunang Kaligtasan, Kagalingan at Empleyo",
+        "Kalusugan",
+        "Serbisyong Pang-ekonomiya",
+        "Komunikasyon, mga Kalsada, at iba pang Transportasyon",
+        "Agrikultura, Repormang Pansakahan, at Likas na Yaman at Kapaligiran",
+        "Pagpapaunlad ng mga Yamang Tubig at Pagkontrol sa Baha",
+        "Pangkalahatang Serbisyong Publiko",
+        "Kaayusang Publiko at Kaligtasan",
+        "Pangkalahatang Administrasyon"
+      ],
+      "Quarter 4": [
+        "Mga Sagisag ng Pagkakakilanlang Pilipino",
+        "Pagkamamamayan",
+        "Karapatan at Tungkulin ng Mamamayang Pilipino",
+        "Kahulugan at Uri ng Karapatan",
+        "Karapatang Sibil",
+        "Karapatang Politikal",
+        "Karapatang Panlipunan at Pangkabuhayan",
+        "Mga Kaakibat na Tungkulin",
+        "Kagalingang Pansibiko"
+      ]
+    }
   },
   "English": {
-    "Quarter 1": [
-      "Literary Text Comprehension",
-      "Story Elements",
-      "Author's Point of View",
-      "Sequencing Events",
-      "Types of Plot",
-      "Sound Devices: Onomatopoeia",
-      "Making Predictions",
-      "Drawing Conclusions",
-      "Main Idea",
-      "Summarizing",
-      "Fantasy and Reality",
-      "Informational Text Comprehension",
-      "Text Types: Enumeration-Description",
-      "Author's Purpose",
-      "Context Clues",
-      "Synonyms and Antonyms",
-      "Root Words",
-      "Prefixes and Suffixes",
-      "Subject-Verb Agreement",
-      "Kinds of Nouns",
-      "Subject Pronouns",
-      "Action Verbs",
-      "Simple Verb Tenses",
-      "Active and Passive Voice",
-      "Descriptive Adjectives",
-      "Complex Sentences",
-      "Writing with Introduction, Body, and Conclusion",
-      "Narrative Writing",
-      "Enumeration-Description Writing",
-      "Friendly Letters",
-      "Facial Expressions and Gestures",
-      "Lines and Visual Elements",
-      "Visual Meaning and Symbolism",
-      "Fact and Non-Fact Images",
-      "Multimedia Elements"
-    ],
-
-    "Quarter 2": [
-      "Sound Devices: Alliteration",
-      "Text Types: Chronological Order",
-      "Text Types: Procedural Order",
-      "Chronological Writing",
-      "Procedural Writing",
-      "Geometric Shapes",
-      "Organic Shapes",
-      "Abstract Shapes",
-      "Quantitative Adjectives"
-    ],
-
-    "Quarter 3": [
-      "Sound Devices: Assonance",
-      "Figures of Speech: Simile",
-      "Text Types: Recount",
-      "Fact and Opinion",
-      "Context Clues: Definition",
-      "Context Clues: Exemplification",
-      "Irregular Nouns",
-      "Collective Nouns",
-      "Concrete Nouns",
-      "Abstract Nouns",
-      "Indefinite Pronouns",
-      "Possessive Pronouns",
-      "Helping Verbs",
-      "Degrees of Regular Adjectives",
-      "Degrees of Irregular Adjectives",
-      "Recount Writing",
-      "Eye Contact and Haptics",
-      "Colors as Visual Elements",
-      "Graphic Elements"
-    ],
-
-    "Quarter 4": [
-      "Sound Devices: Consonance",
-      "Figures of Speech: Metaphor",
-      "Demonstrative Pronouns",
-      "Linking Verbs",
-      "Order of Adjectives",
-      "Space as a Visual Element",
-      "Creating Visual Texts"
-    ]
+    "Grade 4": {
+      "Quarter 1": [
+        "Literary Text Comprehension",
+        "Story Elements",
+        "Author's Point of View",
+        "Sequencing Events",
+        "Types of Plot",
+        "Sound Devices: Onomatopoeia",
+        "Making Predictions",
+        "Drawing Conclusions",
+        "Main Idea",
+        "Summarizing",
+        "Fantasy and Reality",
+        "Informational Text Comprehension",
+        "Text Types: Enumeration-Description",
+        "Author's Purpose",
+        "Context Clues",
+        "Synonyms and Antonyms",
+        "Root Words",
+        "Prefixes and Suffixes",
+        "Subject-Verb Agreement",
+        "Kinds of Nouns",
+        "Subject Pronouns",
+        "Action Verbs",
+        "Simple Verb Tenses",
+        "Active and Passive Voice",
+        "Descriptive Adjectives",
+        "Complex Sentences",
+        "Writing with Introduction, Body, and Conclusion",
+        "Narrative Writing",
+        "Enumeration-Description Writing",
+        "Friendly Letters",
+        "Facial Expressions and Gestures",
+        "Lines and Visual Elements",
+        "Visual Meaning and Symbolism",
+        "Fact and Non-Fact Images",
+        "Multimedia Elements"
+      ],
+      "Quarter 2": [
+        "Sound Devices: Alliteration",
+        "Text Types: Chronological Order",
+        "Text Types: Procedural Order",
+        "Chronological Writing",
+        "Procedural Writing",
+        "Geometric Shapes",
+        "Organic Shapes",
+        "Abstract Shapes",
+        "Quantitative Adjectives"
+      ],
+      "Quarter 3": [
+        "Sound Devices: Assonance",
+        "Figures of Speech: Simile",
+        "Text Types: Recount",
+        "Fact and Opinion",
+        "Context Clues: Definition",
+        "Context Clues: Exemplification",
+        "Irregular Nouns",
+        "Collective Nouns",
+        "Concrete Nouns",
+        "Abstract Nouns",
+        "Indefinite Pronouns",
+        "Possessive Pronouns",
+        "Helping Verbs",
+        "Degrees of Regular Adjectives",
+        "Degrees of Irregular Adjectives",
+        "Recount Writing",
+        "Eye Contact and Haptics",
+        "Colors as Visual Elements",
+        "Graphic Elements"
+      ],
+      "Quarter 4": [
+        "Sound Devices: Consonance",
+        "Figures of Speech: Metaphor",
+        "Demonstrative Pronouns",
+        "Linking Verbs",
+        "Order of Adjectives",
+        "Space as a Visual Element",
+        "Creating Visual Texts"
+      ]
+    }
   },
   "Filipino": {
-    "all": [
-      "Pangngalan",
-      "Uri ng Pangngalan",
-      "Panghalip Panao",
-      "Pandiwa",
-      "Pang-uri",
-      "Pagbasa at Pag-unawa sa Kuwento",
-      "Tauhan, Tagpuan, at Banghay",
-      "Pagsusunod-sunod ng Pangyayari",
-      "Sanhi at Bunga",
-      "Paggamit ng Malaki at Maliit na Titik",
-      "Mga Bantas",
-      "Magkasingkahulugan at Magkasalungat na Salita",
-      "Pagbuo ng Pangungusap",
-      "Diptonggo at Klaster"
-    ]
+    "Grade 4": {
+      "all": [
+        "Pangngalan",
+        "Uri ng Pangngalan",
+        "Panghalip Panao",
+        "Pandiwa",
+        "Pang-uri",
+        "Pagbasa at Pag-unawa sa Kuwento",
+        "Tauhan, Tagpuan, at Banghay",
+        "Pagsusunod-sunod ng Pangyayari",
+        "Sanhi at Bunga",
+        "Paggamit ng Malaki at Maliit na Titik",
+        "Mga Bantas",
+        "Magkasingkahulugan at Magkasalungat na Salita",
+        "Pagbuo ng Pangungusap",
+        "Diptonggo at Klaster"
+      ]
+    }
   },
   "GMRC / Values": {
-    "all": [
-      "Paggalang sa Sarili",
-      "Paggalang sa Kapwa at Nakatatanda",
-      "Katapatan",
-      "Pagiging Responsable",
-      "Pagmamahal sa Pamilya",
-      "Pakikipagkaibigan",
-      "Disiplina sa Sarili",
-      "Pagtulong sa Kapwa",
-      "Pagpapahalaga sa Kalikasan",
-      "Kabutihang Asal sa Paaralan",
-      "Pagiging Matiyaga",
-      "Pasasalamat"
-    ]
+    "Grade 4": {
+      "all": [
+        "Paggalang sa Sarili",
+        "Paggalang sa Kapwa at Nakatatanda",
+        "Katapatan",
+        "Pagiging Responsable",
+        "Pagmamahal sa Pamilya",
+        "Pakikipagkaibigan",
+        "Disiplina sa Sarili",
+        "Pagtulong sa Kapwa",
+        "Pagpapahalaga sa Kalikasan",
+        "Kabutihang Asal sa Paaralan",
+        "Pagiging Matiyaga",
+        "Pasasalamat"
+      ]
+    }
   },
   "MAPEH": {
-    "all": [
-      "Music: Rhythm and Beat",
-      "Music: Notes and Rests",
-      "Music: Time Signature",
-      "Arts: Lines and Shapes",
-      "Arts: Primary and Secondary Colors",
-      "Arts: Elements of Art",
-      "PE: Locomotor Movements",
-      "PE: Non-Locomotor Movements",
-      "PE: Mga Larong Pinoy",
-      "Health: Wastong Nutrisyon",
-      "Health: Kalinisan ng Katawan",
-      "Health: Kaligtasan sa Tahanan"
-    ]
+    "Grade 4": {
+      "all": [
+        "Music: Rhythm and Beat",
+        "Music: Notes and Rests",
+        "Music: Time Signature",
+        "Arts: Lines and Shapes",
+        "Arts: Primary and Secondary Colors",
+        "Arts: Elements of Art",
+        "PE: Locomotor Movements",
+        "PE: Non-Locomotor Movements",
+        "PE: Mga Larong Pinoy",
+        "Health: Wastong Nutrisyon",
+        "Health: Kalinisan ng Katawan",
+        "Health: Kaligtasan sa Tahanan"
+      ]
+    }
   },
   "EPP": {
-    "all": [
-      "Kahalagahan ng Computer at Computing Devices",
-      "Monitor, Keyboard, CPU, Mouse at Iba pang Bahagi ng Computer",
-      "Booting, Shutting Down, at Keyboarding Techniques",
-      "Wastong Posisyon at Layo sa Paggamit ng Computer",
-      "Digital Health and Wellness",
-      "Online Security and Safety",
-      "Phishing, Password, at Personal Information Protection",
-      "Word Processing Software - User Interface",
-      "Page Setup at Font Formatting",
-      "Text Alignment at Saving ng Document"
-    ]
+    "Grade 4": {
+      "all": [
+        "Kahalagahan ng Computer at Computing Devices",
+        "Monitor, Keyboard, CPU, Mouse at Iba pang Bahagi ng Computer",
+        "Booting, Shutting Down, at Keyboarding Techniques",
+        "Wastong Posisyon at Layo sa Paggamit ng Computer",
+        "Digital Health and Wellness",
+        "Online Security and Safety",
+        "Phishing, Password, at Personal Information Protection",
+        "Word Processing Software - User Interface",
+        "Page Setup at Font Formatting",
+        "Text Alignment at Saving ng Document"
+      ]
+    }
   }
 }
