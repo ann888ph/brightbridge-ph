@@ -683,7 +683,7 @@
     <div class="grid-3" style="margin-bottom: 16px;">
       <div class="field">
         <label>Grade Level</label>
-        <select id="grade">
+        <select id="grade" onchange="updateTopics()">
           <option value="">Select Grade</option>
           <option>Grade 1</option>
           <option>Grade 2</option>
@@ -1156,11 +1156,32 @@ async function loadTopics() {
 
 function updateTopics() {
   const subject = document.getElementById('subject').value;
+  const grade = document.getElementById('grade').value;
   const quarter = document.getElementById('quarter').value;
   const topicSelect = document.getElementById('topic');
   topicSelect.innerHTML = '<option value="">Select Topic</option>';
-  if (!topics[subject]) return;
-  const list = topics[subject][quarter] || topics[subject].all || [];
+
+  if (!subject || !topics[subject]) return;
+
+  const gradeData = topics[subject][grade];
+  if (!gradeData) {
+    // No curriculum data yet for this grade+subject combo. Let the AI still help,
+    // just without a curated dropdown - offer a free-text friendly fallback option.
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = 'No topic list yet for ' + (grade || 'this grade') + ' - type your own below';
+    opt.disabled = true;
+    topicSelect.appendChild(opt);
+    topicSelect.insertAdjacentHTML('afterend',
+      '<input type="text" id="topicCustom" placeholder="Type a topic (e.g. Counting 1-20)" style="margin-top:8px;" />');
+    return;
+  }
+
+  // Remove any leftover custom input from a previous no-data selection
+  const stray = document.getElementById('topicCustom');
+  if (stray) stray.remove();
+
+  const list = gradeData[quarter] || gradeData.all || [];
   list.forEach(t => {
     const opt = document.createElement('option');
     opt.value = t; opt.textContent = t;
@@ -1473,7 +1494,8 @@ async function generateWorksheet() {
   const grade = document.getElementById('grade').value;
   const quarter = document.getElementById('quarter').value;
   const subject = document.getElementById('subject').value;
-  const topic = document.getElementById('topic').value;
+  const topicCustomEl = document.getElementById('topicCustom');
+  const topic = (topicCustomEl && topicCustomEl.value.trim()) || document.getElementById('topic').value;
   const activity = document.getElementById('activity').value;
   const items = document.getElementById('items').value;
   const difficulty = document.getElementById('difficulty').value;
