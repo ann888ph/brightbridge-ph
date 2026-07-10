@@ -415,6 +415,31 @@
   }
   .btn-logout:hover { background: var(--mint); }
 
+  /* ===== Quota Badge ===== */
+  .quota-bar {
+    background: var(--white); border: 2px solid var(--mint); border-radius: 14px;
+    padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center;
+    justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .quota-info { flex: 1; min-width: 200px; }
+  .quota-label { font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .quota-count { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--teal-dark); margin-top: 2px; }
+  .quota-track { height: 8px; background: var(--warm); border-radius: 10px; overflow: hidden; margin-top: 8px; }
+  .quota-fill { height: 100%; background: linear-gradient(90deg, var(--teal), var(--teal-dark)); border-radius: 10px; transition: width 0.3s; }
+  .quota-fill.warn { background: linear-gradient(90deg, #f59e0b, #d97706); }
+  .quota-fill.full { background: linear-gradient(90deg, #ef4444, #dc2626); }
+  .quota-plan-badge {
+    background: var(--mint); color: var(--teal-dark); font-size: 11px; font-weight: 800;
+    padding: 5px 12px; border-radius: 20px; white-space: nowrap;
+  }
+  .quota-blocked {
+    display: none; background: #fff7ed; border: 2px solid #fdba74; border-radius: 14px;
+    padding: 20px; text-align: center; margin-bottom: 20px;
+  }
+  .quota-blocked.visible { display: block; }
+  .quota-blocked-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: #c2410c; margin-bottom: 6px; }
+  .quota-blocked-text { font-size: 13px; color: #9a3412; margin-bottom: 4px; }
+
   /* ===== My Worksheets ===== */
   .ws-list { display: flex; flex-direction: column; gap: 10px; }
   .ws-item {
@@ -629,6 +654,21 @@
 
 <div class="container">
 
+  <div class="quota-bar" id="quotaBar">
+    <div class="quota-info">
+      <div class="quota-label">This Month's Worksheets</div>
+      <div class="quota-count" id="quotaCount">Loading...</div>
+      <div class="quota-track"><div class="quota-fill" id="quotaFill" style="width:0%"></div></div>
+    </div>
+    <div class="quota-plan-badge" id="quotaPlanBadge">Free Plan</div>
+  </div>
+
+  <div class="quota-blocked" id="quotaBlocked">
+    <div class="quota-blocked-title">&#x1F31F; You've used all your worksheets this month!</div>
+    <div class="quota-blocked-text" id="quotaBlockedText">Your plan resets on the 1st of next month.</div>
+    <div class="quota-blocked-text">Want more? Message us to upgrade your plan.</div>
+  </div>
+
   <div class="card">
     <div class="card-title">&#x1F3AF; Worksheet Mode</div>
     <div class="mode-toggle">
@@ -822,6 +862,7 @@ function showApp() {
   document.getElementById('app').style.display = 'block';
   document.getElementById('userEmail').textContent = currentUser.email;
   loadWorksheets();
+  loadPlanAndUsage();
 }
 
 function clearSessionState() {
@@ -847,6 +888,9 @@ function clearSessionState() {
     document.getElementById(id).checked = false;
   });
   setMode('printable');
+  currentPlan = 'free';
+  currentUsageCount = 0;
+  document.getElementById('quotaBlocked').classList.remove('visible');
 }
 
 function showAuth() {
@@ -942,6 +986,75 @@ function setMode(mode) {
   document.getElementById('modeDesc').textContent = mode === 'printable'
     ? 'Print-ready worksheet \u2014 perfect for pen and paper practice.'
     : 'Answer on screen with instant checking \u2014 perfect for laptop or tablet! No handwriting needed. \uD83D\uDC9B';
+}
+
+/* ============ PLANS & QUOTA ============ */
+const PLAN_LIMITS = {
+  free: { label: 'Free Plan', limit: 5 },
+  parent: { label: 'Parent Plan', limit: 20 },
+  family_plus: { label: 'Family Plus', limit: 60 },
+  teacher: { label: 'Teacher Plan', limit: 150 }
+};
+
+let currentPlan = 'free';
+let currentUsageCount = 0;
+
+async function loadPlanAndUsage() {
+  // 1. Get the user's plan from profiles (default to free if no row yet)
+  try {
+    const { data: profile } = await db.from('profiles').select('plan').eq('user_id', currentUser.id).single();
+    currentPlan = (profile && profile.plan) || 'free';
+  } catch (e) {
+    currentPlan = 'free';
+  }
+
+  // 2. Count this calendar month's generations from usage_logs
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  try {
+    const { count } = await db.from('usage_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', currentUser.id)
+      .gte('created_at', startOfMonth.toISOString());
+    currentUsageCount = count || 0;
+  } catch (e) {
+    currentUsageCount = 0;
+  }
+
+  renderQuota();
+}
+
+function renderQuota() {
+  const plan = PLAN_LIMITS[currentPlan] || PLAN_LIMITS.free;
+  const used = currentUsageCount;
+  const limit = plan.limit;
+  const pct = Math.min(100, Math.round((used / limit) * 100));
+
+  document.getElementById('quotaCount').textContent = used + ' of ' + limit + ' used';
+  document.getElementById('quotaPlanBadge').textContent = plan.label;
+
+  const fill = document.getElementById('quotaFill');
+  fill.style.width = pct + '%';
+  fill.className = 'quota-fill' + (pct >= 100 ? ' full' : pct >= 80 ? ' warn' : '');
+
+  const blocked = document.getElementById('quotaBlocked');
+  const genBtn = document.getElementById('generateBtn');
+  if (used >= limit) {
+    blocked.classList.add('visible');
+    genBtn.disabled = true;
+    genBtn.style.opacity = '0.5';
+  } else {
+    blocked.classList.remove('visible');
+    genBtn.disabled = false;
+    genBtn.style.opacity = '1';
+  }
+}
+
+function hasQuotaRemaining() {
+  const plan = PLAN_LIMITS[currentPlan] || PLAN_LIMITS.free;
+  return currentUsageCount < plan.limit;
 }
 
 /* ============ WORKSHEET STORAGE ============ */
@@ -1370,6 +1483,12 @@ async function generateWorksheet() {
     return;
   }
 
+  if (!hasQuotaRemaining()) {
+    showError("You've reached your monthly worksheet limit. Your plan resets next month, or you can upgrade for more. \uD83C\uDF31");
+    document.getElementById('quotaBlocked').classList.add('visible');
+    return;
+  }
+
   const supports = [];
   if (document.getElementById('dysgraphia').checked) supports.push('Dysgraphia-Friendly Format (use large answer spaces, clear lines)');
   if (document.getElementById('simplified').checked) supports.push('Simplified Instructions (use very short and easy-to-understand directions)');
@@ -1490,10 +1609,12 @@ Specific formatting rules:
       renderInteractive(currentQuiz);
       await saveWorksheet(wsTitle, grade, subject, topic, JSON.stringify(currentQuiz), 'interactive');
       logUsage(subject, 'interactive');
+      currentUsageCount++; renderQuota();
     } else {
       showPrintable(text);
       await saveWorksheet(wsTitle, grade, subject, topic, text, 'printable');
       logUsage(subject, 'printable');
+      currentUsageCount++; renderQuota();
     }
 
     document.getElementById('output-section').classList.add('visible');
