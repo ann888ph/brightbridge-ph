@@ -881,7 +881,9 @@ async function handleForgotPassword() {
     return;
   }
   try {
-    const { error } = await db.auth.resetPasswordForEmail(email);
+    const { error } = await db.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://brightbridgeph.netlify.app'
+    });
     if (error) throw error;
     authMsg('Password reset email sent to ' + email + '. Please check your inbox.', 'success');
   } catch (err) {
