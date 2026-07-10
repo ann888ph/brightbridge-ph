@@ -982,6 +982,38 @@ function launchConfetti() {
   }
 }
 
+/* ============ JSON REPAIR ============ */
+function parseQuizJson(text) {
+  // Extract from first { to last }
+  const start = text.indexOf('{');
+  if (start === -1) throw new SyntaxError('No JSON found');
+  let s = text.slice(start);
+
+  // Try direct parse first
+  try { return JSON.parse(s); } catch (e) {}
+
+  // Try cutting at last } 
+  const lastBrace = s.lastIndexOf('}');
+  if (lastBrace !== -1) {
+    try { return JSON.parse(s.slice(0, lastBrace + 1)); } catch (e) {}
+  }
+
+  // Repair truncated JSON: cut at each } from the end, try closing the structure
+  for (let i = s.length; i > 0; i--) {
+    if (s[i - 1] === '}') {
+      const candidate = s.slice(0, i);
+      const suffixes = [']}', '}]}', ']}}', ''];
+      for (const suffix of suffixes) {
+        try {
+          const parsed = JSON.parse(candidate + suffix);
+          if (parsed.questions && parsed.questions.length > 0) return parsed;
+        } catch (e) {}
+      }
+    }
+  }
+  throw new SyntaxError('Unrepairable JSON');
+}
+
 /* ============ GENERATE ============ */
 async function generateWorksheet() {
   const grade = document.getElementById('grade').value;
@@ -1043,7 +1075,7 @@ LANGUAGE RULE:
 - If subject is MATH or SCIENCE: use English for all questions. Filipino context allowed in word problems only.
 - Never write Math or Science questions fully in Filipino/Tagalog.
 
-If a token limit approaches, output fewer complete questions rather than incomplete JSON. The JSON must always be complete and parseable.`;
+Output compact JSON (no unnecessary whitespace or newlines). If a token limit approaches, output fewer complete questions rather than incomplete JSON. The JSON must always be complete and parseable.`;
   } else {
     prompt = `You are an expert Filipino elementary school teacher and curriculum designer aligned with DepEd standards.
 
@@ -1103,7 +1135,7 @@ Specific formatting rules:
     const wsTitle = `${subject} \u2014 ${topic} (${grade})`;
 
     if (wsMode === 'interactive') {
-      currentQuiz = JSON.parse(text);
+      currentQuiz = parseQuizJson(text);
       renderInteractive(currentQuiz);
       await saveWorksheet(wsTitle, grade, subject, topic, JSON.stringify(currentQuiz), 'interactive');
     } else {
