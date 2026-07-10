@@ -52,7 +52,7 @@
   .hero h1 { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--teal-dark); margin-bottom: 8px; }
   .hero p { color: var(--muted); font-size: 1rem; max-width: 520px; margin: 0 auto; line-height: 1.7; }
 
-  .container { max-width: 780px; margin: 0 auto; padding: 36px 20px 60px; }
+  .container { max-width: 780px; margin: 0 auto; padding: 36px 20px 60px; overflow-x: hidden; }
 
   .card {
     background: var(--white);
@@ -470,10 +470,19 @@
     background: linear-gradient(135deg, #fffdf8, var(--peach));
     border: 2px solid var(--mint); border-radius: 16px;
     padding: 24px 26px; margin-bottom: 22px;
+    max-width: 100%; box-sizing: border-box; overflow-wrap: break-word;
   }
-  .iq-passage-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-  .iq-passage-title { font-family: 'Playfair Display', serif; font-size: 1.05rem; color: var(--teal-dark); flex: 1; }
-  .iq-passage-text { font-size: 15px; line-height: 2; color: var(--text); white-space: pre-wrap; }
+  .iq-passage-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .iq-passage-title { font-family: 'Playfair Display', serif; font-size: 1.05rem; color: var(--teal-dark); flex: 1; min-width: 140px; }
+  .iq-passage-text {
+    font-size: 15px; line-height: 2; color: var(--text);
+    white-space: pre-wrap; overflow-wrap: break-word; word-break: break-word;
+    max-width: 100%;
+  }
+  @media (max-width: 768px) {
+    .iq-passage { padding: 18px 18px; }
+    .iq-passage-text { font-size: 14.5px; line-height: 1.85; }
+  }
 
   .iq-question {
     background: var(--warm); border: 2px solid var(--mint); border-radius: 14px;
@@ -1065,13 +1074,20 @@ function renderInteractive(quiz) {
   const area = document.getElementById('interactiveArea');
   let html = `<p style="font-size:14px; color:var(--muted); font-weight:600; margin-bottom:18px;">${quiz.directions || 'Answer each question, then click Check Answers!'}</p>`;
 
-  if (quiz.passage) {
+  const isReadingType = /reading|comprehension/i.test(quiz.activityType || document.getElementById('activity').value || '');
+  if (typeof quiz.passage === 'string' && quiz.passage.trim().length > 0) {
     html += `<div class="iq-passage">
       <div class="iq-passage-head">
         <div class="iq-passage-title">\uD83D\uDCD6 Read the Story</div>
         <button class="iq-speak" id="passageSpk" onclick="speakPassage()" title="Read the story aloud">\uD83D\uDD0A</button>
       </div>
       <div class="iq-passage-text">${escapeHtml(quiz.passage)}</div>
+    </div>`;
+  } else if (isReadingType) {
+    // AC 18: safe fallback if a reading activity is missing its passage, instead of a silent gap or crash
+    html += `<div class="iq-passage" style="text-align:center; color:var(--muted);">
+      <div class="iq-passage-title" style="margin-bottom:6px;">\uD83D\uDCD6 Story unavailable</div>
+      <div style="font-size:13px;">This worksheet's story could not be loaded. Try generating it again.</div>
     </div>`;
   }
 
@@ -1112,9 +1128,25 @@ function renderInteractive(quiz) {
 }
 
 function speakPassage() {
-  if (!window.speechSynthesis || !currentQuiz || !currentQuiz.passage) return;
+  if (!window.speechSynthesis) return;
+  const btn = document.getElementById('passageSpk');
+
+  // Toggle: if already speaking the passage, stop it (AC 12: stop/restart control)
+  if (btn && btn.classList.contains('speaking')) {
+    window.speechSynthesis.cancel();
+    btn.classList.remove('speaking');
+    btn.innerHTML = '\uD83D\uDD0A';
+    btn.title = 'Read the story aloud';
+    return;
+  }
+
+  if (!currentQuiz || typeof currentQuiz.passage !== 'string' || !currentQuiz.passage.trim()) return;
+
   window.speechSynthesis.cancel();
-  document.querySelectorAll('.iq-speak.speaking').forEach(b => b.classList.remove('speaking'));
+  document.querySelectorAll('.iq-speak.speaking').forEach(b => {
+    b.classList.remove('speaking');
+    b.innerHTML = '\uD83D\uDD0A';
+  });
 
   const utter = new SpeechSynthesisUtterance(currentQuiz.passage);
   const filSubjects = ['Filipino', 'Araling Panlipunan', 'GMRC / Values', 'EPP'];
@@ -1129,17 +1161,26 @@ function speakPassage() {
   }
   utter.rate = 0.85;
 
-  const btn = document.getElementById('passageSpk');
-  if (btn) btn.classList.add('speaking');
-  utter.onend = () => { if (btn) btn.classList.remove('speaking'); };
+  if (btn) { btn.classList.add('speaking'); btn.innerHTML = '\u23F9'; btn.title = 'Stop reading'; }
+  utter.onend = () => { if (btn) { btn.classList.remove('speaking'); btn.innerHTML = '\uD83D\uDD0A'; btn.title = 'Read the story aloud'; } };
+  utter.onerror = () => { if (btn) { btn.classList.remove('speaking'); btn.innerHTML = '\uD83D\uDD0A'; btn.title = 'Read the story aloud'; } };
 
   window.speechSynthesis.speak(utter);
 }
 
 function speakQuestion(qi) {
   if (!window.speechSynthesis) { alert('Read aloud is not supported on this browser.'); return; }
+  const thisBtn = document.getElementById('q' + qi + 'spk');
+
+  if (thisBtn && thisBtn.classList.contains('speaking')) {
+    window.speechSynthesis.cancel();
+    thisBtn.classList.remove('speaking');
+    thisBtn.innerHTML = '\uD83D\uDD0A';
+    return;
+  }
+
   window.speechSynthesis.cancel();
-  document.querySelectorAll('.iq-speak.speaking').forEach(b => b.classList.remove('speaking'));
+  document.querySelectorAll('.iq-speak.speaking').forEach(b => { b.classList.remove('speaking'); b.innerHTML = '\uD83D\uDD0A'; });
 
   const q = currentQuiz.questions[qi];
   let text = q.question;
@@ -1163,8 +1204,9 @@ function speakQuestion(qi) {
   utter.rate = 0.85;
 
   const btn = document.getElementById('q' + qi + 'spk');
-  if (btn) btn.classList.add('speaking');
-  utter.onend = () => { if (btn) btn.classList.remove('speaking'); };
+  if (btn) { btn.classList.add('speaking'); btn.innerHTML = '\u23F9'; }
+  utter.onend = () => { if (btn) { btn.classList.remove('speaking'); btn.innerHTML = '\uD83D\uDD0A'; } };
+  utter.onerror = () => { if (btn) { btn.classList.remove('speaking'); btn.innerHTML = '\uD83D\uDD0A'; } };
 
   window.speechSynthesis.speak(utter);
 }
@@ -1444,6 +1486,7 @@ Specific formatting rules:
     if (wsMode === 'interactive') {
       currentQuiz = parseQuizJson(text);
       currentQuiz.subject = subject;
+      currentQuiz.activityType = activity;
       renderInteractive(currentQuiz);
       await saveWorksheet(wsTitle, grade, subject, topic, JSON.stringify(currentQuiz), 'interactive');
       logUsage(subject, 'interactive');
