@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>BrightBridge PH â€” Worksheet Generator</title>
+<title>BrightBridge PH &#x2014; Worksheet Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -357,9 +357,9 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo">
-      <div class="logo-dot"><span>ðŸŒ‰</span></div>
+      <div class="logo-dot"><span>&#x1F309;</span></div>
       <div class="auth-title">BrightBridge PH</div>
-      <div class="auth-sub" id="authSub">Sign in to create worksheets for your learner ðŸŒ¿</div>
+      <div class="auth-sub" id="authSub">Sign in to create worksheets for your learner &#x1F33F;</div>
     </div>
     <div class="field">
       <label>Email</label>
@@ -367,7 +367,7 @@
     </div>
     <div class="field">
       <label>Password</label>
-      <input type="password" id="authPassword" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" style="background-image:none;" />
+      <input type="password" id="authPassword" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" style="background-image:none;" />
     </div>
     <button class="auth-btn" id="authBtn" onclick="handleAuth()">Sign In</button>
     <div class="auth-toggle" id="authToggle">
@@ -381,7 +381,7 @@
 <div id="app" style="display:none;">
 
 <header>
-  <div class="logo-dot"><span>ðŸŒ‰</span></div>
+  <div class="logo-dot"><span>&#x1F309;</span></div>
   <div>
     <div class="logo-text">BrightBridge PH</div>
     <div class="logo-sub">Worksheet Generator</div>
@@ -393,14 +393,14 @@
 </header>
 
 <div class="hero">
-  <h1>Generate a Worksheet in Seconds âœ¨</h1>
+  <h1>Generate a Worksheet in Seconds &#x2728;</h1>
   <p>DepEd-aligned, parent-friendly, and crafted for every learner. Fill in the details below and let AI do the rest.</p>
 </div>
 
 <div class="container">
 
   <div class="card">
-    <div class="card-title">ðŸ“š Learner Settings</div>
+    <div class="card-title">&#x1F4DA; Learner Settings</div>
     <div class="grid-3" style="margin-bottom: 16px;">
       <div class="field">
         <label>Grade Level</label>
@@ -466,7 +466,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">ðŸ’› Reading & Learning Support <span class="badge">Optional</span></div>
+    <div class="card-title">&#x1F49B; Reading & Learning Support <span class="badge">Optional</span></div>
     <div class="checkboxes">
       <label class="check-item">
         <input type="checkbox" id="dysgraphia" />
@@ -492,31 +492,31 @@
   </div>
 
   <button class="btn-generate" id="generateBtn" onclick="generateWorksheet()">
-    âœ¨ Generate Worksheet
+    &#x2728; Generate Worksheet
   </button>
 
   <div class="loading-bar" id="loadingBar"><div class="loading-fill"></div></div>
-  <div class="loading-text" id="loadingText">ðŸŒ¿ BrightBridge is crafting your worksheet...</div>
+  <div class="loading-text" id="loadingText">&#x1F33F; BrightBridge is crafting your worksheet...</div>
   <div class="error-msg" id="errorMsg"></div>
 
   <div id="output-section">
     <div class="card" id="output-card">
       <div class="output-header">
-        <div class="output-title">ðŸ“„ Your Generated Worksheet</div>
+        <div class="output-title">&#x1F4C4; Your Generated Worksheet</div>
         <div class="btn-group">
-          <button class="btn-sm btn-outline" onclick="copyText()">ðŸ“‹ Copy</button>
-          <button class="btn-sm btn-filled" onclick="window.print()">ðŸ–¨ï¸ Print</button>
+          <button class="btn-sm btn-outline" onclick="copyText()">&#x1F4CB; Copy</button>
+          <button class="btn-sm btn-filled" onclick="window.print()">&#x1F5A8;&#xFE0F; Print</button>
         </div>
       </div>
       <div class="worksheet-output" id="worksheetOutput"></div>
-      <div class="saved-badge" id="savedBadge">ðŸ’¾ Saved to My Worksheets</div>
+      <div class="saved-badge" id="savedBadge">&#x1F4BE; Saved to My Worksheets</div>
     </div>
   </div>
 
   <div class="card" id="saved-card" style="margin-top:24px;">
-    <div class="card-title">ðŸ“š My Worksheets <span class="badge" id="wsCount">0 saved</span></div>
+    <div class="card-title">&#x1F4DA; My Worksheets <span class="badge" id="wsCount">0 saved</span></div>
     <div class="ws-list" id="wsList">
-      <div class="ws-empty">No saved worksheets yet. Generate one and it will appear here! ðŸŒ±</div>
+      <div class="ws-empty">No saved worksheets yet. Generate one and it will appear here! &#x1F331;</div>
     </div>
   </div>
 
@@ -566,8 +566,8 @@ function toggleAuthMode() {
   authMode = authMode === 'login' ? 'signup' : 'login';
   document.getElementById('authBtn').textContent = authMode === 'login' ? 'Sign In' : 'Create Account';
   document.getElementById('authSub').textContent = authMode === 'login'
-    ? 'Sign in to create worksheets for your learner ðŸŒ¿'
-    : 'Create your free BrightBridge account ðŸŒ¸';
+    ? 'Sign in to create worksheets for your learner \uD83C\uDF3F'
+    : 'Create your free BrightBridge account \uD83C\uDF38';
   document.getElementById('authToggle').innerHTML = authMode === 'login'
     ? 'New here? <a onclick="toggleAuthMode()">Create an account</a>'
     : 'Already have an account? <a onclick="toggleAuthMode()">Sign in</a>';
@@ -584,7 +584,7 @@ async function handleAuth() {
   const email = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
   if (!email || !password) {
-    authMsg('Please enter your email and password. ðŸŒ¿', 'error');
+    authMsg('Please enter your email and password. \uD83C\uDF3F', 'error');
     return;
   }
   const btn = document.getElementById('authBtn');
@@ -597,7 +597,7 @@ async function handleAuth() {
       if (data.session) {
         // Auto-confirmed, logged in
       } else {
-        authMsg('Account created! Please check your email to confirm, then sign in. ðŸ“§', 'success');
+        authMsg('Account created! Please check your email to confirm, then sign in. \uD83D\uDCE7', 'success');
       }
     } else {
       const { error } = await db.auth.signInWithPassword({ email, password });
@@ -635,7 +635,7 @@ async function loadWorksheets() {
   const count = document.getElementById('wsCount');
 
   if (error || !data || data.length === 0) {
-    list.innerHTML = '<div class="ws-empty">No saved worksheets yet. Generate one and it will appear here! ðŸŒ±</div>';
+    list.innerHTML = '<div class="ws-empty">No saved worksheets yet. Generate one and it will appear here! \uD83C\uDF31</div>';
     count.textContent = '0 saved';
     return;
   }
@@ -647,11 +647,11 @@ async function loadWorksheets() {
     <div class="ws-item">
       <div class="ws-info">
         <div class="ws-title">${ws.title}</div>
-        <div class="ws-meta">${ws.grade} Â· ${ws.subject} Â· ${date}</div>
+        <div class="ws-meta">${ws.grade} \u00B7 ${ws.subject} \u00B7 ${date}</div>
       </div>
       <div class="ws-actions">
-        <button class="ws-btn view" onclick="viewWorksheet('${ws.id}')">ðŸ‘ï¸ View</button>
-        <button class="ws-btn del" onclick="deleteWorksheet('${ws.id}')">ðŸ—‘ï¸</button>
+        <button class="ws-btn view" onclick="viewWorksheet('${ws.id}')">\uD83D\uDC41\uFE0F View</button>
+        <button class="ws-btn del" onclick="deleteWorksheet('${ws.id}')">\uD83D\uDDD1\uFE0F</button>
       </div>
     </div>`;
   }).join('');
@@ -684,7 +684,7 @@ const topics = {
     "Drawing Conclusions", "Making Predictions"
   ],
   Math: [
-    "Counting 1â€“10", "Counting 1â€“100", "Addition within 10",
+    "Counting 1\u201310", "Counting 1\u2013100", "Addition within 10",
     "Addition within 20", "Subtraction within 10", "Subtraction within 20",
     "Place Value (Tens and Ones)", "Skip Counting by 2s, 5s, 10s",
     "Comparing Numbers", "Number Patterns",
@@ -724,7 +724,7 @@ async function generateWorksheet() {
   const difficulty = document.getElementById('difficulty').value;
 
   if (!grade || !subject || !topic || !activity || !items || !difficulty) {
-    showError('Please fill in all required fields before generating. ðŸŒ¿');
+    showError('Please fill in all required fields before generating. \uD83C\uDF3F');
     return;
   }
 
@@ -750,7 +750,7 @@ ${supportNote}
 
 IMPORTANT: Return your response as clean HTML only (no markdown, no backticks, no code fences). Use these HTML elements:
 - <h1> for the worksheet title (centered)
-- <p> for header info (Name, Date, Score lines) â€” use underscores like: Name: _______________
+- <p> for header info (Name, Date, Score lines) \u2014 use underscores like: Name: _______________
 - <hr> to separate sections
 - <ol> or <p> for numbered items
 - For Multiple Choice: each choice on same line like: A. choice &nbsp;&nbsp; B. choice &nbsp;&nbsp; C. choice &nbsp;&nbsp; D. choice
@@ -762,17 +762,17 @@ Use Filipino-friendly context (local names like Nena, Juan, Aling Rosa, places l
 
 LANGUAGE RULE: 
 - If subject is ENGLISH: use English throughout.
-- If subject is MATH or SCIENCE: use English as the medium of instruction for all questions, directions, and labels. Filipino context (local names, foods, places) is allowed in word problems ONLY â€” but the question itself must be in English.
+- If subject is MATH or SCIENCE: use English as the medium of instruction for all questions, directions, and labels. Filipino context (local names, foods, places) is allowed in word problems ONLY \u2014 but the question itself must be in English.
 - Never write Math or Science questions fully in Filipino/Tagalog.
 
-CRITICAL INSTRUCTION: You may be working within a token limit. If you sense you are running out of space before finishing all items â€” STOP adding new items and immediately write the Answer Key section. A worksheet with fewer items but a complete Answer Key is far better than one with all items but no Answer Key. Never leave the Answer Key missing or incomplete.
+CRITICAL INSTRUCTION: You may be working within a token limit. If you sense you are running out of space before finishing all items \u2014 STOP adding new items and immediately write the Answer Key section. A worksheet with fewer items but a complete Answer Key is far better than one with all items but no Answer Key. Never leave the Answer Key missing or incomplete.
 
 DYSGRAPHIA-FRIENDLY MODE (apply when Dysgraphia-Friendly Format is requested):
 If Dysgraphia-Friendly Mode is selected, generate a worksheet that tests the same learning objective but reduces handwriting burden. Use checkboxes, circle-the-answer formats, word banks, short instructions, larger spacing, and clear sections. Avoid long written answers, crowded layouts, and unnecessary copying. The goal is to assess understanding, not handwriting endurance. Keep the content grade-appropriate and include an answer key. Do not simplify the academic skill unless requested. Only simplify the response method and visual layout.
 
 Specific formatting rules:
-- For Multiple Choice answers: replace "Answer: ______" with: <span style="font-size:1.1em;">â˜ A &nbsp;&nbsp;&nbsp; â˜ B &nbsp;&nbsp;&nbsp; â˜ C &nbsp;&nbsp;&nbsp; â˜ D</span>
-- For True/False items: use <span style="font-size:1.1em;">â˜ TRUE &nbsp;&nbsp;&nbsp; â˜ FALSE</span>
+- For Multiple Choice answers: replace "Answer: ______" with: <span style="font-size:1.1em;">\u2610 A &nbsp;&nbsp;&nbsp; \u2610 B &nbsp;&nbsp;&nbsp; \u2610 C &nbsp;&nbsp;&nbsp; \u2610 D</span>
+- For True/False items: use <span style="font-size:1.1em;">\u2610 TRUE &nbsp;&nbsp;&nbsp; \u2610 FALSE</span>
 - For Fill in the Blank: provide a word bank at the top, and use extra long blank lines (20+ underscores)
 - For Identification: use checkbox squares and clear section headers
 - Add generous spacing and clear visual breaks between every item`;
@@ -796,7 +796,7 @@ Specific formatting rules:
     document.getElementById('output-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     // Auto-save to Supabase
-    const wsTitle = `${subject} â€” ${topic} (${grade})`;
+    const wsTitle = `${subject} \u2014 ${topic} (${grade})`;
     await saveWorksheet(wsTitle, grade, subject, topic, text);
 
   } catch (err) {
@@ -811,7 +811,7 @@ function setLoading(active) {
   const bar = document.getElementById('loadingBar');
   const txt = document.getElementById('loadingText');
   btn.disabled = active;
-  btn.textContent = active ? 'ðŸŒ¿ Generating...' : 'âœ¨ Generate Worksheet';
+  btn.textContent = active ? '\uD83C\uDF3F Generating...' : '\u2728 Generate Worksheet';
   bar.classList.toggle('active', active);
   txt.classList.toggle('active', active);
 }
@@ -830,7 +830,7 @@ function copyText() {
   const el = document.getElementById('worksheetOutput');
   const text = el.innerText;
   navigator.clipboard.writeText(text).then(() => {
-    alert('Copied to clipboard! ðŸ“‹');
+    alert('Copied to clipboard! \uD83D\uDCCB');
   });
 }
 
