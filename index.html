@@ -689,6 +689,18 @@ function clearSessionState() {
   document.getElementById('wsList').innerHTML = '';
   document.getElementById('wsCount').textContent = '0 saved';
   document.getElementById('errorMsg').classList.remove('visible');
+  // Reset the form so the next user starts fresh
+  document.getElementById('grade').value = '';
+  document.getElementById('quarter').value = 'Quarter 1';
+  document.getElementById('subject').value = '';
+  document.getElementById('topic').innerHTML = '<option value="">Select Topic</option>';
+  document.getElementById('activity').value = '';
+  document.getElementById('items').value = '';
+  document.getElementById('difficulty').value = '';
+  ['dysgraphia', 'simplified', 'attention', 'processing'].forEach(id => {
+    document.getElementById(id).checked = false;
+  });
+  setMode('printable');
 }
 
 function showAuth() {
