@@ -512,6 +512,11 @@
           <option>English</option>
           <option>Math</option>
           <option>Science</option>
+          <option>Filipino</option>
+          <option>Araling Panlipunan</option>
+          <option>GMRC / Values</option>
+          <option>MAPEH</option>
+          <option>EPP</option>
         </select>
       </div>
       <div class="field">
@@ -798,7 +803,7 @@ const topics = {
     "Drawing Conclusions", "Making Predictions"
   ],
   Math: [
-    "Counting 1\u201310", "Counting 1\u2013100", "Addition within 10",
+    "Counting 1-10", "Counting 1-100", "Addition within 10",
     "Addition within 20", "Subtraction within 10", "Subtraction within 20",
     "Place Value (Tens and Ones)", "Skip Counting by 2s, 5s, 10s",
     "Comparing Numbers", "Number Patterns",
@@ -812,6 +817,41 @@ const topics = {
     "Day and Night", "The Solar System",
     "States of Matter", "Sound and Light",
     "Food Groups and Nutrition", "Caring for the Environment"
+  ],
+  Filipino: [
+    "Pangngalan", "Uri ng Pangngalan", "Panghalip Panao",
+    "Pandiwa", "Pang-uri", "Pagbasa at Pag-unawa sa Kuwento",
+    "Tauhan, Tagpuan, at Banghay", "Pagsusunod-sunod ng Pangyayari",
+    "Sanhi at Bunga", "Paggamit ng Malaki at Maliit na Titik",
+    "Mga Bantas", "Magkasingkahulugan at Magkasalungat na Salita",
+    "Pagbuo ng Pangungusap", "Diptonggo at Klaster"
+  ],
+  "Araling Panlipunan": [
+    "Paggamit ng Mapa at Globo", "Lokasyon ng Pilipinas (Latitud at Longhitud)",
+    "Ekwador at Prime Meridian", "Tiyak at Relatibong Lokasyon",
+    "Insular at Bisinal na Lokasyon", "Teritoryo at Hangganan ng Pilipinas",
+    "Mga Pulo at Kapuluan ng Pilipinas", "Anyong Lupa at Anyong Tubig",
+    "Mga Rehiyon ng Pilipinas", "Klima ng Pilipinas",
+    "Likas na Yaman ng Pilipinas", "Mga Simbolo ng Mapa"
+  ],
+  "GMRC / Values": [
+    "Paggalang sa Sarili", "Paggalang sa Kapwa at Nakatatanda",
+    "Katapatan", "Pagiging Responsable", "Pagmamahal sa Pamilya",
+    "Pakikipagkaibigan", "Disiplina sa Sarili", "Pagtulong sa Kapwa",
+    "Pagpapahalaga sa Kalikasan", "Kabutihang Asal sa Paaralan",
+    "Pagiging Matiyaga", "Pasasalamat"
+  ],
+  MAPEH: [
+    "Music: Rhythm and Beat", "Music: Notes and Rests", "Music: Time Signature",
+    "Arts: Lines and Shapes", "Arts: Primary and Secondary Colors", "Arts: Elements of Art",
+    "PE: Locomotor Movements", "PE: Non-Locomotor Movements", "PE: Mga Larong Pinoy",
+    "Health: Wastong Nutrisyon", "Health: Kalinisan ng Katawan", "Health: Kaligtasan sa Tahanan"
+  ],
+  EPP: [
+    "Gawaing Pantahanan", "Pagtatanim ng Gulay at Halaman",
+    "Pag-aalaga ng Hayop", "Wastong Paggamit ng Kasangkapan",
+    "Pagtitipid at Pag-iimpok", "Kaayusan at Kalinisan ng Tahanan",
+    "Pagluluto ng Simpleng Pagkain", "Pangangalaga ng Kasuotan"
   ]
 };
 
@@ -1074,6 +1114,8 @@ LANGUAGE RULE:
 - If subject is ENGLISH: use English throughout.
 - If subject is MATH or SCIENCE: use English for all questions. Filipino context allowed in word problems only.
 - Never write Math or Science questions fully in Filipino/Tagalog.
+- If subject is FILIPINO, ARALING PANLIPUNAN, GMRC / VALUES, or EPP: write EVERYTHING in Filipino/Tagalog \u2014 directions, questions, and choices.
+- If subject is MAPEH: use English as the base, Filipino terms welcome.
 
 Output compact JSON (no unnecessary whitespace or newlines). If a token limit approaches, output fewer complete questions rather than incomplete JSON. The JSON must always be complete and parseable.`;
   } else {
@@ -1103,6 +1145,8 @@ LANGUAGE RULE:
 - If subject is ENGLISH: use English throughout.
 - If subject is MATH or SCIENCE: use English as the medium of instruction for all questions, directions, and labels. Filipino context (local names, foods, places) is allowed in word problems ONLY \u2014 but the question itself must be in English.
 - Never write Math or Science questions fully in Filipino/Tagalog.
+- If subject is FILIPINO, ARALING PANLIPUNAN, GMRC / VALUES, or EPP: write EVERYTHING in Filipino/Tagalog \u2014 directions (Panuto), questions, and choices. This matches how these subjects are taught in DepEd schools.
+- If subject is MAPEH: use English as the base, but Filipino terms are welcome (e.g., Mga Larong Pinoy, wastong nutrisyon).
 
 CRITICAL INSTRUCTION: You may be working within a token limit. If you sense you are running out of space before finishing all items \u2014 STOP adding new items and immediately write the Answer Key section. A worksheet with fewer items but a complete Answer Key is far better than one with all items but no Answer Key. Never leave the Answer Key missing or incomplete.
 
