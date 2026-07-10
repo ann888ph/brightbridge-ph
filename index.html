@@ -264,45 +264,144 @@
     body { background: white; }
   }
 
-  /* ===== Auth Screen ===== */
+  /* ===== Auth Screen: split-screen premium ===== */
   #auth-screen {
     min-height: 100vh;
     display: flex;
+    background: var(--warm);
+  }
+  .auth-hero {
+    flex: 1.15;
+    position: relative;
+    background: url('/login-hero.jpg') center/cover no-repeat;
+    display: flex;
+    align-items: flex-end;
+    min-height: 100vh;
+  }
+  .auth-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(160deg,
+      rgba(30,122,96,0.55) 0%,
+      rgba(30,122,96,0.25) 40%,
+      rgba(20,80,63,0.78) 100%);
+  }
+  .auth-hero-content {
+    position: relative;
+    padding: 56px 60px;
+    color: #ffffff;
+    width: 100%;
+  }
+  .auth-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+  .auth-brand .logo-dot { width: 44px; height: 44px; background: rgba(255,255,255,0.18); backdrop-filter: blur(6px); border: 1.5px solid rgba(255,255,255,0.4); }
+  .auth-brand .logo-dot span { font-size: 22px; }
+  .auth-hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.9rem, 3.2vw, 2.7rem);
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    margin-bottom: 10px;
+  }
+  .auth-tagline {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.95);
+    margin-bottom: 10px;
+  }
+  .auth-support {
+    font-size: 0.92rem;
+    line-height: 1.7;
+    color: rgba(255,255,255,0.82);
+    max-width: 480px;
+    margin-bottom: 24px;
+  }
+  .auth-features { display: flex; flex-wrap: wrap; gap: 10px; list-style: none; }
+  .auth-features li {
+    background: rgba(255,255,255,0.14);
+    backdrop-filter: blur(8px);
+    border: 1.5px solid rgba(255,255,255,0.35);
+    border-radius: 30px;
+    padding: 8px 18px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .auth-panel {
+    flex: 1;
+    display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--mint) 0%, var(--warm) 50%, var(--peach) 100%);
-    padding: 20px;
+    padding: 48px 28px;
   }
   .auth-card {
-    background: var(--white);
-    border-radius: 20px;
-    box-shadow: 0 8px 40px rgba(45,158,126,0.15);
-    padding: 40px 36px;
     width: 100%;
-    max-width: 420px;
+    max-width: 400px;
   }
-  .auth-logo { text-align: center; margin-bottom: 24px; }
-  .auth-logo .logo-dot { margin: 0 auto 12px; width: 48px; height: 48px; }
-  .auth-logo .logo-dot span { font-size: 24px; }
-  .auth-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--teal-dark); }
-  .auth-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
-  .auth-card .field { margin-bottom: 14px; }
+  .auth-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.7rem;
+    color: var(--teal-dark);
+    margin-bottom: 6px;
+  }
+  .auth-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
+  .auth-card .field { margin-bottom: 16px; }
+  .auth-card input {
+    padding: 13px 16px;
+    border-radius: 12px;
+    font-size: 15px;
+    background-image: none;
+  }
+  .auth-card input:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 4px rgba(45,158,126,0.12);
+  }
+  .pw-wrap { position: relative; }
+  .pw-wrap input { padding-right: 48px; width: 100%; }
+  .pw-eye {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    width: 36px; height: 36px; border: none; background: transparent;
+    cursor: pointer; font-size: 17px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0.55; transition: opacity 0.2s;
+  }
+  .pw-eye:hover, .pw-eye.on { opacity: 1; }
+  .auth-row { display: flex; justify-content: flex-end; margin: -6px 0 18px; }
+  .auth-forgot {
+    font-size: 12.5px; font-weight: 700; color: var(--teal);
+    cursor: pointer; text-decoration: none;
+  }
+  .auth-forgot:hover { text-decoration: underline; }
   .auth-btn {
     width: 100%;
-    padding: 13px;
+    padding: 14px;
     background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
     color: white; border: none; border-radius: 12px;
     font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 800;
-    cursor: pointer; margin-top: 6px;
-    transition: all 0.2s;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
   }
-  .auth-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(45,158,126,0.3); }
-  .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-  .auth-toggle { text-align: center; font-size: 13px; color: var(--muted); margin-top: 16px; }
-  .auth-toggle a { color: var(--teal); font-weight: 700; cursor: pointer; text-decoration: none; }
-  .auth-msg { font-size: 13px; padding: 10px 14px; border-radius: 10px; margin-top: 12px; display: none; }
+  .auth-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(45,158,126,0.32); }
+  .auth-btn:focus-visible { outline: 3px solid rgba(45,158,126,0.4); outline-offset: 2px; }
+  .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .auth-toggle { text-align: center; font-size: 13.5px; color: var(--muted); margin-top: 20px; }
+  .auth-toggle a { color: var(--teal); font-weight: 800; cursor: pointer; text-decoration: none; }
+  .auth-toggle a:hover { text-decoration: underline; }
+  .auth-msg { font-size: 13px; padding: 11px 14px; border-radius: 10px; margin-top: 14px; display: none; line-height: 1.5; }
   .auth-msg.error { display: block; background: #fff0f0; border: 1.5px solid #fca5a5; color: #b91c1c; }
   .auth-msg.success { display: block; background: var(--mint); border: 1.5px solid var(--teal); color: var(--teal-dark); }
+
+  @media (max-width: 900px) {
+    #auth-screen { flex-direction: column; }
+    .auth-hero { min-height: 300px; flex: none; align-items: flex-end; }
+    .auth-hero-content { padding: 28px 24px; }
+    .auth-support { display: none; }
+    .auth-features li { padding: 6px 14px; font-size: 0.75rem; }
+    .auth-panel { padding: 36px 22px 56px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .auth-btn, .pw-eye { transition: none; }
+  }
 
   /* ===== App header user bar ===== */
   .user-bar {
@@ -367,6 +466,15 @@
   .mode-desc { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 16px; }
 
   /* ===== Interactive Quiz ===== */
+  .iq-passage {
+    background: linear-gradient(135deg, #fffdf8, var(--peach));
+    border: 2px solid var(--mint); border-radius: 16px;
+    padding: 24px 26px; margin-bottom: 22px;
+  }
+  .iq-passage-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .iq-passage-title { font-family: 'Playfair Display', serif; font-size: 1.05rem; color: var(--teal-dark); flex: 1; }
+  .iq-passage-text { font-size: 15px; line-height: 2; color: var(--text); white-space: pre-wrap; }
+
   .iq-question {
     background: var(--warm); border: 2px solid var(--mint); border-radius: 14px;
     padding: 20px 22px; margin-bottom: 16px;
@@ -447,25 +555,46 @@
 
 <!-- ============ AUTH SCREEN ============ -->
 <div id="auth-screen">
-  <div class="auth-card">
-    <div class="auth-logo">
-      <div class="logo-dot"><span>&#x1F309;</span></div>
-      <div class="auth-title">BrightBridge PH</div>
-      <div class="auth-sub" id="authSub">Sign in to create worksheets for your learner &#x1F33F;</div>
+  <div class="auth-hero">
+    <div class="auth-hero-content">
+      <div class="auth-brand">
+        <div class="logo-dot"><span>&#x1F309;</span></div>
+        <div style="font-family:'Playfair Display',serif; font-size:1.05rem; font-weight:700;">BrightBridge PH</div>
+      </div>
+      <h1>Personalized learning support for every learner.</h1>
+      <p class="auth-support">Create custom worksheets in seconds, support reading and writing needs, and make home learning easier for families and teachers.</p>
+      <ul class="auth-features">
+        <li>&#x2728; Interactive worksheets</li>
+        <li>&#x1F50A; Read-aloud support</li>
+        <li>&#x1F49B; Dysgraphia-friendly learning</li>
+      </ul>
     </div>
-    <div class="field">
-      <label>Email</label>
-      <input type="text" id="authEmail" placeholder="you@email.com" style="background-image:none;" />
+  </div>
+
+  <div class="auth-panel">
+    <div class="auth-card">
+      <div class="auth-heading" id="authHeading">Welcome Back</div>
+      <p class="auth-sub" id="authSub">Sign in to create worksheets for your learner.</p>
+      <div class="field">
+        <label>Email</label>
+        <input type="text" id="authEmail" placeholder="you@email.com" autocomplete="email" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="authPassword" placeholder="Your password" autocomplete="current-password" />
+          <button type="button" class="pw-eye" id="pwEye" onclick="togglePassword()" title="Show password" aria-label="Show or hide password">&#x1F441;</button>
+        </div>
+      </div>
+      <div class="auth-row">
+        <a class="auth-forgot" onclick="handleForgotPassword()">Forgot password?</a>
+      </div>
+      <button class="auth-btn" id="authBtn" onclick="handleAuth()">Sign In</button>
+      <div class="auth-toggle" id="authToggle">
+        New here? <a onclick="toggleAuthMode()">Create an account</a>
+      </div>
+      <div class="auth-msg" id="authMsg"></div>
     </div>
-    <div class="field">
-      <label>Password</label>
-      <input type="password" id="authPassword" placeholder="password" style="background-image:none;" />
-    </div>
-    <button class="auth-btn" id="authBtn" onclick="handleAuth()">Sign In</button>
-    <div class="auth-toggle" id="authToggle">
-      New here? <a onclick="toggleAuthMode()">Create an account</a>
-    </div>
-    <div class="auth-msg" id="authMsg"></div>
   </div>
 </div>
 
@@ -661,6 +790,14 @@ async function initAuth() {
     showApp();
   }
   db.auth.onAuthStateChange((_event, session) => {
+    if (_event === 'PASSWORD_RECOVERY') {
+      const newPass = prompt('Welcome back! Enter your new password:');
+      if (newPass && newPass.length >= 6) {
+        db.auth.updateUser({ password: newPass }).then(() => alert('Password updated! You are now signed in.'));
+      } else if (newPass) {
+        alert('Password must be at least 6 characters. Please use Forgot password again.');
+      }
+    }
     if (session) {
       currentUser = session.user;
       showApp();
@@ -711,10 +848,11 @@ function showAuth() {
 
 function toggleAuthMode() {
   authMode = authMode === 'login' ? 'signup' : 'login';
+  document.getElementById('authHeading').textContent = authMode === 'login' ? 'Welcome Back' : 'Create Your Account';
   document.getElementById('authBtn').textContent = authMode === 'login' ? 'Sign In' : 'Create Account';
   document.getElementById('authSub').textContent = authMode === 'login'
-    ? 'Sign in to create worksheets for your learner \uD83C\uDF3F'
-    : 'Create your free BrightBridge account \uD83C\uDF38';
+    ? 'Sign in to create worksheets for your learner.'
+    : 'Free to join. Start supporting your learner today.';
   document.getElementById('authToggle').innerHTML = authMode === 'login'
     ? 'New here? <a onclick="toggleAuthMode()">Create an account</a>'
     : 'Already have an account? <a onclick="toggleAuthMode()">Sign in</a>';
@@ -727,15 +865,41 @@ function authMsg(text, type) {
   el.className = 'auth-msg' + (type ? ' ' + type : '');
 }
 
+function togglePassword() {
+  const input = document.getElementById('authPassword');
+  const eye = document.getElementById('pwEye');
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  eye.classList.toggle('on', !showing);
+  eye.title = showing ? 'Show password' : 'Hide password';
+}
+
+async function handleForgotPassword() {
+  const email = document.getElementById('authEmail').value.trim();
+  if (!email) {
+    authMsg('Type your email above first, then click Forgot password.', 'error');
+    return;
+  }
+  try {
+    const { error } = await db.auth.resetPasswordForEmail(email);
+    if (error) throw error;
+    authMsg('Password reset email sent to ' + email + '. Please check your inbox.', 'success');
+  } catch (err) {
+    authMsg(err.message, 'error');
+  }
+}
+
 async function handleAuth() {
   const email = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
   if (!email || !password) {
-    authMsg('Please enter your email and password. \uD83C\uDF3F', 'error');
+    authMsg('Please enter your email and password.', 'error');
     return;
   }
   const btn = document.getElementById('authBtn');
+  const restoreText = btn.textContent;
   btn.disabled = true;
+  btn.textContent = authMode === 'login' ? 'Signing in...' : 'Creating account...';
   try {
     if (authMode === 'signup') {
       const { data, error } = await db.auth.signUp({ email, password });
@@ -751,6 +915,7 @@ async function handleAuth() {
     authMsg(err.message, 'error');
   } finally {
     btn.disabled = false;
+    btn.textContent = restoreText;
   }
 }
 
@@ -898,6 +1063,16 @@ function renderInteractive(quiz) {
   const area = document.getElementById('interactiveArea');
   let html = `<p style="font-size:14px; color:var(--muted); font-weight:600; margin-bottom:18px;">${quiz.directions || 'Answer each question, then click Check Answers!'}</p>`;
 
+  if (quiz.passage) {
+    html += `<div class="iq-passage">
+      <div class="iq-passage-head">
+        <div class="iq-passage-title">\uD83D\uDCD6 Read the Story</div>
+        <button class="iq-speak" id="passageSpk" onclick="speakPassage()" title="Read the story aloud">\uD83D\uDD0A</button>
+      </div>
+      <div class="iq-passage-text">${escapeHtml(quiz.passage)}</div>
+    </div>`;
+  }
+
   quiz.questions.forEach((q, i) => {
     html += `<div class="iq-question" id="q${i}">`;
     html += `<div class="iq-qhead">`;
@@ -932,6 +1107,31 @@ function renderInteractive(quiz) {
   </div>`;
 
   area.innerHTML = html;
+}
+
+function speakPassage() {
+  if (!window.speechSynthesis || !currentQuiz || !currentQuiz.passage) return;
+  window.speechSynthesis.cancel();
+  document.querySelectorAll('.iq-speak.speaking').forEach(b => b.classList.remove('speaking'));
+
+  const utter = new SpeechSynthesisUtterance(currentQuiz.passage);
+  const filSubjects = ['Filipino', 'Araling Panlipunan', 'GMRC / Values', 'EPP'];
+  const wantFil = filSubjects.includes(currentQuiz.subject || '');
+  const voices = window.speechSynthesis.getVoices();
+  if (wantFil) {
+    const filVoice = voices.find(v => v.lang && (v.lang.toLowerCase().startsWith('fil') || v.lang.toLowerCase().startsWith('tl')));
+    if (filVoice) { utter.voice = filVoice; utter.lang = filVoice.lang; }
+    else { utter.lang = 'fil-PH'; }
+  } else {
+    utter.lang = 'en-US';
+  }
+  utter.rate = 0.85;
+
+  const btn = document.getElementById('passageSpk');
+  if (btn) btn.classList.add('speaking');
+  utter.onend = () => { if (btn) btn.classList.remove('speaking'); };
+
+  window.speechSynthesis.speak(utter);
 }
 
 function speakQuestion(qi) {
@@ -1153,6 +1353,7 @@ CRITICAL: Respond with ONLY a valid JSON object. No markdown, no backticks, no e
 {
   "title": "worksheet title here",
   "directions": "short child-friendly directions here",
+  "passage": "ONLY for Reading Comprehension: the complete story text here (3-6 short paragraphs, grade-appropriate). Omit this field for other activity types.",
   "questions": [
     { "type": "multiple_choice", "question": "question text", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "answer": 0 },
     { "type": "true_false", "question": "statement here", "answer": true },
@@ -1165,6 +1366,7 @@ Rules:
 - "answer" for true_false is boolean true or false
 - "answer" for fill_blank is the expected word/phrase (keep it to 1-2 words for fair checking)
 - "alternates" for fill_blank: list acceptable variations a child might reasonably type (singular/plural forms, with or without "mga"/"ang", synonyms, symbol forms like ">" for "greater"). Be generous - the goal is to assess understanding, not exact wording.
+- If Activity Type is Reading Comprehension: you MUST include the "passage" field with the COMPLETE story. Every question must be answerable from the passage alone. Never reference a story that is not included.
 - Mix question types appropriately for the activity type requested
 - Exactly ${items} questions total
 - Use Filipino-friendly context (names like Nena, Juan, Aling Rosa; places like Maynila, Cebu; foods like adobo, sinigang)
