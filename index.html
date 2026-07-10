@@ -678,7 +678,21 @@ function showApp() {
   loadWorksheets();
 }
 
+function clearSessionState() {
+  currentQuiz = null;
+  userAnswers = {};
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  document.getElementById('worksheetOutput').innerHTML = '';
+  document.getElementById('interactiveArea').innerHTML = '';
+  document.getElementById('output-section').classList.remove('visible');
+  document.getElementById('savedBadge').classList.remove('visible');
+  document.getElementById('wsList').innerHTML = '';
+  document.getElementById('wsCount').textContent = '0 saved';
+  document.getElementById('errorMsg').classList.remove('visible');
+}
+
 function showAuth() {
+  clearSessionState();
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
 }
