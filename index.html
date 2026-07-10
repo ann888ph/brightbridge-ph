@@ -506,6 +506,15 @@
         </select>
       </div>
       <div class="field">
+        <label>Quarter</label>
+        <select id="quarter" onchange="updateTopics()">
+          <option>Quarter 1</option>
+          <option>Quarter 2</option>
+          <option>Quarter 3</option>
+          <option>Quarter 4</option>
+        </select>
+      </div>
+      <div class="field">
         <label>Subject</label>
         <select id="subject" onchange="updateTopics()">
           <option value="">Select Subject</option>
@@ -519,14 +528,14 @@
           <option>EPP</option>
         </select>
       </div>
+    </div>
+    <div class="grid-3" style="margin-bottom: 16px;">
       <div class="field">
         <label>Topic / Lesson</label>
         <select id="topic">
           <option value="">Select Topic</option>
         </select>
       </div>
-    </div>
-    <div class="grid-3">
       <div class="field">
         <label>Activity Type</label>
         <select id="activity">
@@ -549,6 +558,8 @@
           <option>20</option>
         </select>
       </div>
+    </div>
+    <div class="grid-3">
       <div class="field">
         <label>Difficulty</label>
         <select id="difficulty">
@@ -793,85 +804,135 @@ async function deleteWorksheet(id) {
 
 /* ============ TOPICS ============ */
 const topics = {
-  English: [
-    "Nouns", "Common and Proper Nouns", "Plural Nouns",
-    "Sentences and Non-Sentences", "Simple Sentences",
-    "Declarative Sentences", "Kinds of Sentences", "Punctuation Marks",
-    "CVC Words", "Short Vowel Words", "Rhyming Words",
-    "Reading Comprehension", "Character, Setting, and Plot",
-    "Sequencing Events", "Cause and Effect",
-    "Drawing Conclusions", "Making Predictions"
-  ],
-  Math: [
-    "Counting 1-10", "Counting 1-100", "Addition within 10",
-    "Addition within 20", "Subtraction within 10", "Subtraction within 20",
-    "Place Value (Tens and Ones)", "Skip Counting by 2s, 5s, 10s",
-    "Comparing Numbers", "Number Patterns",
-    "Simple Fractions", "Multiplication (Basic)", "Division (Basic)",
-    "Word Problems", "Telling Time", "Money"
-  ],
-  Science: [
-    "Parts of the Body", "The Five Senses",
-    "Plants and Their Parts", "Animals and Their Habitats",
-    "Living and Non-Living Things", "Weather and Seasons",
-    "Day and Night", "The Solar System",
-    "States of Matter", "Sound and Light",
-    "Food Groups and Nutrition", "Caring for the Environment"
-  ],
-  Filipino: [
-    "Pangngalan", "Uri ng Pangngalan", "Panghalip Panao",
-    "Pandiwa", "Pang-uri", "Pagbasa at Pag-unawa sa Kuwento",
-    "Tauhan, Tagpuan, at Banghay", "Pagsusunod-sunod ng Pangyayari",
-    "Sanhi at Bunga", "Paggamit ng Malaki at Maliit na Titik",
-    "Mga Bantas", "Magkasingkahulugan at Magkasalungat na Salita",
-    "Pagbuo ng Pangungusap", "Diptonggo at Klaster"
-  ],
-  "Araling Panlipunan": [
-    "Paggamit ng Mapa at Globo", "Lokasyon ng Pilipinas (Latitud at Longhitud)",
-    "Ekwador at Prime Meridian", "Tiyak at Relatibong Lokasyon",
-    "Insular at Bisinal na Lokasyon", "Teritoryo at Hangganan ng Pilipinas",
-    "Mga Pulo at Kapuluan ng Pilipinas", "Anyong Lupa at Anyong Tubig",
-    "Mga Rehiyon ng Pilipinas", "Klima ng Pilipinas",
-    "Likas na Yaman ng Pilipinas", "Mga Simbolo ng Mapa"
-  ],
-  "GMRC / Values": [
-    "Paggalang sa Sarili", "Paggalang sa Kapwa at Nakatatanda",
-    "Katapatan", "Pagiging Responsable", "Pagmamahal sa Pamilya",
-    "Pakikipagkaibigan", "Disiplina sa Sarili", "Pagtulong sa Kapwa",
-    "Pagpapahalaga sa Kalikasan", "Kabutihang Asal sa Paaralan",
-    "Pagiging Matiyaga", "Pasasalamat"
-  ],
-  MAPEH: [
-    "Music: Rhythm and Beat", "Music: Notes and Rests", "Music: Time Signature",
-    "Arts: Lines and Shapes", "Arts: Primary and Secondary Colors", "Arts: Elements of Art",
-    "PE: Locomotor Movements", "PE: Non-Locomotor Movements", "PE: Mga Larong Pinoy",
-    "Health: Wastong Nutrisyon", "Health: Kalinisan ng Katawan", "Health: Kaligtasan sa Tahanan"
-  ],
-  EPP: [
-    "Kahalagahan ng Computer at Computing Devices",
-    "Monitor, Keyboard, CPU, Mouse at Iba pang Bahagi ng Computer",
-    "Booting, Shutting Down, at Keyboarding Techniques",
-    "Wastong Posisyon at Layo sa Paggamit ng Computer",
-    "Digital Health and Wellness",
-    "Online Security and Safety",
-    "Phishing, Password, at Personal Information Protection",
-    "Word Processing Software - User Interface",
-    "Page Setup at Font Formatting",
-    "Text Alignment at Saving ng Document"
-  ]
+  Math: {
+    "Quarter 1": [
+      "Angles (Right, Acute, Obtuse)", "Measuring Angles with a Protractor",
+      "Triangles and Quadrilaterals", "Classifying Triangles and Quadrilaterals",
+      "Perimeter of Quadrilaterals", "Perimeter of Composite Figures",
+      "Reading and Writing Numbers up to 1 000 000", "Place Value of 6-Digit Numbers",
+      "Comparing Numbers using =, <, >", "Rounding to the Nearest Hundred Thousand",
+      "Estimating Sums and Differences", "Addition and Subtraction up to 1 000 000"
+    ],
+    "Quarter 2": [
+      "Multiplication with Products up to 1 000 000", "Estimating Products",
+      "Division of 3- to 4-Digit Numbers", "Estimating Quotients",
+      "MDAS Rules", "Multi-Step Word Problems (Including Money)",
+      "Converting Units of Length, Mass, and Capacity", "Converting Units of Time",
+      "Elapsed Time Problems", "Similar Fractions (Proper, Improper, Mixed)",
+      "Adding and Subtracting Similar Fractions"
+    ],
+    "Quarter 3": [
+      "Dissimilar Fractions", "Comparing and Ordering Dissimilar Fractions",
+      "Equivalent Fractions", "Factors and Multiples up to 100",
+      "Reducing Fractions to Simplest Form", "Adding and Subtracting Dissimilar Fractions",
+      "Multi-Step Fraction Problems", "Line Symmetry", "Reflection of Figures"
+    ],
+    "Quarter 4": [
+      "Collecting and Presenting Data in Tables", "Single Line Graphs",
+      "Interpreting Data", "Simple Patterns", "Number Sentences",
+      "Decimal Numbers and Fractions", "Place Value of Decimals to Hundredths",
+      "Comparing and Ordering Decimals", "Rounding Decimals"
+    ]
+  },
+  Science: {
+    "Quarter 1": [
+      "Science Inventions and Filipino Scientists", "Science Inventions in Everyday Life",
+      "Chemical Properties of Materials", "Changes in Materials Due to Temperature",
+      "Minimizing Harmful Changes in Materials", "Science and Community Environmental Issues",
+      "Gathering Scientific Information"
+    ],
+    "Quarter 2": [
+      "Human Body Systems", "Root and Shoot Systems of Plants",
+      "Philippine Animals and Their Habitats", "Animals and Plants in Local Habitats",
+      "Life Cycles of Animals", "Herbivores, Carnivores, and Omnivores", "Food Chains"
+    ],
+    "Quarter 3": [
+      "Forces and Movement", "Measuring Distance and Time", "Speed",
+      "Pushes and Pulls", "How Forces Change the Shape of Objects",
+      "Properties of Magnets", "Light, Sound, and Heat Energy", "Sources and Uses of Energy"
+    ],
+    "Quarter 4": [
+      "Types of Soil", "Soil and Plant Growth", "Water as a Basic Need",
+      "Characteristics of Weather", "Weather Instruments", "Weather Charts and Safety",
+      "The Sun", "Shadows and the Sun's Position"
+    ]
+  },
+  English: {
+    all: [
+      "Nouns", "Common and Proper Nouns", "Plural Nouns",
+      "Sentences and Non-Sentences", "Simple Sentences",
+      "Declarative Sentences", "Kinds of Sentences", "Punctuation Marks",
+      "CVC Words", "Short Vowel Words", "Rhyming Words",
+      "Reading Comprehension", "Character, Setting, and Plot",
+      "Sequencing Events", "Cause and Effect",
+      "Drawing Conclusions", "Making Predictions"
+    ]
+  },
+  Filipino: {
+    all: [
+      "Pangngalan", "Uri ng Pangngalan", "Panghalip Panao",
+      "Pandiwa", "Pang-uri", "Pagbasa at Pag-unawa sa Kuwento",
+      "Tauhan, Tagpuan, at Banghay", "Pagsusunod-sunod ng Pangyayari",
+      "Sanhi at Bunga", "Paggamit ng Malaki at Maliit na Titik",
+      "Mga Bantas", "Magkasingkahulugan at Magkasalungat na Salita",
+      "Pagbuo ng Pangungusap", "Diptonggo at Klaster"
+    ]
+  },
+  "Araling Panlipunan": {
+    all: [
+      "Paggamit ng Mapa at Globo", "Lokasyon ng Pilipinas (Latitud at Longhitud)",
+      "Ekwador at Prime Meridian", "Tiyak at Relatibong Lokasyon",
+      "Insular at Bisinal na Lokasyon", "Teritoryo at Hangganan ng Pilipinas",
+      "Mga Pulo at Kapuluan ng Pilipinas", "Anyong Lupa at Anyong Tubig",
+      "Mga Rehiyon ng Pilipinas", "Klima ng Pilipinas",
+      "Likas na Yaman ng Pilipinas", "Mga Simbolo ng Mapa"
+    ]
+  },
+  "GMRC / Values": {
+    all: [
+      "Paggalang sa Sarili", "Paggalang sa Kapwa at Nakatatanda",
+      "Katapatan", "Pagiging Responsable", "Pagmamahal sa Pamilya",
+      "Pakikipagkaibigan", "Disiplina sa Sarili", "Pagtulong sa Kapwa",
+      "Pagpapahalaga sa Kalikasan", "Kabutihang Asal sa Paaralan",
+      "Pagiging Matiyaga", "Pasasalamat"
+    ]
+  },
+  MAPEH: {
+    all: [
+      "Music: Rhythm and Beat", "Music: Notes and Rests", "Music: Time Signature",
+      "Arts: Lines and Shapes", "Arts: Primary and Secondary Colors", "Arts: Elements of Art",
+      "PE: Locomotor Movements", "PE: Non-Locomotor Movements", "PE: Mga Larong Pinoy",
+      "Health: Wastong Nutrisyon", "Health: Kalinisan ng Katawan", "Health: Kaligtasan sa Tahanan"
+    ]
+  },
+  EPP: {
+    all: [
+      "Kahalagahan ng Computer at Computing Devices",
+      "Monitor, Keyboard, CPU, Mouse at Iba pang Bahagi ng Computer",
+      "Booting, Shutting Down, at Keyboarding Techniques",
+      "Wastong Posisyon at Layo sa Paggamit ng Computer",
+      "Digital Health and Wellness",
+      "Online Security and Safety",
+      "Phishing, Password, at Personal Information Protection",
+      "Word Processing Software - User Interface",
+      "Page Setup at Font Formatting",
+      "Text Alignment at Saving ng Document"
+    ]
+  }
 };
 
 function updateTopics() {
   const subject = document.getElementById('subject').value;
+  const quarter = document.getElementById('quarter').value;
   const topicSelect = document.getElementById('topic');
   topicSelect.innerHTML = '<option value="">Select Topic</option>';
-  if (topics[subject]) {
-    topics[subject].forEach(t => {
-      const opt = document.createElement('option');
-      opt.value = t; opt.textContent = t;
-      topicSelect.appendChild(opt);
-    });
-  }
+  if (!topics[subject]) return;
+  const list = topics[subject][quarter] || topics[subject].all || [];
+  list.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t; opt.textContent = t;
+    topicSelect.appendChild(opt);
+  });
 }
 
 /* ============ OUTPUT RENDERING ============ */
@@ -1063,6 +1124,7 @@ function parseQuizJson(text) {
 /* ============ GENERATE ============ */
 async function generateWorksheet() {
   const grade = document.getElementById('grade').value;
+  const quarter = document.getElementById('quarter').value;
   const subject = document.getElementById('subject').value;
   const topic = document.getElementById('topic').value;
   const activity = document.getElementById('activity').value;
@@ -1089,7 +1151,7 @@ async function generateWorksheet() {
     prompt = `You are an expert Filipino elementary school teacher and curriculum designer aligned with DepEd standards.
 
 Create an INTERACTIVE ${activity} for the following:
-- Grade Level: ${grade}
+- Grade Level: ${grade}\n- Quarter: ${quarter} (align content to DepEd MATATAG curriculum for this quarter)
 - Subject: ${subject}
 - Topic: ${topic}
 - Number of Items: ${items}
@@ -1128,7 +1190,7 @@ Output compact JSON (no unnecessary whitespace or newlines). If a token limit ap
     prompt = `You are an expert Filipino elementary school teacher and curriculum designer aligned with DepEd standards.
 
 Create a ${activity} for the following:
-- Grade Level: ${grade}
+- Grade Level: ${grade}\n- Quarter: ${quarter} (align content to DepEd MATATAG curriculum for this quarter)
 - Subject: ${subject}
 - Topic: ${topic}
 - Number of Items: ${items}
