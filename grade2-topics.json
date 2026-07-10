@@ -1,0 +1,168 @@
+{
+  "Language": {
+    "Grade 2": {
+      "Quarter 1": [
+        "Pakikinig at Pagtalakay sa mga Kuwento Tungkol sa Sariling Komunidad",
+        "Pagtukoy sa mga Elemento ng Kuwento (Tauhan, Tagpuan, Pangyayari) sa Narinig",
+        "Pangngalan: Kongkreto (Pambalana at Pantangi) at Di-Kongkreto",
+        "Kailanan at Kasarian ng Pangngalan sa Pakikipagtalastasan",
+        "Pagbabahagi ng mga Kuwento at Karanasan sa Komunidad Nang May Wastong Tono"
+      ],
+      "Quarter 2": [
+        "Panghalip Panao: Paggamit ng Ako, Ikaw, Siya, Kami, Kayo, Sila sa Pangungusap",
+        "Panghalip Pamatlig: Paggamit ng Ito, Iyan, Iyon sa Pagturo ng Bagay",
+        "Panghalip Pananong sa Pagkuha ng Impormasyon",
+        "Pag-unawa sa Nakasulat at Pasalitang Ulat o Balita",
+        "Pagpapahayag ng Sariling Saloobin at Opinyon sa Isang Paksa"
+      ],
+      "Quarter 3": [
+        "Pandiwa: Pagkilala sa mga Salitang Kilos sa Pangungusap",
+        "Aspekto ng Pandiwa: Naganap, Nagaganap, at Magaganap sa Paglalarawan ng Gawain",
+        "Pagsunod sa mga Nakasulat na Panuto na May 3-4 na Hakbang",
+        "Pang-uri: Paglalarawan ng Tao, Bagay, Hayop, at Lugar sa Komunidad",
+        "Pagtukoy sa Sanhi at Bunga sa mga Sitwasyong Napakinggan"
+      ],
+      "Quarter 4": [
+        "Pang-abay: Pagkilala sa Pamanahon, Panlunan, at Pamaraan",
+        "Pag-iba ng Pang-uri at Pang-abay sa Pagbuo ng Pangungusap",
+        "Paggamit ng mga Pangatnig (At, Ngunit, Dahil) sa Pagsasama ng Kaisipan",
+        "Pagbuo ng Maikling Talata o Ulat Tungkol sa Isang Karanasan",
+        "Pakikilahok sa mga Talakayan at Pagtatanong Gamit ang Bakit at Paano"
+      ]
+    }
+  },
+  "Reading and Literacy": {
+    "Grade 2": {
+      "Quarter 1": [
+        "Pagbasa ng mga Salitang May Kambal-Katinig (Klaster) at Diptonggo",
+        "Pagkilala sa mga Salitang Magkasingkahulugan at Magkasalungat",
+        "Pagtukoy sa Mahahalagang Detalye sa Nabasang Kuwento",
+        "Pagsulat ng mga Salita at Parirala Nang May Wastong Espasyo",
+        "Paggamit ng mga Palatandaang Kontekstuwal (Context Clues) upang Malaman ang Kahulugan"
+      ],
+      "Quarter 2": [
+        "Pagbasa ng mga Salitang May Maraming Pantig (Polysyllabic Words)",
+        "Pagkilala sa mga Karaniwang Salitang Hiram at Sight Words para sa Grade 2",
+        "Pagsulat ng mga Simpleng Pangungusap Nang May Wastong Bantas at Malaking Titik",
+        "Pagtukoy sa Pangunahing Kaisipan at mga Suportang Detalye sa Teksto",
+        "Pagkakasunod-sunod ng mga Pangyayari sa Kuwento (Paggamit ng Una, Kasunod, Huli)"
+      ],
+      "Quarter 3": [
+        "Batayang Katatasan sa Pagbasa (Fluency, Speed, and Expression)",
+        "Pagbasa at Pag-unawa sa mga Tekstong Impormatibo (Informational Texts)",
+        "Paggawa ng Sariling Hinuha (Inferences) at Prediksyon sa Binabasa",
+        "Pagsulat ng Maikling Talata na May 3-4 na Pangungusap",
+        "Pagkilala sa Pagkakaiba ng Katotohanan (Fact) at Opinyon sa Teksto"
+      ],
+      "Quarter 4": [
+        "Pagbasa at Pagsusuri ng mga Tula, Awit, at Tugma",
+        "Pagsagot sa mga Kritikal na Tanong Tungkol sa Nabasang Akda",
+        "Pagsulat ng Liham Pangkaibigan o simpleng Paanyaya",
+        "Pagsusuri sa mga Elemento ng Kuwento at Pagbibigay ng Alternatibong Wakas",
+        "Independent Reading ng mga Aklat na Angkop sa Antas ng Grade 2"
+      ]
+    }
+  },
+  "Math": {
+    "Grade 2": {
+      "Quarter 1": [
+        "Whole Numbers up to 1 000",
+        "Counting, Reading, and Writing Numbers up to 1 000",
+        "Place Value and Value of a Digit in 3-Digit Numbers",
+        "Comparing and Ordering Numbers up to 1 000",
+        "Ordinal Numbers up to 20th",
+        "Addition of Whole Numbers up to 3-Digit Numbers with and without Regrouping",
+        "Properties of Addition (Commutative, Associative, Identity)",
+        "Solving One-Step and Two-Step Word Problems Involving Addition"
+      ],
+      "Quarter 2": [
+        "Subtraction of Whole Numbers up to 3-Digit Numbers with and without Regrouping",
+        "Solving One-Step and Two-Step Word Problems Involving Subtraction",
+        "Concept of Multiplication as Repeated Addition and Counting by Arrays",
+        "Multiplication Tables of 2, 3, 4, 5, and 10",
+        "Properties of Multiplication (Commutative, Identity, Zero)",
+        "Solving One-Step Word Problems Involving Multiplication"
+      ],
+      "Quarter 3": [
+        "Concept of Division as Equal Sharing and Repeated Subtraction",
+        "Division Sentences and Relating Division to Multiplication",
+        "Dividing Numbers by 2, 3, 4, 5, and 10",
+        "Solving One-Step Word Problems Involving Division",
+        "Representing and Comparing Unit Fractions (One-Half, One-Third, One-Fourth, up to One-Tenth)",
+        "Geometric Shapes: Recognizing 3-Dimensional Shapes (Cube, Prism, Pyramid, Cylinder, Cone, Sphere)",
+        "Identifying and Extending Geometric Patterns and Number Sequences"
+      ],
+      "Quarter 4": [
+        "Philippine Money up to \u20b11 000 (Coins and Bills)",
+        "Comparing Values of Money and Finding the Total Value",
+        "Solving Word Problems Involving Money",
+        "Linear Measure: Measuring Length Using Standard Units (Meter and Centimeter)",
+        "Mass Measure: Measuring Weight Using Standard Units (Kilogram and Gram)",
+        "Capacity Measure: Measuring Liquid Using Standard Units (Liter and Milliliter)",
+        "Telling Time Using Analog and Digital Clocks (Minutes, Hours, AM/PM)",
+        "Reading and Interpreting Data in Pictographs with a Scale and Tables",
+        "Solving Problems Involving Time and Data Graphs"
+      ]
+    }
+  },
+  "Makabansa": {
+    "Grade 2": {
+      "Quarter 1": [
+        "Konsepto ng Komunidad: Kahulugan at mga Bumubuo Rito",
+        "Mga Mahahalagang Lugar sa Aking Komunidad (Paaralan, Simbahan, Pamilihan, Ospital)",
+        "Ang Aking Tungkulin Bilang Kasapi ng Komunidad",
+        "Kalinisan at Pangangalaga sa Sariling Katawan at Kapaligiran (Health)",
+        "Batayang Kasanayan sa Lokomotor at Di-Lokomotor na Kilos (PE)"
+      ],
+      "Quarter 2": [
+        "Ang Kasaysayan at Pinagmulan ng Aking Komunidad",
+        "Mga Pagbabago at mga Bagay na Nananatili sa Komunidad",
+        "Mga Natatanging Sagisag, Tradisyon, at Pagdiriwang sa Komunidad",
+        "Pagguhit, Pagpinta, at Paggawa ng Likhang-Sining Inspirado ng Komunidad (Arts)",
+        "Pagkilala sa Ritmo, Tempo, at Melodiya ng mga Katutubong Awit (Music)"
+      ],
+      "Quarter 3": [
+        "Mga Likas na Yaman at Hanapbuhay sa Aking Komunidad",
+        "Ang Pamumuno at Paglilingkod sa Komunidad (Mga Barangay Officials)",
+        "Mga Alituntunin, Batas, at Karapatan sa Loob ng Komunidad",
+        "Pakikilahok sa mga Simpleng Gawaing Pangkatawan at Laro ng Lahi",
+        "Kalinisan at Kaligtasan sa Pagkain at Tubig sa Komunidad"
+      ],
+      "Quarter 4": [
+        "Mga Suliranin at Pagtutulungan sa Aking Komunidad (Bayanihan)",
+        "Paghahanda sa Sakuna at Kalamidad sa Lokal na Antas",
+        "Pangangalaga sa Kapaligiran at Wastong Pagtatapon ng Basura",
+        "Pagpapahalaga sa mga Kontribusyon ng Bawat Kasapi ng Komunidad",
+        "Pagbuo ng Pangarap at Hakbang para sa Ikinabubuti ng Komunidad"
+      ]
+    }
+  },
+  "GMRC / Values": {
+    "Grade 2": {
+      "Quarter 1": [
+        "Pansariling Disiplina at Katapatan sa Tahanan at Paaralan",
+        "Wastong Pag-aalaga sa Katawan Bilang Tanda ng Pagpapahalaga sa Sarili",
+        "Pagiging Masunurin sa mga Magulang at mga Tuntunin ng Pamilya",
+        "Pagpapakita ng Magalang na Pananalita (Po at Opo) at Kilos"
+      ],
+      "Quarter 2": [
+        "Pakikipagkapwa: Paggalang sa Pagkakaiba-iba ng mga Tao sa Komunidad",
+        "Pagiging Mapagparaya, Mapagpatawad, at Maunawain sa mga Kaibigan",
+        "Pagtulong sa mga Matatanda, May Kapansanan, at Nangangailangan",
+        "Wastong Pakikitungo sa mga Bisita at Bagong Salta sa Komunidad"
+      ],
+      "Quarter 3": [
+        "Pagpapahalaga sa Ari-arian ng Paaralan, Komunidad, at Kapwa",
+        "Pagsunod sa mga Batas sa Daan, Parke, at mga Pampublikong Lugar",
+        "Pagiging Maagap at Pagpapahalaga sa Oras ng Ibang Tao",
+        "Pagpapakita ng Pagiging Responsableng Mag-aaral"
+      ],
+      "Quarter 4": [
+        "Pagpapahalaga sa mga Bayani at Kultura ng Ating Bansa",
+        "Pangangalaga sa mga Halaman, Hayop, at Likas na Kapaligiran",
+        "Pagpapakita ng Pasasalamat at Pagkilala sa mga Biyaya sa Buhay",
+        "Paggalang sa Iba't Ibang Paraan ng Pananampalataya at Pagsamba"
+      ]
+    }
+  }
+}

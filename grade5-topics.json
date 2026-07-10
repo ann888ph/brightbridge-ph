@@ -1,0 +1,285 @@
+{
+  "Math": {
+    "Grade 5": {
+      "Quarter 1": [
+        "Whole Numbers up to 10 000 000",
+        "Reading and Writing Numbers up to 10 000 000",
+        "Rounding Numbers to the Nearest Hundred Thousands and Millions",
+        "Divisibility Rules for 2, 5, and 10",
+        "Divisibility Rules for 3, 6, and 9",
+        "Divisibility Rules for 4, 8, 11, and 12",
+        "Order of Operations (PMDAS/GMDAS)",
+        "Greatest Common Factor (GCF) and Least Common Multiple (LCM)",
+        "Fractions: Addition and Subtraction of Fractions and Mixed Numbers",
+        "Solving Word Problems Involving Addition and Subtraction of Fractions"
+      ],
+      "Quarter 2": [
+        "Multiplication of Fractions and Mixed Numbers",
+        "Solving Word Problems Involving Multiplication of Fractions",
+        "Division of Simple Fractions and Mixed Numbers",
+        "Reading and Writing Decimals through Ten Thousandths",
+        "Rounding Decimals to the Nearest Hundredths and Thousandths",
+        "Comparing and Ordering Decimals",
+        "Addition and Subtraction of Decimals",
+        "Multiplication of Decimals up to 2 Decimal Places",
+        "Division of Decimals with up to 2 Decimal Places",
+        "Solving Multi-Step Word Problems Involving Decimals"
+      ],
+      "Quarter 3": [
+        "Ratio and Proportion: Concept and Formulation",
+        "Identifying Proportions (Direct, Inverse, and Partitive)",
+        "Percentage, Base, and Rate",
+        "Solving Word Problems Involving Percentage",
+        "Geometry: Polygons and Their Properties",
+        "Congruent Polygons",
+        "Circles: Radius, Diameter, Chord, Center, Arc, and Central Angle",
+        "Solid Figures: Cubes, Prisms, Pyramids, Cylinders, Cones, and Spheres",
+        "Number Sequences and Equations"
+      ],
+      "Quarter 4": [
+        "Measurement: Circumference of a Circle",
+        "Area of a Circle",
+        "Volume of a Rectangular Prism",
+        "Converting Units of Volume (Cubic Centimeter to Cubic Meter)",
+        "Temperature: Reading and Measuring Temperature in Celsius",
+        "Line Graphs: Reading and Interpreting Data",
+        "Constructing Line Graphs",
+        "Experimental Probability",
+        "Solving Word Problems Involving Probability"
+      ]
+    }
+  },
+  "Science": {
+    "Grade 5": {
+      "Quarter 1": [
+        "Properties of Materials to Determine Whether They are Useful or Harmful",
+        "Changes in Materials in the Presence or Absence of Oxygen",
+        "Application of the Properties of Materials in Everyday Life",
+        "Designing a Product out of Local, Recyclable Materials",
+        "Waste Management at Home and in the Community"
+      ],
+      "Quarter 2": [
+        "Human Reproductive System: Parts and Their Functions",
+        "Changes During Puberty (Physical and Emotional)",
+        "Menstrual Cycle and Proper Hygiene",
+        "Animals: Modes of Reproduction (Viviparous and Oviparous)",
+        "Plants: Reproductive Parts of Flowering and Non-Flowering Plants",
+        "Modes of Reproduction in Plants (Sexual and Asexual)",
+        "Interactions in Estuaries and Intertidal Zones",
+        "Protecting and Conserving Estuaries and Intertidal Zones"
+      ],
+      "Quarter 3": [
+        "Motion: Measuring Time and Distance",
+        "Conductors and Insulators of Heat and Electricity",
+        "Electrical Circuits: Parts of a Simple Circuit",
+        "Electromagnets: How They Work and Their Uses",
+        "Light and Sound: How They Travel Through Different Materials",
+        "Effects of Light and Sound on Human Activities"
+      ],
+      "Quarter 4": [
+        "Earth's Surface: Weathering and Soil Erosion",
+        "Effects of Soil Erosion on Living Things and the Environment",
+        "Weather Disturbances: Typhoons and Their Effects",
+        "Safety Precautions Before, During, and After a Typhoon",
+        "The Moon: Phases of the Moon and Beliefs/Practices",
+        "Stars: Characteristics and Constellations in the Night Sky"
+      ]
+    }
+  },
+  "English": {
+    "Grade 5": {
+      "Quarter 1": [
+        "Filling Out Forms Accurately (School Forms, Deposit Slips)",
+        "Inferring the Meaning of Unfamiliar Words Using Context Clues",
+        "Using Compound and Complex Sentences",
+        "Identifying Point of View in a Story",
+        "Reading Comprehension: Elements of a Literary Text",
+        "Writing a 3-Paragraph Composition"
+      ],
+      "Quarter 2": [
+        "Identifying the Main Idea, Key Sentences, and Supporting Details",
+        "Using Correlative and Subordinating Conjunctions",
+        "Identifying Propaganda Devices (Bandwagon, Testimonial, etc.)",
+        "Examining Images for Stereotypes (Gender, Age, Culture)",
+        "Gathering Relevant Information from Various Sources (Dictionaries, Thesaurus, Online)",
+        "Writing an Informational Text"
+      ],
+      "Quarter 3": [
+        "Distinguishing Text Types According to Purpose (To Persuade, Inform, Entertain)",
+        "Summarizing Information from Various Text Types",
+        "Providing Evidence to Support Fact or Opinion",
+        "Using Adverbs of Intensity and Frequency",
+        "Making a Stand on a Given Issue or Topic",
+        "Writing an Editorial or Feature Article"
+      ],
+      "Quarter 4": [
+        "Analyzing How Visual and Multimedia Elements Contribute to the Text",
+        "Writing Paragraphs Showing Cause and Effect, and Problem and Solution",
+        "Using Appropriate Graphic Organizers in Texts",
+        "Restating Sentences Drawn from an Audio/Visual Presentation",
+        "Revising Writing for Clarity, Punctuation, and Spelling",
+        "Delivering a Prepared Speech or Presentation"
+      ]
+    }
+  },
+  "Filipino": {
+    "Grade 5": {
+      "Quarter 1": [
+        "Pagsagot sa mga Tanong sa Binasa/Napakinggang Kuwento at Tekstong Pang-impormasyon",
+        "Paggamit ng Pangngalan at Panghalip sa Pagtalakay Tungkol sa Sarili, Tao, at Lugar",
+        "Pagbibigay ng Kahulugan ng Salita Pamilyar at Di-Pamilyar",
+        "Pagsulat ng Isang Maikling Tula o Tugma",
+        "Pagsusunod-sunod ng mga Pangyayari sa Kuwento",
+        "Pagpapahayag ng Sariling Opinyon o Reaksyon sa Isang Napakinggang Balita"
+      ],
+      "Quarter 2": [
+        "Paggamit ng Pandiwa (Aspekto) sa Pagsasalaysay ng mga Karanasan",
+        "Paggamit ng Pang-uri sa Paglalarawan ng mga Kilalang Tao at Lugar",
+        "Pagtukoy sa Sanhi at Bunga ng mga Pangyayari",
+        "Pagbibigay ng Pamagat sa Nabasang Talata",
+        "Pagsulat ng Isang Simpleng Sulating Pormal (Liham Pangangalakal)",
+        "Pagbuo ng Balangkas (Outline) ng Binasa"
+      ],
+      "Quarter 3": [
+        "Paggamit ng Pang-abay (Pamanahon, Panlunan, Pamaraan)",
+        "Paggamit ng Pangatnig sa Pagbuo ng mga Hugnayang Pangungusap",
+        "Pagsusuri sa mga Elemento ng Pelikula o Napanood na Palabas",
+        "Pag-uulat ng mga Nasaksihang Pangyayari",
+        "Pagsulat ng Simpleng Editoryal o Opinyon",
+        "Pag-unawa sa Idyoma (Sawikain) at Salawikain"
+      ],
+      "Quarter 4": [
+        "Paggawa ng Pangkalahatang Sanggunian (Almanac, Atlas, Ensiklopedya)",
+        "Pagtukoy sa Paniniwala at Reyalidad sa mga Napanood o Nabasa",
+        "Pagkilala sa Iba't Ibang Uri ng Teksto (Naglalahad, Naglalarawan, Nanghihikayat)",
+        "Pagsulat ng Sariling Iskrip para sa Isang Maikling Dula",
+        "Pagsulat ng Talaarawan (Diary) o Journal",
+        "Pagsasagawa ng Isang Maikling Debate o Pagtatalo"
+      ]
+    }
+  },
+  "Araling Panlipunan": {
+    "Grade 5": {
+      "Quarter 1": [
+        "Kinalalagyan ng Pilipinas sa Mundo gamit ang Globo at Mapa",
+        "Teorya sa Pagkabuo ng Pilipinas at Pinagmulan ng mga Unang Pilipino",
+        "Pamumuhay ng mga Sinaunang Pilipino (Ekonomiya at Lipunan)",
+        "Kultura ng Sinaunang Pilipino (Paniniwala, Tradisyon, at Edukasyon)",
+        "Sistema ng Pamamahala ng mga Sinaunang Pilipino (Barangay at Sultanato)",
+        "Pagpapahalaga sa Kontribusyon ng mga Sinaunang Pilipino"
+      ],
+      "Quarter 2": [
+        "Dahilan ng Kolonyalismong Espanyol sa Pilipinas",
+        "Mga Paraan ng Pananakop ng mga Espanyol (Krus at Espada)",
+        "Sistemang Encomienda at mga Patakarang Pang-ekonomiya (Tributo, Polo y Servicio)",
+        "Epekto ng mga Patakarang Espanyol sa Pamumuhay ng mga Pilipino",
+        "Tungkulin at Gampanin ng Simbahang Katoliko sa Pananakop",
+        "Reaksyon ng mga Pilipino sa Pananakop ng mga Espanyol"
+      ],
+      "Quarter 3": [
+        "Pagbabagong Kultural sa Ilalim ng Kolonyalismong Espanyol",
+        "Edukasyon sa Panahon ng Espanyol",
+        "Impluwensya ng Espanyol sa Arkitektura, Sining, at Panitikan",
+        "Kalagayan ng mga Kababaihan sa Panahon ng Espanyol",
+        "Papel ng mga Antas ng Lipunan (Peninsulares, Insulares, Ilustrado)",
+        "Pag-angkop at Pagtanggi ng mga Pilipino sa Kulturang Espanyol"
+      ],
+      "Quarter 4": [
+        "Mga Lokal na Pag-aalsa Laban sa mga Espanyol (Dahilan at Bunga)",
+        "Ang Kalakalang Galyon at ang Pag-usbong ng Panggitnang Uri (Middle Class)",
+        "Kaisipang La Ilustracion (Enlightenment) at Epekto sa Pilipinas",
+        "Ang Kilusang Propaganda at La Liga Filipina",
+        "Ang Pagsilang ng Katipunan (KKK)",
+        "Mga Salik sa Pagsibol ng Nasyonalismong Pilipino"
+      ]
+    }
+  },
+  "EPP": {
+    "Grade 5": {
+      "Quarter 1": [
+        "Entrepreneurship: Ligtas at Responsableng Paggamit ng ICT",
+        "Mga Kasanayan sa Pamamahala ng Negosyo (Basic Business Planning)",
+        "Paggamit ng Word Processing at Presentation Software para sa Negosyo",
+        "Pagsali sa mga Discussion Forums at Chats sa Edukasyon",
+        "Advanced Features ng Search Engine at Web Browsing"
+      ],
+      "Quarter 2": [
+        "Agriculture: Paggawa ng Abonong Organiko (Composting)",
+        "Pamamaraan sa Pagtatanim ng Gulay (Urban at Backyard Gardening)",
+        "Pagsasagawa ng Masistemang Pangangalaga ng mga Tanim",
+        "Pag-aani at Pagsasapamilihan ng Inaning Produkto",
+        "Pangangalaga ng Hayop na may Dalawang Paa at Pakpak (Poultry)"
+      ],
+      "Quarter 3": [
+        "Home Economics: Pangangalaga sa Kasuotan at Pansariling Kagamitan",
+        "Tungkulin sa Sarili, sa Pamilya, at sa Pamayanan sa Panahon ng Puberty",
+        "Pagplano at Paghahanda ng Masustansyang Pagkain",
+        "Pag-aayos ng Tahanan at Paglikha ng mga Kagamitang Pantahanan",
+        "Pananahi sa Kamay (Basic Hand Stitches)"
+      ],
+      "Quarter 4": [
+        "Industrial Arts: Mga Kagamitan sa Pagsusukat at Paggawa ng Linya",
+        "Basic Electrical at Electronics Skills",
+        "Paggawa ng Proyekto Gamit ang Kahoy, Metal, o Kawayan",
+        "Ligtas na Paggamit ng mga Kasangkapang Pang-industriya",
+        "Pagpaplano at Pagkukuwenta ng Materyales para sa Proyekto"
+      ]
+    }
+  },
+  "MAPEH": {
+    "Grade 5": {
+      "Quarter 1": [
+        "Music: Rhythm, Notes, and Rests in Different Time Signatures",
+        "Arts: Cross-hatching and Pointillism Techniques using Philippine Artifacts",
+        "PE: Assessment of Physical Fitness and Target Games (Batang Pinoy)",
+        "Health: Mental, Emotional, and Social Health Dimensions"
+      ],
+      "Quarter 2": [
+        "Music: Melody, Major Scales, and Pitch Names",
+        "Arts: Landscape Painting and Philippine Landscapes/Murals",
+        "PE: Invasion Games (Agawan Base, Lawin at Sisiw)",
+        "Health: Changes During Puberty and Personal Hygiene"
+      ],
+      "Quarter 3": [
+        "Music: Form, Timbre, and Vocal/Instrumental Ensembles",
+        "Arts: Printmaking and Silkscreen Printing Techniques",
+        "PE: Philippine Folk Dances (e.g., Cari\u00f1osa, Polka sa Nayon)",
+        "Health: Nature of Gateway Drugs (Caffeine, Tobacco, Alcohol)"
+      ],
+      "Quarter 4": [
+        "Music: Tempo and Texture (Monophonic, Homophonic, Polyphonic)",
+        "Arts: 3D Crafts, Paper Mache, and Mobile Creation",
+        "PE: Traditional Dance and Recreational Activities",
+        "Health: Basic First Aid and Safety Practices"
+      ]
+    }
+  },
+  "GMRC / Values": {
+    "Grade 5": {
+      "Quarter 1": [
+        "Pagkakaroon ng Mapanuring Pag-iisip (Critical Thinking)",
+        "Pagpapahayag ng Katotohanan Kahit Masakit",
+        "Pagiging Bukas ang Isip sa mga Hinaing ng Iba",
+        "Pagsusuri sa mga Nakalap na Impormasyon mula sa Media"
+      ],
+      "Quarter 2": [
+        "Pagkamahabagin (Compassion) at Pagtulong sa Kapwa",
+        "Paggalang sa mga Opinyon o Paniniwala ng Iba",
+        "Pagtulong sa mga Biktima ng Kalamidad",
+        "Pagpapanatili ng Mabuting Pakikipagkaibigan"
+      ],
+      "Quarter 3": [
+        "Kasiyahan sa Paggawa at Pagiging Produktibo",
+        "Pagkakaroon ng Disiplina at Pananagutan sa mga Gawaing Bahay/Paaralan",
+        "Pangangalaga at Pagrespeto sa Karapatang Pantao",
+        "Pagsunod sa mga Batas Pambansa at Pandaigdigan"
+      ],
+      "Quarter 4": [
+        "Pagiging Makabayan at Pagtangkilik sa Produktong Pilipino",
+        "Pangangalaga sa Kapaligiran at mga Endangered Species",
+        "Pananalig sa Diyos Bilang Gabay sa Mabuting Asal",
+        "Paggalang sa mga Sagradong Lugar ng Iba't Ibang Relihiyon"
+      ]
+    }
+  }
+}

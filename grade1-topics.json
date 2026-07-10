@@ -1,0 +1,183 @@
+{
+  "Language": {
+    "Grade 1": {
+      "Quarter 1": [
+        "Ang Aking Sarili (Pagpapakilala sa Sarili)",
+        "Mga Tunog sa Paligid (Kalikasan, Hayop, Sasakyan)",
+        "Batayang Talasalitaan at Pagpapahayag ng Pangangailangan",
+        "Pakikinig at Pagtukoy sa Mensahe ng Kausap",
+        "Pagbabahagi ng mga Personal na Karanasan"
+      ],
+      "Quarter 2": [
+        "Ang Aking Pamilya at Tahanan",
+        "Pakikipag-usap sa Kapwa nang May Paggalang",
+        "Pag-unawa sa mga Simpleng Kuwentong Napakinggan",
+        "Pagtukoy sa mga Pangngalan (Tao, Bagay, Hayop, Lugar)",
+        "Paggamit ng mga Magagalang na Pananalita"
+      ],
+      "Quarter 3": [
+        "Ang Aking Paaralan at Komunidad",
+        "Paglalarawan ng mga Karanasan at Nararamdaman",
+        "Pagtukoy sa mga Kilos o Pandiwa sa Pang-araw-araw na Gawain",
+        "Pagsunod sa 2-3 Hakbang na Panuto o Direksyon",
+        "Pagtukoy sa Mahahalagang Detalye ng Tekstong Narinig"
+      ],
+      "Quarter 4": [
+        "Ang Mundo sa Aking Paligid",
+        "Pagbabahagi ng Sariling Ideya at Opinyon",
+        "Simpleng Pagbuo ng Pangungusap Gamit ang mga Natutuhang Salita",
+        "Pag-intindi sa Iba't Ibang Uri ng Teksto (Tula, Awit, Kuwento)",
+        "Pagtatanong Gamit ang Sino, Ano, Saan, Kailan, at Bakit"
+      ]
+    }
+  },
+  "Reading and Literacy": {
+    "Grade 1": {
+      "Quarter 1": [
+        "Alpabeto at Wastong Tunog ng mga Titik",
+        "Tamang Hawak ng Lapis at Direksyon ng Pagbasa/Pagsulat",
+        "Pagkilala sa Pagkakaiba ng Katinig at Patinig",
+        "Pagsasamang-Tunog ng mga Titik (Blending)",
+        "Pagkilala sa mga Bahagi ng Isang Aklat"
+      ],
+      "Quarter 2": [
+        "Pagbasa at Pagsulat ng mga Simpleng Salita (CVC Words)",
+        "Pagkilala sa mga Karaniwang Sight Words",
+        "Pagbasa ng mga Simpleng Parirala",
+        "Pag-ugnay ng Tunog sa Tamang Titik (Spelling ng Maikling Salita)",
+        "Pagkilala sa mga Tugmang Salita (Rhyming Words)"
+      ],
+      "Quarter 3": [
+        "Pagbasa ng mga Simpleng Pangungusap",
+        "Pagsulat ng mga Maiikling Salita at Parirala",
+        "Pag-unawa sa Takbo at Pagkakasunod-sunod ng Simpleng Kuwento",
+        "Pagtukoy sa Simula, Gitna, at Katapusan ng Kuwento",
+        "Paghula sa Maaaring Mangyari sa Kuwento (Predicting Outcomes)"
+      ],
+      "Quarter 4": [
+        "Batayang Katatasan sa Pagbasa (Fluency with Accuracy)",
+        "Pagbasa ng mga Maiikling Talata at Teksto",
+        "Pagsagot sa mga Tanong Ukol sa Binasa (Sino, Ano, Kailan, Saan)",
+        "Pagsulat ng 1-2 Simpleng Pangungusap Ukol sa Isang Larawan",
+        "Pag-iba ng Kathang-isip (Fiction) sa Di-Kathang-isip (Non-fiction)"
+      ]
+    }
+  },
+  "Math": {
+    "Grade 1": {
+      "Quarter 1": [
+        "Simple 2-Dimensional Shapes",
+        "Comparing 2-Dimensional Shapes",
+        "Composing and Decomposing Shapes",
+        "Whole Numbers up to 100",
+        "Counting Numbers up to 100",
+        "Reading and Writing Numbers up to 100",
+        "Comparing Numbers up to 20",
+        "Ordering Numbers up to 20",
+        "Ordinal Numbers up to 10th",
+        "Addition with Sums up to 20",
+        "Properties of Addition",
+        "One-Step Addition Problems up to 20"
+      ],
+      "Quarter 2": [
+        "Measuring Length and Distance Using Non-Standard Units",
+        "Comparing Lengths and Distances",
+        "Place Value in 2-Digit Numbers",
+        "Tens and Ones",
+        "Expanded Form of 2-Digit Numbers",
+        "Ordering Numbers up to 100",
+        "Counting by 2s, 5s, and 10s up to 100",
+        "Odd and Even Numbers",
+        "Addition with Sums up to 100 Without Regrouping",
+        "One-Step Addition Problems up to 100"
+      ],
+      "Quarter 3": [
+        "Collecting Data Through a Simple Interview",
+        "Pictographs Without a Scale",
+        "Interpreting Pictographs",
+        "Organizing Data in Tables",
+        "Subtraction of Numbers Less Than 20",
+        "Subtraction of Numbers Less Than 100 Without Regrouping",
+        "Writing Equivalent Addition and Subtraction Expressions",
+        "One-Step Subtraction Problems",
+        "Repeating Patterns",
+        "Extending and Creating Patterns"
+      ],
+      "Quarter 4": [
+        "Fractions: One-Half and One-Fourth",
+        "Comparing One-Half and One-Fourth",
+        "Counting Halves and Quarters",
+        "Philippine Coins and Bills up to \u20b1100",
+        "Comparing Values of Philippine Money",
+        "Addition and Subtraction of Money up to \u20b1100",
+        "One-Step Problems Involving Money",
+        "Half Turn and Quarter Turn",
+        "Clockwise and Counterclockwise Direction",
+        "Telling Time by Hour, Half Hour, and Quarter Hour",
+        "Days of the Week and Months of the Year",
+        "Using a Calendar",
+        "Problems Involving Time"
+      ]
+    }
+  },
+  "Makabansa": {
+    "Grade 1": {
+      "Quarter 1": [
+        "Pagkilala sa Sarili (Pangalan, Kasarian, Kaarawan, Edad)",
+        "Mga Pansariling Gusto, Interes, at Kakayahan",
+        "Pansariling Kalusugan at Kalinisan sa Katawan",
+        "Batayang Ritmo, Kilos, at Koordinasyon ng Katawan (PE)",
+        "Pagguhit at Paggamit ng Kulay sa Pagpapahayag ng Sarili (Arts)"
+      ],
+      "Quarter 2": [
+        "Ang Aking Pamilya at mga Kasapi Nito",
+        "Papel, Tungkulin, at Responsibilidad ng Bawat Kasapi",
+        "Pagpapakita ng Paggalang at Pagtutulungan sa Pamilya",
+        "Pag-awit ng mga Simpleng Kanta at Pagkilala sa Pitch (Music)",
+        "Paggawa ng mga Malikhaing Sining Patungkol sa Pamilya"
+      ],
+      "Quarter 3": [
+        "Ang Aking Paaralan (Lokasyon at mga Bahagi Nito)",
+        "Mga Alituntunin at Regulasyon sa Loob ng Paaralan",
+        "Kahalagahan ng Pag-aaral at Pakikipagkapwa sa mga Kamag-aral",
+        "Mga Laro at Gawaing Pisikal para sa Kalusugan",
+        "Pansariling Kaligtasan sa Paaralan at Pag-iwas sa Sakuna"
+      ],
+      "Quarter 4": [
+        "Ang Aking Komunidad (Mga Katangiang Pisikal at Anyo)",
+        "Mga Pangunahing Pangangailangan sa Komunidad",
+        "Pangangalaga sa Kapaligiran at Likas na Yaman",
+        "Kultura, Tradisyon, at Pagkakaisa sa Komunidad",
+        "Pagiging Mabuti at Mapanagutang Kasapi ng Komunidad"
+      ]
+    }
+  },
+  "GMRC / Values": {
+    "Grade 1": {
+      "Quarter 1": [
+        "Pagpapahalaga at Pagmamahal sa Sarili",
+        "Kalinisan at Maayos na Pag-uugali sa Araw-araw",
+        "Katapatan sa Pamilya at sa Sarili",
+        "Paggalang sa mga Magulang at mga Nakatatanda"
+      ],
+      "Quarter 2": [
+        "Pagmamahal at Pagmamalasakit sa Kapwa",
+        "Pakikipagkaibigan at Wastong Pakikitungo sa Iba",
+        "Pagiging Mapagbigay at Pagbabahagi sa Nangangailangan",
+        "Pagsasaalang-alang sa Damdamin ng Ibang Tao"
+      ],
+      "Quarter 3": [
+        "Pagmamahal sa Paaralan at Disiplina",
+        "Pagsunod sa mga Panuto at Alituntunin",
+        "Pangangalaga sa mga Gamit sa Paaralan at Tahanan",
+        "Pagiging Maayos at Maayos na Pila (Orderliness)"
+      ],
+      "Quarter 4": [
+        "Pagmamahal sa Bansa at sa Kalikasan",
+        "Pangangalaga sa mga Halaman at mga Hayop",
+        "Pagpapakita ng Pasasalamat (Gratitude)",
+        "Batayang Pananampalataya at Paggalang sa Paniniwala ng Iba"
+      ]
+    }
+  }
+}

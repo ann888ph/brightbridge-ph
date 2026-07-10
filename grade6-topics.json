@@ -1,0 +1,263 @@
+{
+  "Math": {
+    "Grade 6": {
+      "Quarter 1": [
+        "Fractions: Addition and Subtraction of Simple and Mixed Fractions",
+        "Multiplication and Division of Fractions",
+        "Solving Multi-Step Word Problems Involving Fractions",
+        "Decimals: Addition and Subtraction of Decimals through Ten Thousandths",
+        "Multiplication of Decimals and Mixed Decimals",
+        "Division of Whole Numbers by Decimals and Vice Versa",
+        "Division of Decimals by Decimals",
+        "Solving Multi-Step Word Problems Involving Decimals"
+      ],
+      "Quarter 2": [
+        "Ratio and Proportion: Concept and Application",
+        "Direct, Inverse, and Partitive Proportions",
+        "Percentage, Rate, and Base",
+        "Solving Word Problems Involving Discount, Commission, Sales Tax, and Simple Interest",
+        "Integers: Concept and Ordering of Integers on a Number Line",
+        "Addition and Subtraction of Integers",
+        "Multiplication and Division of Integers",
+        "Solving Word Problems Involving Integers"
+      ],
+      "Quarter 3": [
+        "Solid Figures: Visualizing and Describing Different Solid Figures",
+        "Formulating the Rule for the Sequence and nth Term",
+        "Algebraic Expressions and Equations",
+        "Solving Simple Equations",
+        "Speed, Distance, and Time: Formulating and Solving Problems",
+        "Area of Composite Figures (Triangles, Squares, Rectangles, Circles)",
+        "Surface Area of Solid Figures (Cube, Prism, Pyramid, Cylinder, Cone, Sphere)"
+      ],
+      "Quarter 4": [
+        "Volume of Solid Figures (Cylinder, Cone, and Sphere)",
+        "Solving Word Problems Involving Volume",
+        "Meter Reading: Electric and Water Meters",
+        "Data Handling: Constructing and Interpreting Pie Graphs",
+        "Probability: Determining the Probability of a Simple Event",
+        "Making Listings and Tree Diagrams for Probability",
+        "Solving Routine and Non-Routine Problems Involving Experimental and Theoretical Probability"
+      ]
+    }
+  },
+  "Science": {
+    "Grade 6": {
+      "Quarter 1": [
+        "Mixtures: Homogeneous and Heterogeneous Mixtures",
+        "Techniques in Separating Mixtures (Decantation, Evaporation, Filtering, Sieving, Using Magnets)",
+        "Benefits of Separating Mixtures in the Community and Daily Life"
+      ],
+      "Quarter 2": [
+        "Human Body Systems: Musculo-Skeletal System",
+        "Integumentary System (Skin, Hair, Nails)",
+        "Digestive System and Its Functions",
+        "Respiratory System and Its Functions",
+        "Circulatory System and Its Functions",
+        "Nervous System and Its Functions",
+        "How the Different Body Systems Work Together",
+        "Animals: Characteristics of Vertebrates and Invertebrates",
+        "Ecosystems: Interactions Among Living and Non-Living Things in Tropical Rainforests, Coral Reefs, and Mangrove Swamps"
+      ],
+      "Quarter 3": [
+        "Force and Motion: Gravity and Friction",
+        "How Gravity and Friction Affect the Movement of Objects",
+        "Energy Transformation (e.g., Sound, Heat, Light, and Electricity)",
+        "Simple Machines: Characteristics and Uses (Lever, Pulley, Inclined Plane, Wedge, Screw, Wheel and Axle)",
+        "Safety Measures in Using Simple Machines"
+      ],
+      "Quarter 4": [
+        "Earthquakes and Volcanic Eruptions: Changes on the Earth's Surface",
+        "Precautionary Measures Before, During, and After Earthquakes and Volcanic Eruptions",
+        "Seasons in the Philippines (Wet and Dry)",
+        "Motions of the Earth (Rotation and Revolution) and Their Effects",
+        "The Solar System: Planets and Their Characteristics",
+        "Comparing Planets Based on Relative Size and Distance from the Sun"
+      ]
+    }
+  },
+  "English": {
+    "Grade 6": {
+      "Quarter 1": [
+        "Analyzing Sound Devices (Onomatopoeia, Alliteration, Assonance)",
+        "Inferring Meaning of Idiomatic Expressions",
+        "Identifying Real or Make-Believe, Fact or Non-Fact Images",
+        "Making Connections Between Information Viewed and Personal Experiences",
+        "Using Pluralization of Regular and Irregular Nouns",
+        "Writing a 3-Paragraph Composition (Personal Experience)"
+      ],
+      "Quarter 2": [
+        "Gathering Relevant Information from Various Sources (Almanac, Encyclopedia, Dictionary)",
+        "Determining Tone, Mood, and Purpose of the Author",
+        "Using Pronouns and Pronoun-Antecedent Agreement",
+        "Distinguishing Various Types of Informational/Factual Texts",
+        "Writing an Outline from a Given Text",
+        "Writing a Persuasive or Argumentative Paragraph"
+      ],
+      "Quarter 3": [
+        "Providing Evidence to Support a Fact or Opinion",
+        "Using a Particular Kind of Sentence for a Specific Purpose (Making Requests, Asking Permission)",
+        "Using Subordinating and Coordinating Conjunctions",
+        "Organizing Information from Secondary Sources in Preparation for Writing, Reporting, or Similar Academic Tasks in English",
+        "Writing a Short Report on a Given Topic"
+      ],
+      "Quarter 4": [
+        "Summarizing Information from Various Text Types",
+        "Restating Sentences Drawn from an Audio or Visual Presentation",
+        "Revising Writing for Clarity, Correct Punctuation, Spelling, and Transition Words",
+        "Composing Clear and Coherent Sentences Using Appropriate Grammatical Structures (Verb Tenses)",
+        "Delivering a Prepared Script or Speech"
+      ]
+    }
+  },
+  "Filipino": {
+    "Grade 6": {
+      "Quarter 1": [
+        "Pagsagot sa mga Tanong sa Binasa/Napakinggang Pabula, Kuwento, at Tekstong Pang-impormasyon",
+        "Paggamit ng mga Pangngalan at Panghalip sa Pakikipag-usap sa Iba't Ibang Sitwasyon",
+        "Pagbibigay ng Kahulugan ng Pamilyar at Di-Pamilyar na Salita Gamit ang Pahiwatig (Context Clues)",
+        "Pagsusunod-sunod ng mga Pangyayari sa Kuwento Gamit ang mga Balangkas",
+        "Pagsulat ng Sariling Kuwento o Karanasan"
+      ],
+      "Quarter 2": [
+        "Paggamit ng Pandiwa (Aspekto at Pokus) sa Pagsasalaysay ng mga Kaganapan",
+        "Paggamit ng Pang-uri sa Paglalarawan sa Iba't Ibang Sitwasyon",
+        "Pagbibigay ng Sariling Solusyon sa Isang Suliraning Naobserbahan",
+        "Pagtukoy sa Sanhi at Bunga, at Problema at Solusyon",
+        "Pagsulat ng Isang Sulating Pormal (Liham Pangangalakal, Editoryal)"
+      ],
+      "Quarter 3": [
+        "Paggamit ng Pang-abay at Pangatnig sa Pagbuo ng Pangungusap",
+        "Pagbibigay ng Hinuha o Prediksyon sa Maaaring Mangyari sa Teksto",
+        "Pagsusuri sa mga Elemento ng Pelikula o Napanood (Tauhan, Tagpuan, Banghay)",
+        "Paggawa ng Patalastas o Islogan Tungkol sa Isang Napapanahong Isyu",
+        "Pagsulat ng Isang Ulat Mula sa Isang Panayam o Napanood"
+      ],
+      "Quarter 4": [
+        "Pagkilala sa Iba't Ibang Uri ng Teksto (Impormatibo, Persweysib, Naratibo)",
+        "Paghahambing ng Iba't Ibang Porma ng Media (Radyo, Telebisyon, Internet)",
+        "Paggawa ng Pangkalahatang Sanggunian o Pamanahong Papel (Research)",
+        "Pagsulat ng Iskrip para sa Isang Maikling Dula o Broadcasting",
+        "Pagsasagawa ng Isang Maikling Debate o Pagtatalo"
+      ]
+    }
+  },
+  "Araling Panlipunan": {
+    "Grade 6": {
+      "Quarter 1": [
+        "Ang Kinalalagyan ng Pilipinas at Teritoryo Nito",
+        "Ang Kilusang Propaganda at Katipunan (KKK)",
+        "Ang Himagsikang Pilipino ng 1896",
+        "Deklarasyon ng Kalayaan sa Kawit, Cavite",
+        "Ang Digmaang Pilipino-Amerikano",
+        "Mga Bayaning Pilipino na Lumaban sa mga Amerikano"
+      ],
+      "Quarter 2": [
+        "Ang Pamahalaang Kolonyal ng mga Amerikano (Sibil at Militar)",
+        "Mga Patakaran ng Amerikano (Edukasyon, Kalusugan, Transportasyon)",
+        "Ang Pamahalaang Komonwelt",
+        "Pananakop ng mga Hapones at ang Ikalawang Republika ng Pilipinas",
+        "Ang Kilusang Gerilya at HUKBALAHAP",
+        "Paglaya ng Pilipinas Mula sa Hapon (1945)"
+      ],
+      "Quarter 3": [
+        "Ang Ikatlong Republika ng Pilipinas (Mga Suliranin at Hamon)",
+        "Mga Programa ng mga Naging Pangulo (Roxas hanggang Macapagal)",
+        "Ang Panahon ng Batas Militar (Martial Law) sa Ilalim ni Marcos",
+        "Mga Pangyayari na Nagbigay-Daan sa People Power Revolution (1986)",
+        "Ang Panunumbalik ng Demokrasya at ang Ika-Limang Republika"
+      ],
+      "Quarter 4": [
+        "Mga Karapatan at Tungkulin ng Mamamayang Pilipino",
+        "Ang Saligang Batas ng 1987 at ang Pamahalaan",
+        "Mga Napapanahong Isyung Panlipunan, Pang-ekonomiya, at Pangkapaligiran",
+        "Pagtatanggol at Pangangalaga sa Teritoryo ng Pilipinas",
+        "Kahalagahan ng Aktibong Pakikilahok ng mga Mamamayan (Civic Engagement)"
+      ]
+    }
+  },
+  "EPP": {
+    "Grade 6": {
+      "Quarter 1": [
+        "ICT and Entrepreneurship: Buying and Selling of Products Based on Needs",
+        "Creating an Online Survey Form (Google Forms)",
+        "Using Advanced Features of Spreadsheets (Formulas and Functions)",
+        "Using Audio and Video Conferencing Tools Safely",
+        "Creating Multimedia Presentations"
+      ],
+      "Quarter 2": [
+        "Agriculture: Propagating Trees and Fruit-Bearing Trees",
+        "Establishing an Orchard",
+        "Proper Harvesting, Marketing, and Selling of Fruits",
+        "Animal Raising: Swine, Goat, or Fish (Depending on Location)",
+        "Monitoring Growth and Record-Keeping in Animal Raising"
+      ],
+      "Quarter 3": [
+        "Home Economics: Management of Family Resources (Budgeting)",
+        "Sewing Household Linens (Pillowcases, Table Runners)",
+        "Food Preservation Techniques (Drying, Salting, Freezing, Sugar Preservation)",
+        "Packaging and Marketing Preserved Foods",
+        "Project Planning and Costing for Preserved Foods"
+      ],
+      "Quarter 4": [
+        "Industrial Arts: Enhancing Bamboo, Wood, and Metal Products",
+        "Techniques in Decorating (Finishing, Painting, Varnishing)",
+        "Constructing a Simple Project (e.g., Pen Holder, Extension Cord)",
+        "Basic Repairs of Simple Gadgets/Furniture at Home",
+        "Recycling Waste Materials for Livelihood Projects"
+      ]
+    }
+  },
+  "MAPEH": {
+    "Grade 6": {
+      "Quarter 1": [
+        "Music: Notes and Rests in 2/4, 3/4, 4/4, and 6/8 Time Signatures",
+        "Arts: Logo Design and Cartoon Character Creation (Hand-Drawn and Digital)",
+        "PE: Target Games (Tumbang Preso, Batang Pinoy Games) and Fitness Assessment",
+        "Health: Personal Health Issues and Concerns (Stunted Growth, Overweight, Hearing/Vision)"
+      ],
+      "Quarter 2": [
+        "Music: Melody (C Major, G Major, and F Major Scales)",
+        "Arts: Digital Painting, Graphic Design, and Poster Making",
+        "PE: Invasion Games (Agawan Base, Lawin at Sisiw)",
+        "Health: Building and Maintaining Healthy School and Community Environments"
+      ],
+      "Quarter 3": [
+        "Music: Musical Forms (Binary, Ternary, Rondo) and Timbre (Orchestra)",
+        "Arts: Printmaking (Silkscreen or Basic T-Shirt Printing)",
+        "PE: Philippine Folk Dances (Itik-Itik, Maglalatik)",
+        "Health: Prevention and Control of Environmental Diseases (Dengue, Malaria, Respiratory)"
+      ],
+      "Quarter 4": [
+        "Music: Tempo (Allegro, Andante, Presto) and Harmony (Major and Minor Chords)",
+        "Arts: Sculpture, 3D Art, and Paper Mache",
+        "PE: Dance and Recreational Activities",
+        "Health: Consumer Health (Wise Buying, Over-the-Counter Drugs, Quackery)"
+      ]
+    }
+  },
+  "GMRC / Values": {
+    "Grade 6": {
+      "Quarter 1": [
+        "Pagsusuri Bago Gumawa ng Desisyon (Critical Decision Making)",
+        "Pagtanggap ng Katotohanan at Mapanuring Pag-iisip",
+        "Pagkamatiyaga at Pagkabukas-isip sa Paglutas ng Problema"
+      ],
+      "Quarter 2": [
+        "Pagiging Tapat sa Pangako o Kasunduan",
+        "Pagpapakita ng Paggalang sa Ideya ng Iba",
+        "Pagkakaroon ng Kusang-loob na Tulungan ang Kapwa"
+      ],
+      "Quarter 3": [
+        "Pagpapahalaga sa Karapatan ng Iba at sa Kalidad ng Paggawa",
+        "Pagsunod sa mga Batas (Traffic Rules, Anti-Littering)",
+        "Pagiging Mapanagutang Mamimili (Responsible Consumerism)"
+      ],
+      "Quarter 4": [
+        "Pagpapakita ng Espirituwalidad at Pananalig sa Diyos",
+        "Pagtulong sa Pagpapanatili ng Kapayapaan at Kaayusan",
+        "Pagmamahal sa Kalikasan at Sustainable na Pamumuhay"
+      ]
+    }
+  }
+}

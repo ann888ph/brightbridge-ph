@@ -1,0 +1,217 @@
+{
+  "Math": {
+    "Grade 3": {
+      "Quarter 1": [
+        "Whole Numbers up to 10 000",
+        "Reading and Writing Numbers up to 10 000",
+        "Place Value and Value of a Digit in 4-Digit Numbers",
+        "Comparing and Ordering Numbers up to 10 000",
+        "Rounding Numbers to the Nearest Tens, Hundreds, and Thousands",
+        "Addition of Numbers up to 10 000 with and without Regrouping",
+        "Estimating Sums",
+        "One-Step and Two-Step Word Problems Involving Addition",
+        "Subtraction of Numbers up to 10 000 with and without Regrouping",
+        "Estimating Differences",
+        "One-Step and Two-Step Word Problems Involving Subtraction"
+      ],
+      "Quarter 2": [
+        "Multiplication of 2- to 3-Digit Numbers by 1- to 2-Digit Numbers",
+        "Estimating Products",
+        "Properties of Multiplication",
+        "Multi-Step Word Problems Involving Multiplication and Addition/Subtraction",
+        "Division of 2- to 3-Digit Numbers by 1- to 2-Digit Numbers",
+        "Estimating Quotients",
+        "Word Problems Involving Division",
+        "Fractions: Proper, Improper, and Mixed Numbers",
+        "Comparing and Ordering Fractions",
+        "Equivalent Fractions"
+      ],
+      "Quarter 3": [
+        "Identifying Odd and Even Numbers",
+        "Fractions: Addition and Subtraction of Similar Fractions",
+        "Geometry: Identifying Point, Line, Line Segment, and Ray",
+        "Parallel, Intersecting, and Perpendicular Lines",
+        "Congruent Line Segments and Symmetry",
+        "Identifying Missing Terms in a Continuous Pattern",
+        "Tessellations (Tiling Surfaces)"
+      ],
+      "Quarter 4": [
+        "Time: Converting Time Measure (Seconds to Minutes, Hours to Days)",
+        "Solving Word Problems Involving Time",
+        "Measurement: Converting Units of Length, Mass, and Capacity",
+        "Area of Squares and Rectangles",
+        "Solving Word Problems Involving Area",
+        "Data Handling: Collecting Data and Organizing in Tables",
+        "Creating and Interpreting Simple Bar Graphs",
+        "Probability: Determining Sure, Likely, and Impossible Events"
+      ]
+    }
+  },
+  "Science": {
+    "Grade 3": {
+      "Quarter 1": [
+        "Properties of Matter",
+        "Characteristics of Solids, Liquids, and Gases",
+        "Classifying Materials Based on State of Matter",
+        "Changes in Solid, Liquid, and Gas Subjected to Temperature Changes",
+        "Safe Handling of Different Materials at Home and in School"
+      ],
+      "Quarter 2": [
+        "Living Things and Non-Living Things",
+        "Parts and Functions of the Human Senses (Eyes, Ears, Nose, Tongue, Skin)",
+        "Healthy Habits to Protect the Sense Organs",
+        "Animals: Parts of the Body and Their Functions",
+        "Classifying Animals According to Body Parts and Uses",
+        "Plants: Parts of the Plant and Their Functions",
+        "Importance of Plants and Animals to Humans"
+      ],
+      "Quarter 3": [
+        "Force and Motion: How Objects Move",
+        "Sources and Uses of Light",
+        "Sources and Uses of Heat",
+        "Sources and Uses of Sound",
+        "Safety Practices in Handling Hot Objects and Loud Sounds"
+      ],
+      "Quarter 4": [
+        "Earth's Surface: Landforms and Waterforms",
+        "Importance of the Environment to People, Plants, and Animals",
+        "Weather: Types of Weather in the Community",
+        "Effects of Weather on People and the Environment",
+        "Safety Precautions During Different Weather Conditions",
+        "The Sun: Benefits of the Sun's Heat and Light"
+      ]
+    }
+  },
+  "English": {
+    "Grade 3": {
+      "Quarter 1": [
+        "Phonics: Review of Short and Long Vowel Sounds",
+        "Nouns: Common and Proper Nouns",
+        "Plural Form of Regular and Irregular Nouns",
+        "Reading Comprehension: Identifying Story Elements (Characters, Setting, Plot)",
+        "Sequencing Events in a Story",
+        "Sentences: Distinguishing Sentences from Phrases"
+      ],
+      "Quarter 2": [
+        "Verbs: Recognizing Action Words",
+        "Verb Tenses: Simple Present, Past, and Future Tense",
+        "Subject-Verb Agreement",
+        "Pronouns: Personal Pronouns",
+        "Reading Comprehension: Identifying Main Idea and Supporting Details",
+        "Using a Dictionary and Table of Contents"
+      ],
+      "Quarter 3": [
+        "Adjectives: Descriptive Words",
+        "Degrees of Comparison of Adjectives",
+        "Pronouns: Demonstrative Pronouns (This, That, These, Those)",
+        "Reading Comprehension: Making Inferences and Drawing Conclusions",
+        "Following 3- to 4-Step Written Directions",
+        "Writing a Simple Descriptive Paragraph"
+      ],
+      "Quarter 4": [
+        "Adverbs: Adverbs of Time, Place, and Manner",
+        "Prepositions: Showing Location and Time",
+        "Types of Sentences (Declarative, Interrogative, Imperative, Exclamatory)",
+        "Conjunctions (And, But, Or, Because)",
+        "Reading Comprehension: Differentiating Fact from Opinion",
+        "Writing a Short Letter or Thank-You Note"
+      ]
+    }
+  },
+  "Filipino": {
+    "Grade 3": {
+      "Quarter 1": [
+        "Pag-unawa sa Napakinggang Kuwento: Pagsagot sa Sino, Ano, Bakit, at Paano",
+        "Pangngalan: Gamit ng Pangngalan sa Pangungusap",
+        "Kasarian ng Pangngalan",
+        "Pagpapantig ng mga Mahahabang Salita",
+        "Pagkakasunod-sunod ng mga Pangyayari sa Kuwento",
+        "Pagsulat ng Maikling Talata Gamit ang Wastong Bantas"
+      ],
+      "Quarter 2": [
+        "Panghalip: Paggamit ng mga Panghalip Panao at Pamatlig",
+        "Pandiwa: Mga Salitang Kilos sa Iba't Ibang Aspekto",
+        "Pagtukoy sa Pangunahing Diwa ng Nabasang Teksto",
+        "Pagsunod sa mga Nakasulat na Panuto",
+        "Paggamit ng mga Palatandaang Kontekstuwal (Context Clues)",
+        "Pagsulat ng Sariling Karanasan"
+      ],
+      "Quarter 3": [
+        "Pang-uri: Kaantasan ng Pang-uri (Lantay, Pahambing, Pasukdol)",
+        "Pang-abay: Pamanahon, Panlunan, at Pamaraan",
+        "Pagkakaiba ng Pang-uri at Pang-abay",
+        "Pagbuo ng mga Hinuha (Inferences) Mula sa Kuwento",
+        "Pagsulat ng Isang Simpleng Reaksyon Tungkol sa Napapanahong Isyu"
+      ],
+      "Quarter 4": [
+        "Pangatnig: Pag-ugnay ng mga Ideya sa Pangungusap",
+        "Mga Uri ng Pangungusap Ayon sa Gamit",
+        "Pag-iba ng Katotohanan at Opinyon",
+        "Pagsusuri sa mga Grap at Tsart",
+        "Pagsulat ng Maikling Kuwento o Talaarawan",
+        "Pagpapahayag ng Sariling Opinyon o Saloobin Nang May Paggalang"
+      ]
+    }
+  },
+  "Makabansa": {
+    "Grade 3": {
+      "Quarter 1": [
+        "Ang Aking Rehiyon: Kinalalagyan at mga Lalawigan Rito",
+        "Paggamit ng Mapa para Tukuyin ang mga Lalawigan sa Rehiyon",
+        "Mga Katangiang Pisikal at Anyong Lupa/Tubig ng mga Lalawigan",
+        "Populasyon at mga Pangkat Etniko sa Aking Rehiyon",
+        "Pangangalaga sa mga Pinagkukunang Yaman ng Rehiyon",
+        "Batayang Kasanayan sa Lokomotor (PE) at Pagpapahalaga sa Kalusugan (Health)"
+      ],
+      "Quarter 2": [
+        "Kasaysayan at Pinagmulan ng mga Lalawigan sa Aking Rehiyon",
+        "Mga Makasaysayang Pook at Simbolo sa Aking Rehiyon",
+        "Mga Tanyag na Tao at Bayani ng Aking Rehiyon",
+        "Musika at Sining ng Aking Rehiyon (Mga Awiting Bayan at Disenyo)",
+        "Mga Laro ng Lahi na Tanyag sa Rehiyon"
+      ],
+      "Quarter 3": [
+        "Pagkakakilanlang Kultural ng Aking Rehiyon (Wika, Kaugalian, at Tradisyon)",
+        "Mga Pagdiriwang at Pista sa Iba't Ibang Lalawigan",
+        "Pagpapahalaga sa Sariling Kultura at Sining",
+        "Edukasyong Pisikal: Ritmikong Ehersisyo at Katutubong Sayaw",
+        "Kalusugan: Mga Gawaing Nagpapanatili ng Malusog na Pamumuhay"
+      ],
+      "Quarter 4": [
+        "Mga Pangunahing Hanapbuhay at Produkto ng mga Lalawigan",
+        "Ugnayan ng mga Lalawigan sa Kalakalan at Ekonomiya",
+        "Ang Tungkulin ng Pamahalaang Lokal sa Pag-unlad ng Rehiyon",
+        "Pakikilahok sa mga Proyekto at Programa ng Pamayanan",
+        "Paghahanda sa Sakuna at Pagtutulungan sa Panahon ng Kalamidad"
+      ]
+    }
+  },
+  "GMRC / Values": {
+    "Grade 3": {
+      "Quarter 1": [
+        "Katatagan ng Loob (Resilience) at Pagtitiwala sa Sarili",
+        "Kalinisan ng Katawan, Isip, at Gawa",
+        "Pagsasabi ng Katotohanan (Honesty) sa Lahat ng Pagkakataon",
+        "Pagtupad sa mga Ipinangako"
+      ],
+      "Quarter 2": [
+        "Pagmamalasakit (Compassion) sa mga Kamag-aral at Kapwa",
+        "Pagiging Sensitibo sa Pangangailangan at Damdamin ng Iba",
+        "Pagtulong sa mga May Kapansanan at Matatanda",
+        "Pagtanggap sa Pagkakaiba-iba ng Paniniwala at Kakayahan"
+      ],
+      "Quarter 3": [
+        "Pagsunod sa mga Batas at Tuntunin sa Paaralan at Pamayanan",
+        "Pangangalaga sa mga Pampublikong Gamit at Pasilidad",
+        "Pagpapakita ng Simpleng Pagkusa (Initiative) sa mga Gawaing Bahay at Eskwela",
+        "Pagpapanatili ng Kaayusan (Orderliness) sa Paligid"
+      ],
+      "Quarter 4": [
+        "Pananalig sa Diyos at Paggalang sa Iba't Ibang Relihiyon",
+        "Pagmamahal sa Bansa at Pagpapahalaga sa Kulturang Pilipino",
+        "Pasasalamat sa mga Biyaya at mga Taong Tumutulong",
+        "Pangangalaga sa Kalikasan Bilang Regalo ng Diyos"
+      ]
+    }
+  }
+}

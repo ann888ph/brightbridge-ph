@@ -1,0 +1,288 @@
+{
+  "Math": {
+    "Grade 4": {
+      "Quarter 1": [
+        "Whole Numbers up to 1 000 000",
+        "Reading and Writing Numbers up to 1 000 000",
+        "Place Value and Value of a Digit",
+        "Comparing and Ordering Numbers up to 1 000 000",
+        "Rounding Numbers to the Nearest Thousands and Ten Thousands",
+        "Multiplication of Whole Numbers up to 3-Digit by 2-Digit Numbers",
+        "Multiplication of Multiples of 10, 100, and 1 000",
+        "Estimating Products of 3- to 4-Digit Numbers",
+        "Multi-Step Word Problems Involving Multiplication",
+        "Division of 3- to 4-Digit Numbers by 1- to 2-Digit Numbers",
+        "Division Involving Multiples of 10, 100, and 1 000",
+        "Estimating Quotients of 3- to 4-Digit Numbers",
+        "Multi-Step Word Problems Involving Division",
+        "Order of Operations (MDAS)"
+      ],
+      "Quarter 2": [
+        "Factors and Multiples",
+        "Prime and Composite Numbers",
+        "Prime Factorization",
+        "Greatest Common Factor (GCF)",
+        "Least Common Multiple (LCM)",
+        "Word Problems Involving GCF and LCM",
+        "Introduction to Fractions (Proper, Improper, and Mixed Numbers)",
+        "Changing Improper Fractions to Mixed Numbers and Vice Versa",
+        "Equivalent Fractions",
+        "Simplifying Fractions to Lowest Terms",
+        "Comparing and Ordering Fractions",
+        "Addition and Subtraction of Similar Fractions",
+        "Addition and Subtraction of Dissimilar Fractions",
+        "Word Problems Involving Addition and Subtraction of Fractions"
+      ],
+      "Quarter 3": [
+        "Introduction to Decimals",
+        "Place Value and Value of a Digit in Decimals",
+        "Reading and Writing Decimals",
+        "Comparing and Ordering Decimals",
+        "Rounding Decimals to the Nearest Whole Number and Tenths",
+        "Lines: Parallel, Intersecting, and Perpendicular Lines",
+        "Angles: Right, Acute, and Obtuse Angles",
+        "Measuring and Drawing Angles Using a Protractor",
+        "Properties of Triangles and Quadrilaterals",
+        "Classifying Triangles and Quadrilaterals",
+        "Missing Terms in a Sequence",
+        "Number Sentences Involving Multiplication and Division"
+      ],
+      "Quarter 4": [
+        "Concept of Perimeter",
+        "Perimeter of Triangles, Squares, and Rectangles",
+        "Word Problems Involving Perimeter",
+        "Concept of Area",
+        "Area of Squares and Rectangles",
+        "Word Problems Involving Area",
+        "Volume of a Rectangular Prism",
+        "Word Problems Involving Volume",
+        "Collecting Data and Organizing in a Table",
+        "Bar Graphs: Reading and Interpreting Single and Double Bar Graphs",
+        "Constructing Bar Graphs",
+        "Simple Probability and Outcomes"
+      ]
+    }
+  },
+  "Science": {
+    "Grade 4": {
+      "Quarter 1": [
+        "Properties of Matter: Materials that Float and Sink",
+        "Materials that Absorb Water (Porosity)",
+        "Materials that Undergo Decay",
+        "Changes in Matter: Useful and Harmful Effects of Changes in Materials",
+        "Changes in Materials in the Presence or Absence of Oxygen",
+        "Changes in Materials Subjected to Temperature Changes"
+      ],
+      "Quarter 2": [
+        "Major Organs of the Body: Functions of the Brain, Heart, Lungs, Liver, Stomach, and Intestines",
+        "Functions of Bones and Muscles",
+        "Caring for the Major Organs of the Body",
+        "Animals: Body Structures for Adaptation and Survival",
+        "Life Cycles of Selected Animals (Complete and Incomplete Metamorphosis)",
+        "Plants: Body Structures for Adaptation and Survival",
+        "Monocot and Dicot Plant Characteristics",
+        "Interactions in the Ecosystem: Benefited and Harmed Organisms",
+        "Effects of the Environment on the Life Cycle of Organisms"
+      ],
+      "Quarter 3": [
+        "Force: Effects of Force on the Size, Shape, and Movement of Objects",
+        "Types of Forces: Friction, Gravity, and Magnetic Force",
+        "Light: Properties of Light (Reflection and Refraction)",
+        "Light Transmission: Transparent, Translucent, and Opaque Materials",
+        "Sound: Production and Propagation of Sound Through Different Media",
+        "Properties of Sound: Loudness and Pitch",
+        "Heat: Transfer of Heat Through Conduction, Convection, and Radiation"
+      ],
+      "Quarter 4": [
+        "Soil: Types of Soil (Sandy, Clay, Loam) and Their Characteristics",
+        "Water Sources in the Community and Their Importance",
+        "The Water Cycle and Its Importance",
+        "Weather Instruments (Thermometer, Anemometer, Wind Vane, Rain Gauge)",
+        "Interpreting Weather Charts and Making Predictions",
+        "Safety Precautions Before, During, and After Different Weather Conditions",
+        "The Sun: Effects of Sun's Heat and Light on Living Things",
+        "The Components of the Solar System"
+      ]
+    }
+  },
+  "English": {
+    "Grade 4": {
+      "Quarter 1": [
+        "Parts of a Book and Utilizing the Index and Glossary",
+        "Using a Dictionary and Thesaurus to Find Meanings, Synonyms, and Antonyms",
+        "Note-Taking and Summarizing Short Texts",
+        "Identifying the Main Idea and Supporting Details",
+        "Context Clues: Synonyms, Antonyms, and Definition",
+        "Nouns: Mass and Count Nouns",
+        "Nouns: Quantifiers of Mass Nouns",
+        "Nouns: Collective Nouns",
+        "Reading Short Stories and Identifying Elements (Setting, Characters, Plot)"
+      ],
+      "Quarter 2": [
+        "Pronouns: Personal and Possessive Pronouns",
+        "Pronouns: Subject, Object, and Demonstrative Pronouns",
+        "Pronoun-Antecedent Agreement",
+        "Verbs: Base Form and S-Form of Regular and Irregular Verbs",
+        "Verbs: Simple Present Tense",
+        "Verbs: Simple Past Tense",
+        "Verbs: Simple Future Tense",
+        "Subject-Verb Agreement Rules",
+        "Listening to and Comprehending Informational Texts",
+        "Distinguishing Fact from Opinion"
+      ],
+      "Quarter 3": [
+        "Adjectives: Degrees of Comparison (Positive, Comparative, Superlative)",
+        "Order of Adjectives in a Series",
+        "Adverbs: Adverbs of Manner, Time, and Place",
+        "Distinguishing Adjectives from Adverbs",
+        "Identifying Meaning of Words with Prefixes and Suffixes",
+        "Drawing Conclusions and Making Inferences",
+        "Identifying Author's Purpose (To Persuade, Inform, Entertain)",
+        "Analyzing Visual Elements (Images, Symbols) in Text"
+      ],
+      "Quarter 4": [
+        "Prepositions: Common Prepositions (In, On, At, Under, Between)",
+        "Prepositional Phrases",
+        "Sentences: Simple Sentences (Subject and Predicate)",
+        "Sentences: Compound Sentences Using Conjunctions (And, But, Or)",
+        "Distinguishing Types of Sentences (Declarative, Interrogative, Imperative, Exclamatory)",
+        "Writing a Simple 3- to 5-Sentence Paragraph",
+        "Journal Writing and Friendly Letters",
+        "Fact-Checking and Cross-Referencing Simple Information"
+      ]
+    }
+  },
+  "Filipino": {
+    "Grade 4": {
+      "Quarter 1": [
+        "Paggamit ng Diksyunaryo at Pag-ayos ng Salita sa Alpabetikal na Ayos",
+        "Pagtukoy sa Mahahalagang Detalye ng Tekstong Nabasa o Narinig",
+        "Pangngalan: Pantangi at Pambalana",
+        "Kasarian at Kailanan ng Pangngalan",
+        "Pagtukoy sa Sanhi at Bunga sa mga Teksto",
+        "Pagsasalaysay Muli ng Nabasang Teksto Gamit ang Sariling Salita",
+        "Pagsulat ng Maikling Talata Tungkol sa Sarili"
+      ],
+      "Quarter 2": [
+        "Panghalip: Panao (Ako, Ikaw, Siya, Kami, Kayo, Sila)",
+        "Panghalip: Pananong at Panukuang Pananda",
+        "Pagtukoy sa Mensahe at Tema ng Kuwento o Tula",
+        "Pagbibigay ng Solusyon sa Isang Naobserbahang Suliranin",
+        "Pandiwa: Aspekto ng Pandiwa (Naganap, Nagaganap, Magaganap)",
+        "Paggamit ng Wastong Aspekto ng Pandiwa sa Pangungusap",
+        "Pagsulat ng Maikling Liham Pangkaibigan"
+      ],
+      "Quarter 3": [
+        "Pang-uri: Uri ng Pang-uri (Panlarawan at Pamilang)",
+        "Kailanan at Kaantasan ng Pang-uri (Lantay, Pahambing, Pasukdol)",
+        "Pagtukoy sa Katangian ng mga Tauhan Batay sa Kanilang Kilos at Pananalita",
+        "Pag-iba ng Katotohanan (Fact) sa Opinyon",
+        "Pang-abay: Pamanahon, Panlunan, at Pamaraan",
+        "Pagkilala sa Pagkakaiba ng Pang-uri at Pang-abay",
+        "Pagsunod sa 3-4 na Hakbang na Nakasulat na Panuto"
+      ],
+      "Quarter 4": [
+        "Pangatnig: Paggamit ng mga Pangatnig (At, Ngunit, Subalit, Dahil sa, Upang)",
+        "Uri ng Pangungusap Ayon sa Gamit (Pasalaysay, Patanong, Pautos, Padamdam)",
+        "Ayos ng Pangungusap (Karaniwan at Di-Karaniwang Ayos)",
+        "Paggawa ng Sariling Wakas sa Isang Kuwentong Nabasa",
+        "Pag-unawa sa mga Impormasyon mula sa Graph, Tsart, o Mapa",
+        "Pagsulat ng Maikling Balita o Talaarawan (Journal)"
+      ]
+    }
+  },
+  "Makabansa": {
+    "Grade 4": {
+      "Quarter 1": [
+        "Kinalalagyan ng Pilipinas sa Mundo (Relatibong Lokasyon at Absolute Lokasyon)",
+        "Paggamit ng Mapa, Globo, at Compass Rose",
+        "Katangiang Pisikal ng Bansa: Mga Anyong Lupa at Anyong Tubig",
+        "Klima at Panahon sa Pilipinas (Tropikal na Bansa)",
+        "Mga Likas na Yaman ng Pilipinas at ang Wastong Pangangalaga Rito",
+        "Kultura at Pagkakakilanlang Pilipino (Tradisyon, Wika, at Kaugalian)"
+      ],
+      "Quarter 2": [
+        "Ang Pamahalaan ng Pilipinas: Kahalagahan at Tungkulin",
+        "Tatlong Sangay ng Pamahalaan (Ehekutibo, Lehislatibo, Hudikatura)",
+        "Mga Namumuno sa Bansa at sa Lokal na Komunidad",
+        "Mga Karapatan ng Mamamayang Pilipino",
+        "Mga Tungkulin at Pananagutan ng Isang Batang Pilipino",
+        "Mga Simbolo at Sagisag ng Ating Bansa"
+      ],
+      "Quarter 3": [
+        "Sining at Musika: Mga Katutubong Sining, Disenyo, at Tradisyunal na Instrumento",
+        "Pagpapahalaga sa mga Kontribusyon ng Iba't Ibang Rehiyon sa Kultura",
+        "Batayang Kasanayan sa Pag-awit at Pagtugtog",
+        "Edukasyong Pisikal: Mga Laro ng Lahi at Koordinasyon ng Katawan",
+        "Physical Fitness at Kahalagahan ng Aktibong Pamumuhay",
+        "Kalusugan: Wastong Nutrisyon at Pag-iwas sa mga Karaniwang Sakit"
+      ],
+      "Quarter 4": [
+        "Mga Isyung Panlipunan at Kapaligiran sa Komunidad",
+        "Pakikilahok sa mga Gawaing Pambarangay at Pampamayanan",
+        "Paghahanda sa mga Sakuna at Kalamidad (Disaster Preparedness)",
+        "Pagtataguyod ng Kapayapaan at Pagkakaisa sa Paaralan at Komunidad",
+        "Pagiging Produktibo at Mapanagutang Kasapi ng Lipunan"
+      ]
+    }
+  },
+  "EPP": {
+    "Grade 4": {
+      "Quarter 1": [
+        "ICT at Entrepreneurship: Kahulugan at Kahalagahan ng Entrepreneurship",
+        "Mga Katangian ng Isang Mahusay na Entrepreneur",
+        "Ligtas at Responsableng Paggamit ng Computer, Internet, at Email",
+        "Paggamit ng Web Browser at Search Engine sa Pananaliksik",
+        "Paggawa ng Text Document Gamit ang Word Processing Software"
+      ],
+      "Quarter 2": [
+        "ICT at Entrepreneurship: Paggawa ng Spreadsheets (Basic Tables and Charts)",
+        "Paggawa ng Electronic Presentation (Slide Presentations)",
+        "Basic Desktop Publishing at Pag-edit ng Larawan",
+        "Pagpapadala ng Mensahe at Files sa Pamamagitan ng Email"
+      ],
+      "Quarter 3": [
+        "Home Economics at Agriculture: Pangangalaga sa Sarili at Kasuotan",
+        "Pagpapanatili ng Kalinisan at Kaayusan sa Bahay",
+        "Pagtatanim ng mga Halamang Ornamental, Gulay, at Prutas",
+        "Mga Kagamitan at Pamamaraan sa Pagtatanim at Paghahalaman",
+        "Pagpaparami ng Halaman (Artificial and Natural Propagation)"
+      ],
+      "Quarter 4": [
+        "Industrial Arts: Basic Sketching, Shading, at Outlining Techniques",
+        "Pagkilala sa mga Kagamitan sa Pagsusukat (Ruler, Meter Stick, Tape Measure)",
+        "Mga Local Materials na Pwedeng Gawaing Likhang-Sining o Produkto",
+        "Simpleng Paggawa ng Proyekto (Basic Woodwork, Bamboo, o Plastic Craft)",
+        "Batayang Kaalaman sa Pag-aalaga ng mga Hayop (Pets o Livestock)"
+      ]
+    }
+  },
+  "GMRC / Values": {
+    "Grade 4": {
+      "Quarter 1": [
+        "Pagpapahalaga sa Sarili at Katatagan ng Kalooban (Resilience)",
+        "Kalinisan ng Katawan, Isipan, at Pananalita",
+        "Katapatan sa Lahat ng Pagkakataon (Honesty)",
+        "Paggalang sa mga Magulang, Nakatatanda, at Otoridad"
+      ],
+      "Quarter 2": [
+        "Pakikipagkapwa-tao at Pag-unawa sa Pagkakaiba-iba (Empathy)",
+        "Pagiging Mapagbigay at Pagtulong sa mga Nangangailangan",
+        "Wastong Pakikitungo sa mga Kamag-aral at Kaibigan",
+        "Pangangalaga sa mga Pampublikong Ari-arian at Pasilidad"
+      ],
+      "Quarter 3": [
+        "Disiplina sa Sarili at Pagsunod sa mga Batas at Alituntunin",
+        "Responsableng Paggamit ng Social Media at Teknolohiya",
+        "Pagpapahalaga sa Oras (Punctuality and Time Management)",
+        "Kalinisan at Kaayusan sa Paaralan at Kapaligiran"
+      ],
+      "Quarter 4": [
+        "Pagmamahal sa Bayan at Pagiging Mapanagutang Mamamayan",
+        "Pangangalaga sa Kalikasan, Halaman, at mga Hayop",
+        "Pasasalamat sa mga Biyaya at Pananampalataya sa Diyos",
+        "Pagtataguyod ng Kapayapaan at Katarungan sa Pang-araw-araw na Buhay"
+      ]
+    }
+  }
+}
