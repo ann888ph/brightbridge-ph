@@ -349,6 +349,88 @@
     #auth-screen, .user-bar, #saved-card { display: none !important; }
   }
 
+
+  /* ===== Mode Toggle ===== */
+  .mode-toggle {
+    display: flex; gap: 0; border: 2px solid var(--teal); border-radius: 14px;
+    overflow: hidden; margin-bottom: 20px;
+  }
+  .mode-btn {
+    flex: 1; padding: 14px; background: white; color: var(--teal-dark);
+    border: none; font-family: 'Nunito', sans-serif; font-size: 14px;
+    font-weight: 800; cursor: pointer; transition: all 0.2s;
+  }
+  .mode-btn.active {
+    background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+    color: white;
+  }
+  .mode-desc { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 16px; }
+
+  /* ===== Interactive Quiz ===== */
+  .iq-question {
+    background: var(--warm); border: 2px solid var(--mint); border-radius: 14px;
+    padding: 20px 22px; margin-bottom: 16px;
+  }
+  .iq-question.correct { border-color: #22c55e; background: #f0fdf4; }
+  .iq-question.wrong { border-color: #f87171; background: #fff5f5; }
+  .iq-qtext { font-weight: 800; font-size: 15px; color: var(--text); margin-bottom: 14px; }
+  .iq-qnum { color: var(--teal); margin-right: 6px; }
+  .iq-choices { display: flex; flex-direction: column; gap: 8px; }
+  .iq-choice {
+    padding: 12px 16px; border: 2px solid var(--mint); border-radius: 10px;
+    background: white; cursor: pointer; font-size: 14px; font-weight: 600;
+    color: var(--text); transition: all 0.15s; text-align: left;
+    font-family: 'Nunito', sans-serif; width: 100%;
+  }
+  .iq-choice:hover { border-color: var(--teal); background: var(--mint); }
+  .iq-choice.selected { border-color: var(--teal); background: var(--mint); font-weight: 800; }
+  .iq-choice.reveal-correct { border-color: #22c55e; background: #dcfce7; font-weight: 800; }
+  .iq-choice.reveal-wrong { border-color: #f87171; background: #fee2e2; }
+  .iq-choice:disabled { cursor: default; }
+  .iq-tf { display: flex; gap: 10px; }
+  .iq-tf .iq-choice { flex: 1; text-align: center; }
+  .iq-blank {
+    width: 100%; padding: 12px 16px; border: 2px solid var(--mint); border-radius: 10px;
+    font-family: 'Nunito', sans-serif; font-size: 15px; background: white;
+    color: var(--text); outline: none;
+  }
+  .iq-blank:focus { border-color: var(--teal); }
+  .iq-feedback { font-size: 12px; font-weight: 700; margin-top: 8px; display: none; }
+  .iq-feedback.show-correct { display: block; color: #16a34a; }
+  .iq-feedback.show-wrong { display: block; color: #dc2626; }
+
+  .iq-check-btn {
+    width: 100%; padding: 15px;
+    background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+    color: white; border: none; border-radius: 14px;
+    font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 800;
+    cursor: pointer; margin-top: 8px; transition: all 0.2s;
+  }
+  .iq-check-btn:hover { transform: translateY(-2px); }
+  .iq-score {
+    display: none; text-align: center; padding: 24px;
+    background: linear-gradient(135deg, var(--mint), var(--peach));
+    border-radius: 16px; margin-top: 16px;
+  }
+  .iq-score.visible { display: block; animation: fadeUp 0.4s ease; }
+  .iq-score-num { font-family: 'Playfair Display', serif; font-size: 2.2rem; color: var(--teal-dark); font-weight: 700; }
+  .iq-score-label { font-size: 15px; font-weight: 800; color: var(--text); margin-top: 4px; }
+  .iq-retry {
+    margin-top: 14px; padding: 10px 24px; background: white; color: var(--teal-dark);
+    border: 2px solid var(--teal); border-radius: 10px; font-family: 'Nunito', sans-serif;
+    font-size: 13px; font-weight: 800; cursor: pointer;
+  }
+  .iq-retry:hover { background: var(--mint); }
+
+  /* confetti */
+  .confetti-piece {
+    position: fixed; width: 10px; height: 10px; top: -20px; z-index: 9999;
+    animation: confettiFall linear forwards; pointer-events: none;
+  }
+  @keyframes confettiFall {
+    to { transform: translateY(110vh) rotate(720deg); opacity: 0.8; }
+  }
+
 </style>
 </head>
 <body>
@@ -367,7 +449,7 @@
     </div>
     <div class="field">
       <label>Password</label>
-      <input type="password" id="authPassword" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" style="background-image:none;" />
+      <input type="password" id="authPassword" placeholder="password" style="background-image:none;" />
     </div>
     <button class="auth-btn" id="authBtn" onclick="handleAuth()">Sign In</button>
     <div class="auth-toggle" id="authToggle">
@@ -398,6 +480,15 @@
 </div>
 
 <div class="container">
+
+  <div class="card">
+    <div class="card-title">&#x1F3AF; Worksheet Mode</div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="modePrintable" onclick="setMode('printable')">&#x1F5A8;&#xFE0F; Printable</button>
+      <button class="mode-btn" id="modeInteractive" onclick="setMode('interactive')">&#x1F4BB; Interactive</button>
+    </div>
+    <div class="mode-desc" id="modeDesc">Print-ready worksheet &#x2014; perfect for pen and paper practice.</div>
+  </div>
 
   <div class="card">
     <div class="card-title">&#x1F4DA; Learner Settings</div>
@@ -502,13 +593,14 @@
   <div id="output-section">
     <div class="card" id="output-card">
       <div class="output-header">
-        <div class="output-title">&#x1F4C4; Your Generated Worksheet</div>
-        <div class="btn-group">
+        <div class="output-title" id="outputTitle">&#x1F4C4; Your Generated Worksheet</div>
+        <div class="btn-group" id="printableActions">
           <button class="btn-sm btn-outline" onclick="copyText()">&#x1F4CB; Copy</button>
           <button class="btn-sm btn-filled" onclick="window.print()">&#x1F5A8;&#xFE0F; Print</button>
         </div>
       </div>
       <div class="worksheet-output" id="worksheetOutput"></div>
+      <div id="interactiveArea"></div>
       <div class="saved-badge" id="savedBadge">&#x1F4BE; Saved to My Worksheets</div>
     </div>
   </div>
@@ -530,7 +622,10 @@ const SUPABASE_KEY = 'sb_publishable_G8GcsQSqHkSBj7fmJtJejA_NjlREZyE';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
-let authMode = 'login'; // or 'signup'
+let authMode = 'login';
+let wsMode = 'printable';
+let currentQuiz = null;
+let userAnswers = {};
 
 /* ============ AUTH ============ */
 async function initAuth() {
@@ -589,14 +684,11 @@ async function handleAuth() {
   }
   const btn = document.getElementById('authBtn');
   btn.disabled = true;
-
   try {
     if (authMode === 'signup') {
       const { data, error } = await db.auth.signUp({ email, password });
       if (error) throw error;
-      if (data.session) {
-        // Auto-confirmed, logged in
-      } else {
+      if (!data.session) {
         authMsg('Account created! Please check your email to confirm, then sign in. \uD83D\uDCE7', 'success');
       }
     } else {
@@ -614,11 +706,21 @@ async function handleLogout() {
   await db.auth.signOut();
 }
 
+/* ============ MODE TOGGLE ============ */
+function setMode(mode) {
+  wsMode = mode;
+  document.getElementById('modePrintable').classList.toggle('active', mode === 'printable');
+  document.getElementById('modeInteractive').classList.toggle('active', mode === 'interactive');
+  document.getElementById('modeDesc').textContent = mode === 'printable'
+    ? 'Print-ready worksheet \u2014 perfect for pen and paper practice.'
+    : 'Answer on screen with instant checking \u2014 perfect for laptop or tablet! No handwriting needed. \uD83D\uDC9B';
+}
+
 /* ============ WORKSHEET STORAGE ============ */
-async function saveWorksheet(title, grade, subject, topic, content) {
+async function saveWorksheet(title, grade, subject, topic, content, mode) {
   const { error } = await db.from('worksheets').insert({
     user_id: currentUser.id,
-    title, grade, subject, topic, content
+    title, grade, subject, topic, content, mode
   });
   if (!error) {
     document.getElementById('savedBadge').classList.add('visible');
@@ -628,7 +730,7 @@ async function saveWorksheet(title, grade, subject, topic, content) {
 
 async function loadWorksheets() {
   const { data, error } = await db.from('worksheets')
-    .select('id, title, grade, subject, topic, created_at')
+    .select('id, title, grade, subject, topic, mode, created_at')
     .order('created_at', { ascending: false });
 
   const list = document.getElementById('wsList');
@@ -643,11 +745,12 @@ async function loadWorksheets() {
   count.textContent = data.length + ' saved';
   list.innerHTML = data.map(ws => {
     const date = new Date(ws.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+    const modeIcon = ws.mode === 'interactive' ? '\uD83D\uDCBB' : '\uD83D\uDDA8\uFE0F';
     return `
     <div class="ws-item">
       <div class="ws-info">
-        <div class="ws-title">${ws.title}</div>
-        <div class="ws-meta">${ws.grade} \u00B7 ${ws.subject} \u00B7 ${date}</div>
+        <div class="ws-title">${modeIcon} ${ws.title}</div>
+        <div class="ws-meta">${ws.grade} &middot; ${ws.subject} &middot; ${date}</div>
       </div>
       <div class="ws-actions">
         <button class="ws-btn view" onclick="viewWorksheet('${ws.id}')">\uD83D\uDC41\uFE0F View</button>
@@ -658,10 +761,21 @@ async function loadWorksheets() {
 }
 
 async function viewWorksheet(id) {
-  const { data, error } = await db.from('worksheets').select('content').eq('id', id).single();
+  const { data, error } = await db.from('worksheets').select('content, mode').eq('id', id).single();
   if (error || !data) return;
-  document.getElementById('worksheetOutput').innerHTML = data.content;
   document.getElementById('savedBadge').classList.remove('visible');
+
+  if (data.mode === 'interactive') {
+    try {
+      currentQuiz = JSON.parse(data.content);
+      renderInteractive(currentQuiz);
+    } catch (e) {
+      showError('Could not load interactive worksheet.');
+      return;
+    }
+  } else {
+    showPrintable(data.content);
+  }
   document.getElementById('output-section').classList.add('visible');
   document.getElementById('output-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -714,6 +828,160 @@ function updateTopics() {
   }
 }
 
+/* ============ OUTPUT RENDERING ============ */
+function showPrintable(html) {
+  document.getElementById('worksheetOutput').innerHTML = html;
+  document.getElementById('worksheetOutput').style.display = 'block';
+  document.getElementById('interactiveArea').innerHTML = '';
+  document.getElementById('printableActions').style.display = 'flex';
+  document.getElementById('outputTitle').textContent = '\uD83D\uDCC4 Your Generated Worksheet';
+}
+
+function renderInteractive(quiz) {
+  userAnswers = {};
+  document.getElementById('worksheetOutput').style.display = 'none';
+  document.getElementById('worksheetOutput').innerHTML = '';
+  document.getElementById('printableActions').style.display = 'none';
+  document.getElementById('outputTitle').textContent = '\uD83D\uDCBB ' + (quiz.title || 'Interactive Worksheet');
+
+  const area = document.getElementById('interactiveArea');
+  let html = `<p style="font-size:14px; color:var(--muted); font-weight:600; margin-bottom:18px;">${quiz.directions || 'Answer each question, then click Check Answers!'}</p>`;
+
+  quiz.questions.forEach((q, i) => {
+    html += `<div class="iq-question" id="q${i}">`;
+    html += `<div class="iq-qtext"><span class="iq-qnum">${i + 1}.</span>${escapeHtml(q.question)}</div>`;
+
+    if (q.type === 'multiple_choice') {
+      html += `<div class="iq-choices">`;
+      q.choices.forEach((c, ci) => {
+        html += `<button class="iq-choice" id="q${i}c${ci}" onclick="selectChoice(${i}, ${ci})">${String.fromCharCode(65 + ci)}. ${escapeHtml(c)}</button>`;
+      });
+      html += `</div>`;
+    } else if (q.type === 'true_false') {
+      html += `<div class="iq-tf">`;
+      html += `<button class="iq-choice" id="q${i}cTrue" onclick="selectTF(${i}, true)">TRUE</button>`;
+      html += `<button class="iq-choice" id="q${i}cFalse" onclick="selectTF(${i}, false)">FALSE</button>`;
+      html += `</div>`;
+    } else if (q.type === 'fill_blank') {
+      html += `<input type="text" class="iq-blank" id="q${i}blank" placeholder="Type your answer here..." oninput="userAnswers[${i}] = this.value" />`;
+    }
+
+    html += `<div class="iq-feedback" id="q${i}fb"></div>`;
+    html += `</div>`;
+  });
+
+  html += `<button class="iq-check-btn" id="checkBtn" onclick="checkAnswers()">\u2705 Check Answers</button>`;
+  html += `<div class="iq-score" id="iqScore">
+    <div class="iq-score-num" id="scoreNum"></div>
+    <div class="iq-score-label" id="scoreLabel"></div>
+    <button class="iq-retry" onclick="renderInteractive(currentQuiz)">\uD83D\uDD04 Try Again</button>
+  </div>`;
+
+  area.innerHTML = html;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function selectChoice(qi, ci) {
+  userAnswers[qi] = ci;
+  const q = currentQuiz.questions[qi];
+  q.choices.forEach((_, i) => {
+    document.getElementById(`q${qi}c${i}`).classList.toggle('selected', i === ci);
+  });
+}
+
+function selectTF(qi, val) {
+  userAnswers[qi] = val;
+  document.getElementById(`q${qi}cTrue`).classList.toggle('selected', val === true);
+  document.getElementById(`q${qi}cFalse`).classList.toggle('selected', val === false);
+}
+
+function checkAnswers() {
+  let score = 0;
+  const total = currentQuiz.questions.length;
+
+  currentQuiz.questions.forEach((q, i) => {
+    const qEl = document.getElementById(`q${i}`);
+    const fb = document.getElementById(`q${i}fb`);
+    let correct = false;
+
+    if (q.type === 'multiple_choice') {
+      correct = userAnswers[i] === q.answer;
+      const correctBtn = document.getElementById(`q${i}c${q.answer}`);
+      if (correctBtn) correctBtn.classList.add('reveal-correct');
+      if (!correct && userAnswers[i] !== undefined) {
+        const wrongBtn = document.getElementById(`q${i}c${userAnswers[i]}`);
+        if (wrongBtn) wrongBtn.classList.add('reveal-wrong');
+      }
+    } else if (q.type === 'true_false') {
+      correct = userAnswers[i] === q.answer;
+      const correctBtn = document.getElementById(`q${i}c${q.answer ? 'True' : 'False'}`);
+      if (correctBtn) correctBtn.classList.add('reveal-correct');
+      if (!correct && userAnswers[i] !== undefined) {
+        const wrongBtn = document.getElementById(`q${i}c${userAnswers[i] ? 'True' : 'False'}`);
+        if (wrongBtn) wrongBtn.classList.add('reveal-wrong');
+      }
+    } else if (q.type === 'fill_blank') {
+      const given = (userAnswers[i] || '').toString().trim().toLowerCase();
+      const expected = q.answer.toString().trim().toLowerCase();
+      correct = given === expected;
+    }
+
+    if (correct) {
+      score++;
+      qEl.classList.add('correct');
+      qEl.classList.remove('wrong');
+      fb.textContent = '\u2705 Correct! Great job!';
+      fb.className = 'iq-feedback show-correct';
+    } else {
+      qEl.classList.add('wrong');
+      qEl.classList.remove('correct');
+      fb.textContent = '\u274C The correct answer is: ' + formatAnswer(q);
+      fb.className = 'iq-feedback show-wrong';
+    }
+  });
+
+  const pct = score / total;
+  let label = '';
+  if (pct === 1) label = '\uD83C\uDFC6 PERFECT! Outstanding!';
+  else if (pct >= 0.85) label = '\uD83C\uDF89 Very Good! Galing!';
+  else if (pct >= 0.6) label = '\u2B50 Good! Keep it up!';
+  else label = "\uD83C\uDF31 Let's review together! You can do it!";
+
+  document.getElementById('scoreNum').textContent = score + ' / ' + total;
+  document.getElementById('scoreLabel').textContent = label;
+  document.getElementById('iqScore').classList.add('visible');
+  document.getElementById('checkBtn').style.display = 'none';
+  document.getElementById('iqScore').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  if (pct >= 0.85) launchConfetti();
+}
+
+function formatAnswer(q) {
+  if (q.type === 'multiple_choice') return String.fromCharCode(65 + q.answer) + '. ' + q.choices[q.answer];
+  if (q.type === 'true_false') return q.answer ? 'TRUE' : 'FALSE';
+  return q.answer;
+}
+
+function launchConfetti() {
+  const colors = ['#2d9e7e', '#fde8d8', '#d4f0e8', '#f59e0b', '#ec4899', '#8b5cf6'];
+  for (let i = 0; i < 80; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+    piece.style.animationDelay = (Math.random() * 0.5) + 's';
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 5000);
+  }
+}
+
 /* ============ GENERATE ============ */
 async function generateWorksheet() {
   const grade = document.getElementById('grade').value;
@@ -738,7 +1006,46 @@ async function generateWorksheet() {
     ? `\n\nSpecial Learning Support Needs:\n${supports.map(s => '- ' + s).join('\n')}`
     : '';
 
-  const prompt = `You are an expert Filipino elementary school teacher and curriculum designer aligned with DepEd standards.
+  let prompt;
+  if (wsMode === 'interactive') {
+    prompt = `You are an expert Filipino elementary school teacher and curriculum designer aligned with DepEd standards.
+
+Create an INTERACTIVE ${activity} for the following:
+- Grade Level: ${grade}
+- Subject: ${subject}
+- Topic: ${topic}
+- Number of Items: ${items}
+- Difficulty: ${difficulty}
+${supportNote}
+
+CRITICAL: Respond with ONLY a valid JSON object. No markdown, no backticks, no explanation, no text before or after. Just pure JSON in this exact structure:
+
+{
+  "title": "worksheet title here",
+  "directions": "short child-friendly directions here",
+  "questions": [
+    { "type": "multiple_choice", "question": "question text", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "answer": 0 },
+    { "type": "true_false", "question": "statement here", "answer": true },
+    { "type": "fill_blank", "question": "sentence with _____ for the blank", "answer": "correct word" }
+  ]
+}
+
+Rules:
+- "answer" for multiple_choice is the INDEX (0-3) of the correct choice
+- "answer" for true_false is boolean true or false
+- "answer" for fill_blank is the exact expected word/phrase (keep it to 1-2 words for fair checking)
+- Mix question types appropriately for the activity type requested
+- Exactly ${items} questions total
+- Use Filipino-friendly context (names like Nena, Juan, Aling Rosa; places like Maynila, Cebu; foods like adobo, sinigang)
+
+LANGUAGE RULE:
+- If subject is ENGLISH: use English throughout.
+- If subject is MATH or SCIENCE: use English for all questions. Filipino context allowed in word problems only.
+- Never write Math or Science questions fully in Filipino/Tagalog.
+
+If a token limit approaches, output fewer complete questions rather than incomplete JSON. The JSON must always be complete and parseable.`;
+  } else {
+    prompt = `You are an expert Filipino elementary school teacher and curriculum designer aligned with DepEd standards.
 
 Create a ${activity} for the following:
 - Grade Level: ${grade}
@@ -776,6 +1083,7 @@ Specific formatting rules:
 - For Fill in the Blank: provide a word bank at the top, and use extra long blank lines (20+ underscores)
 - For Identification: use checkbox squares and clear section headers
 - Add generous spacing and clear visual breaks between every item`;
+  }
 
   setLoading(true);
   hideError();
@@ -790,17 +1098,28 @@ Specific formatting rules:
     const data = await response.json();
     if (data.error) throw new Error(data.error);
     let text = data.result || '';
-    text = text.replace(/```html/gi, '').replace(/```/g, '').trim();
-    document.getElementById('worksheetOutput').innerHTML = text;
+    text = text.replace(/```json/gi, '').replace(/```html/gi, '').replace(/```/g, '').trim();
+
+    const wsTitle = `${subject} \u2014 ${topic} (${grade})`;
+
+    if (wsMode === 'interactive') {
+      currentQuiz = JSON.parse(text);
+      renderInteractive(currentQuiz);
+      await saveWorksheet(wsTitle, grade, subject, topic, JSON.stringify(currentQuiz), 'interactive');
+    } else {
+      showPrintable(text);
+      await saveWorksheet(wsTitle, grade, subject, topic, text, 'printable');
+    }
+
     document.getElementById('output-section').classList.add('visible');
     document.getElementById('output-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    // Auto-save to Supabase
-    const wsTitle = `${subject} \u2014 ${topic} (${grade})`;
-    await saveWorksheet(wsTitle, grade, subject, topic, text);
-
   } catch (err) {
-    showError('Something went wrong: ' + err.message);
+    if (err instanceof SyntaxError) {
+      showError('The AI response was incomplete. Please try again with fewer items. \uD83C\uDF3F');
+    } else {
+      showError('Something went wrong: ' + err.message);
+    }
   } finally {
     setLoading(false);
   }
