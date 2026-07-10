@@ -374,6 +374,16 @@
   .iq-question.correct { border-color: #22c55e; background: #f0fdf4; }
   .iq-question.wrong { border-color: #f87171; background: #fff5f5; }
   .iq-qtext { font-weight: 800; font-size: 15px; color: var(--text); margin-bottom: 14px; }
+  .iq-qhead { display: flex; align-items: flex-start; gap: 10px; }
+  .iq-qhead .iq-qtext { flex: 1; margin-bottom: 0; }
+  .iq-speak {
+    flex-shrink: 0; width: 38px; height: 38px; border-radius: 10px;
+    border: 2px solid var(--mint); background: white; cursor: pointer;
+    font-size: 16px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+  }
+  .iq-speak:hover { border-color: var(--teal); background: var(--mint); }
+  .iq-speak.speaking { background: var(--teal); border-color: var(--teal); }
+  .iq-qhead + .iq-choices, .iq-qhead + .iq-tf, .iq-qhead + .iq-blank { margin-top: 14px; }
   .iq-qnum { color: var(--teal); margin-right: 6px; }
   .iq-choices { display: flex; flex-direction: column; gap: 8px; }
   .iq-choice {
@@ -850,7 +860,10 @@ function renderInteractive(quiz) {
 
   quiz.questions.forEach((q, i) => {
     html += `<div class="iq-question" id="q${i}">`;
+    html += `<div class="iq-qhead">`;
     html += `<div class="iq-qtext"><span class="iq-qnum">${i + 1}.</span>${escapeHtml(q.question)}</div>`;
+    html += `<button class="iq-speak" id="q${i}spk" onclick="speakQuestion(${i})" title="Read aloud">\uD83D\uDD0A</button>`;
+    html += `</div>`;
 
     if (q.type === 'multiple_choice') {
       html += `<div class="iq-choices">`;
@@ -881,6 +894,39 @@ function renderInteractive(quiz) {
   area.innerHTML = html;
 }
 
+function speakQuestion(qi) {
+  if (!window.speechSynthesis) { alert('Read aloud is not supported on this browser.'); return; }
+  window.speechSynthesis.cancel();
+  document.querySelectorAll('.iq-speak.speaking').forEach(b => b.classList.remove('speaking'));
+
+  const q = currentQuiz.questions[qi];
+  let text = q.question;
+  if (q.type === 'multiple_choice') {
+    text += '. ' + q.choices.map((c, i) => String.fromCharCode(65 + i) + '. ' + c).join('. ');
+  } else if (q.type === 'true_false') {
+    text += '. True... or False?';
+  }
+
+  const utter = new SpeechSynthesisUtterance(text);
+  const filSubjects = ['Filipino', 'Araling Panlipunan', 'GMRC / Values', 'EPP'];
+  const wantFil = filSubjects.includes(currentQuiz.subject || '');
+  const voices = window.speechSynthesis.getVoices();
+  if (wantFil) {
+    const filVoice = voices.find(v => v.lang && (v.lang.toLowerCase().startsWith('fil') || v.lang.toLowerCase().startsWith('tl')));
+    if (filVoice) { utter.voice = filVoice; utter.lang = filVoice.lang; }
+    else { utter.lang = 'fil-PH'; }
+  } else {
+    utter.lang = 'en-US';
+  }
+  utter.rate = 0.85;
+
+  const btn = document.getElementById('q' + qi + 'spk');
+  if (btn) btn.classList.add('speaking');
+  utter.onend = () => { if (btn) btn.classList.remove('speaking'); };
+
+  window.speechSynthesis.speak(utter);
+}
+
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
@@ -899,6 +945,13 @@ function selectTF(qi, val) {
   userAnswers[qi] = val;
   document.getElementById(`q${qi}cTrue`).classList.toggle('selected', val === true);
   document.getElementById(`q${qi}cFalse`).classList.toggle('selected', val === false);
+}
+
+function normalizeAnswer(s) {
+  s = (s || '').toString().toLowerCase().trim();
+  s = s.replace(/[.,!?;:'"]/g, '');
+  s = s.replace(/^(mga|ang|si|the|a|an)\s+/, '');
+  return s.trim();
 }
 
 function checkAnswers() {
@@ -927,9 +980,12 @@ function checkAnswers() {
         if (wrongBtn) wrongBtn.classList.add('reveal-wrong');
       }
     } else if (q.type === 'fill_blank') {
-      const given = (userAnswers[i] || '').toString().trim().toLowerCase();
-      const expected = q.answer.toString().trim().toLowerCase();
-      correct = given === expected;
+      const given = normalizeAnswer(userAnswers[i]);
+      const accepted = [q.answer, ...(q.alternates || [])].map(normalizeAnswer);
+      correct = accepted.some(exp =>
+        given === exp ||
+        (given.length >= 3 && (exp.includes(given) || given.includes(exp)))
+      );
     }
 
     if (correct) {
@@ -1060,14 +1116,15 @@ CRITICAL: Respond with ONLY a valid JSON object. No markdown, no backticks, no e
   "questions": [
     { "type": "multiple_choice", "question": "question text", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "answer": 0 },
     { "type": "true_false", "question": "statement here", "answer": true },
-    { "type": "fill_blank", "question": "sentence with _____ for the blank", "answer": "correct word" }
+    { "type": "fill_blank", "question": "sentence with _____ for the blank", "answer": "correct word", "alternates": ["acceptable variation 1", "acceptable variation 2"] }
   ]
 }
 
 Rules:
 - "answer" for multiple_choice is the INDEX (0-3) of the correct choice
 - "answer" for true_false is boolean true or false
-- "answer" for fill_blank is the exact expected word/phrase (keep it to 1-2 words for fair checking)
+- "answer" for fill_blank is the expected word/phrase (keep it to 1-2 words for fair checking)
+- "alternates" for fill_blank: list acceptable variations a child might reasonably type (singular/plural forms, with or without "mga"/"ang", synonyms, symbol forms like ">" for "greater"). Be generous - the goal is to assess understanding, not exact wording.
 - Mix question types appropriately for the activity type requested
 - Exactly ${items} questions total
 - Use Filipino-friendly context (names like Nena, Juan, Aling Rosa; places like Maynila, Cebu; foods like adobo, sinigang)
@@ -1142,6 +1199,7 @@ Specific formatting rules:
 
     if (wsMode === 'interactive') {
       currentQuiz = parseQuizJson(text);
+      currentQuiz.subject = subject;
       renderInteractive(currentQuiz);
       await saveWorksheet(wsTitle, grade, subject, topic, JSON.stringify(currentQuiz), 'interactive');
     } else {
