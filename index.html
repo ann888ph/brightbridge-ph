@@ -754,6 +754,20 @@ async function saveWorksheet(title, grade, subject, topic, content, mode) {
   }
 }
 
+async function logUsage(subject, mode) {
+  try {
+    await db.from('usage_logs').insert({
+      user_id: currentUser.id,
+      email: currentUser.email,
+      subject: subject,
+      mode: mode
+    });
+  } catch (e) {
+    // Logging should never break the app
+    console.error('Usage log failed', e);
+  }
+}
+
 async function loadWorksheets() {
   const { data, error } = await db.from('worksheets')
     .select('id, title, grade, subject, topic, mode, created_at')
@@ -1202,9 +1216,11 @@ Specific formatting rules:
       currentQuiz.subject = subject;
       renderInteractive(currentQuiz);
       await saveWorksheet(wsTitle, grade, subject, topic, JSON.stringify(currentQuiz), 'interactive');
+      logUsage(subject, 'interactive');
     } else {
       showPrintable(text);
       await saveWorksheet(wsTitle, grade, subject, topic, text, 'printable');
+      logUsage(subject, 'printable');
     }
 
     document.getElementById('output-section').classList.add('visible');
