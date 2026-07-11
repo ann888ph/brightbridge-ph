@@ -428,6 +428,7 @@
   .quota-fill { height: 100%; background: linear-gradient(90deg, var(--teal), var(--teal-dark)); border-radius: 10px; transition: width 0.3s; }
   .quota-fill.warn { background: linear-gradient(90deg, #f59e0b, #d97706); }
   .quota-fill.full { background: linear-gradient(90deg, #ef4444, #dc2626); }
+  .quota-renew { font-size: 11px; color: var(--muted); margin-top: 6px; }
   .quota-plan-badge {
     background: var(--mint); color: var(--teal-dark); font-size: 11px; font-weight: 800;
     padding: 5px 12px; border-radius: 20px; white-space: nowrap;
@@ -659,6 +660,7 @@
       <div class="quota-label">This Month's Worksheets</div>
       <div class="quota-count" id="quotaCount">Loading...</div>
       <div class="quota-track"><div class="quota-fill" id="quotaFill" style="width:0%"></div></div>
+      <div class="quota-renew" id="quotaRenew"></div>
     </div>
     <div class="quota-plan-badge" id="quotaPlanBadge">Free Plan</div>
   </div>
@@ -884,6 +886,7 @@ function clearSessionState() {
   setMode('printable');
   currentPlan = 'free';
   currentUsageCount = 0;
+  currentCycleStart = null;
   document.getElementById('quotaBlocked').classList.remove('visible');
 }
 
@@ -992,6 +995,7 @@ const PLAN_LIMITS = {
 
 let currentPlan = 'free';
 let currentUsageCount = 0;
+let currentCycleStart = null;
 
 async function loadPlanAndUsage() {
   // 1. Get the user's plan and billing cycle start from profiles
@@ -1000,6 +1004,7 @@ async function loadPlanAndUsage() {
     const { data: profile } = await db.from('profiles').select('plan, cycle_start').eq('user_id', currentUser.id).single();
     currentPlan = (profile && profile.plan) || 'free';
     cycleStart = profile && profile.cycle_start;
+  currentCycleStart = cycleStart;
   } catch (e) {
     currentPlan = 'free';
   }
@@ -1036,6 +1041,15 @@ function renderQuota() {
 
   document.getElementById('quotaCount').textContent = used + ' of ' + limit + ' used';
   document.getElementById('quotaPlanBadge').textContent = plan.label;
+
+  const renewEl = document.getElementById('quotaRenew');
+  if (currentCycleStart) {
+    const renewDate = new Date(currentCycleStart);
+    renewDate.setMonth(renewDate.getMonth() + 1);
+    renewEl.textContent = '\uD83D\uDD04 Renews ' + renewDate.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+  } else {
+    renewEl.textContent = '';
+  }
 
   const fill = document.getElementById('quotaFill');
   fill.style.width = pct + '%';
