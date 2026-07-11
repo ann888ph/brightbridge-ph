@@ -864,7 +864,16 @@ Use normal handwritten-answer formatting \u2014 standard blank lines for answers
         "Content-Type": "application/json",
         "Authorization": "Bearer " + session.access_token
       },
-      body: JSON.stringify({ prompt, subject, mode: wsMode })
+      body: JSON.stringify({
+        prompt, subject, mode: wsMode,
+        grade, topic, difficulty, activity,
+        supportFlags: {
+          dysgraphia: document.getElementById('dysgraphia').checked,
+          simplified: document.getElementById('simplified').checked,
+          attention: document.getElementById('attention').checked,
+          processing: document.getElementById('processing').checked
+        }
+      })
     });
     if (response.status === 429) {
       const errData = await response.json();
