@@ -2,20 +2,12 @@
   "Math": {
     "Grade 4": {
       "Quarter 1": [
-        "Whole Numbers up to 1 000 000",
-        "Reading and Writing Numbers up to 1 000 000",
-        "Place Value and Value of a Digit",
-        "Comparing and Ordering Numbers up to 1 000 000",
-        "Rounding Numbers to the Nearest Thousands and Ten Thousands",
-        "Multiplication of Whole Numbers up to 3-Digit by 2-Digit Numbers",
-        "Multiplication of Multiples of 10, 100, and 1 000",
-        "Estimating Products of 3- to 4-Digit Numbers",
-        "Multi-Step Word Problems Involving Multiplication",
-        "Division of 3- to 4-Digit Numbers by 1- to 2-Digit Numbers",
-        "Division Involving Multiples of 10, 100, and 1 000",
-        "Estimating Quotients of 3- to 4-Digit Numbers",
-        "Multi-Step Word Problems Involving Division",
-        "Order of Operations (MDAS)"
+        "Classifying by Sides: Equilateral, Isosceles, Scalene",
+        "Classifying by Angles: Acute, Right, Obtuse",
+        "Types of Quadrilateral: Parallelogram, Rectangle, Square, Rhombus, Trapezoid",
+        "Perimeter",
+        "Understanding Place Value and Value",
+        "Comparing Numbers (> = <) "
       ],
       "Quarter 2": [
         "Factors and Multiples",
@@ -151,13 +143,13 @@
   "Filipino": {
     "Grade 4": {
       "Quarter 1": [
-        "Paggamit ng Diksyunaryo at Pag-ayos ng Salita sa Alpabetikal na Ayos",
-        "Pagtukoy sa Mahahalagang Detalye ng Tekstong Nabasa o Narinig",
-        "Pangngalan: Pantangi at Pambalana",
-        "Kasarian at Kailanan ng Pangngalan",
-        "Pagtukoy sa Sanhi at Bunga sa mga Teksto",
-        "Pagsasalaysay Muli ng Nabasang Teksto Gamit ang Sariling Salita",
-        "Pagsulat ng Maikling Talata Tungkol sa Sarili"
+        "Pagusunod sunod ng mga Pangyayari",
+        "Kasingkahulugan at Kasalungat",
+        "Elemento ng Alamat",
+        "Pagsusuri sa Katangian at Kilos ng Tauhan",
+        "Detonasyon at Konotasyon",
+        "Tayutay(Onomatopeya)",
+        "Gamit ng Panlapi"
       ],
       "Quarter 2": [
         "Panghalip: Panao (Ako, Ikaw, Siya, Kami, Kayo, Sila)",
@@ -286,9 +278,8 @@
     "Grade 4": {
       "Quarter 1": [
         "Music: Notes and Rests, Rhythm, and Time Signatures (2/4, 3/4, 4/4)",
-        "Arts: Drawing Ethnic Designs and Cultural Communities of the Philippines",
-        "PE: Physical Fitness Assessment and Target Games (Tumbang Preso, Tamaang Tao)",
-        "Health: Reading Nutrition Facts and Preventing Food-borne Diseases"
+        "Arts: Lines (Organic Lines, Inorganic Lines)",
+        "Health: Major Nutrients (Carbohydrates, Proteins, Fats, Vitamins, Water, Minerals"
       ],
       "Quarter 2": [
         "Music: Melody, Pitch Names on the G Clef, and Simple Intervals",
