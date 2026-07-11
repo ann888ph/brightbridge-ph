@@ -236,6 +236,59 @@
 </div>
 </div><!-- end #app -->
 
+<!-- FAQ floating button + slide-in panel -->
+<button class="faq-fab" id="faqFab" onclick="toggleFaq(true)" aria-label="Help & FAQ">
+  <span class="faq-fab-icon">?</span>
+  <span class="faq-fab-label">Help</span>
+</button>
+
+<div class="faq-overlay" id="faqOverlay" onclick="toggleFaq(false)"></div>
+
+<div class="faq-panel" id="faqPanel">
+  <div class="faq-panel-header">
+    <h2>&#x1F331; Help &amp; FAQ</h2>
+    <button class="faq-close" onclick="toggleFaq(false)" aria-label="Close">&times;</button>
+  </div>
+  <div class="faq-panel-body">
+
+    <div class="faq-item">
+      <div class="faq-q">How many worksheets can I generate?</div>
+      <div class="faq-a">It depends on your plan: Free = 5/month, Parent = 20/month, Family Plus = 60/month, BrightBridge Pro = 150/month. Your count resets on your personal renewal date, shown at the top of the page.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">What's the difference between Printable and Interactive mode?</div>
+      <div class="faq-a">Printable mode creates a worksheet you can download or print at home. Interactive mode turns it into an on-screen quiz your child can answer directly, with optional read-aloud support.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">What is Dysgraphia-Friendly Mode?</div>
+      <div class="faq-a">It reformats the worksheet to reduce handwriting &mdash; using checkboxes, word banks, and larger spacing &mdash; so your child is tested on understanding, not handwriting endurance. You can turn it on for any subject or grade.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Are the worksheets aligned with DepEd's curriculum?</div>
+      <div class="faq-a">Yes. Topics follow the DepEd MATATAG curriculum guide, organized by grade level and quarter, for Grades 1&ndash;6.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">I used all my free worksheets. What now?</div>
+      <div class="faq-a">You can wait for your monthly allowance to renew, or upgrade to a paid plan for more worksheets. Just message us and we'll help you get set up.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Can I use this for more than one child?</div>
+      <div class="faq-a">Yes! Family Plus is designed for households with multiple children, with a higher monthly worksheet allowance.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Still need help?</div>
+      <div class="faq-a">Email us at <a href="mailto:hellobrightbridgeph@gmail.com">hellobrightbridgeph@gmail.com</a> &mdash; we personally read and reply to every message.</div>
+    </div>
+
+  </div>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>

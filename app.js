@@ -945,5 +945,19 @@ function copyText() {
   });
 }
 
+/* ============ FAQ PANEL ============ */
+function toggleFaq(open) {
+  const panel = document.getElementById('faqPanel');
+  const overlay = document.getElementById('faqOverlay');
+  if (!panel || !overlay) return;
+  if (open) {
+    panel.classList.add('open');
+    overlay.classList.add('visible');
+  } else {
+    panel.classList.remove('open');
+    overlay.classList.remove('visible');
+  }
+}
+
 /* ============ INIT ============ */
 initAuth();
