@@ -994,24 +994,32 @@ let currentPlan = 'free';
 let currentUsageCount = 0;
 
 async function loadPlanAndUsage() {
-  // 1. Get the user's plan from profiles (default to free if no row yet)
+  // 1. Get the user's plan and billing cycle start from profiles
+  let cycleStart = null;
   try {
-    const { data: profile } = await db.from('profiles').select('plan').eq('user_id', currentUser.id).single();
+    const { data: profile } = await db.from('profiles').select('plan, cycle_start').eq('user_id', currentUser.id).single();
     currentPlan = (profile && profile.plan) || 'free';
+    cycleStart = profile && profile.cycle_start;
   } catch (e) {
     currentPlan = 'free';
   }
 
-  // 2. Count this calendar month's generations from usage_logs
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
+  // 2. Count generations since the user's cycle_start (set by admin on signup/renewal/upgrade).
+  //    Falls back to start of calendar month if no cycle_start is set yet.
+  let sinceDate;
+  if (cycleStart) {
+    sinceDate = new Date(cycleStart);
+  } else {
+    sinceDate = new Date();
+    sinceDate.setDate(1);
+    sinceDate.setHours(0, 0, 0, 0);
+  }
 
   try {
     const { count } = await db.from('usage_logs')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', currentUser.id)
-      .gte('created_at', startOfMonth.toISOString());
+      .gte('created_at', sinceDate.toISOString());
     currentUsageCount = count || 0;
   } catch (e) {
     currentUsageCount = 0;
