@@ -66,12 +66,11 @@
   "Science": {
     "Grade 4": {
       "Quarter 1": [
-        "Properties of Matter: Materials that Float and Sink",
-        "Materials that Absorb Water (Porosity)",
-        "Materials that Undergo Decay",
-        "Changes in Matter: Useful and Harmful Effects of Changes in Materials",
-        "Changes in Materials in the Presence or Absence of Oxygen",
-        "Changes in Materials Subjected to Temperature Changes"
+        "Special Properties and Classification of Materials",
+        "Causes of Decay in Materials and their Effect to One's Health and Safety",
+        "Importance of Interpreting Product Labels",
+        "Precautionary measure in Buying, Using, Storing, and Disposing Household Materials",
+        "Changes that Material Undergo"
       ],
       "Quarter 2": [
         "Major Organs of the Body: Functions of the Brain, Heart, Lungs, Liver, Stomach, and Intestines",
@@ -108,15 +107,12 @@
   "English": {
     "Grade 4": {
       "Quarter 1": [
-        "Parts of a Book and Utilizing the Index and Glossary",
-        "Using a Dictionary and Thesaurus to Find Meanings, Synonyms, and Antonyms",
-        "Note-Taking and Summarizing Short Texts",
-        "Identifying the Main Idea and Supporting Details",
-        "Context Clues: Synonyms, Antonyms, and Definition",
-        "Nouns: Mass and Count Nouns",
-        "Nouns: Quantifiers of Mass Nouns",
-        "Nouns: Collective Nouns",
-        "Reading Short Stories and Identifying Elements (Setting, Characters, Plot)"
+        "Vocabulary Words (decision, purse, disturbed, protest, scanning, annoyed, unusual, miserable, confidence, nod)",
+        "Reading Comprehension",
+        "Synonyms",
+        "Antonyms",
+        "Simple Subject and Complete Subject",
+        "Kinds of Sentence"
       ],
       "Quarter 2": [
         "Pronouns: Personal and Possessive Pronouns",
@@ -285,4 +281,38 @@
       ]
     }
   }
+
+  "MAPEH": {
+    "Grade 4": {
+      "Quarter 1": [
+        "Music: Notes and Rests, Rhythm, and Time Signatures (2/4, 3/4, 4/4)",
+        "Arts: Drawing Ethnic Designs and Cultural Communities of the Philippines",
+        "PE: Physical Fitness Assessment and Target Games (Tumbang Preso, Tamaang Tao)",
+        "Health: Reading Nutrition Facts and Preventing Food-borne Diseases"
+      ],
+      "Quarter 2": [
+        "Music: Melody, Pitch Names on the G Clef, and Simple Intervals",
+        "Arts: Painting Landscapes and Philippine Cultural Festivals",
+        "PE: Invasion Games (Agawan Base, Lawin at Sisiw)",
+        "Health: Prevention and Control of Common Communicable Diseases"
+      ],
+      "Quarter 3": [
+        "Music: Musical Form and Timbre (Vocal and Instrumental Sounds)",
+        "Arts: Relief Printmaking using Ethnic Motifs",
+        "PE: Philippine Folk Dances (e.g., Ba-Ingles, Liki)",
+        "Health: Proper Use of Medicines and Understanding Prescriptions"
+      ],
+      "Quarter 4": [
+        "Music: Tempo (Fast and Slow), Dynamics, and Texture",
+        "Arts: 3D Crafts, Mat Weaving, and Paper Mache",
+        "PE: Traditional Dances and Recreational Activities",
+        "Health: Safety Guidelines and Basic First Aid for Emergencies or Disasters"
+      ]
+    }
+  }
+
+
+
+
+  
 }
