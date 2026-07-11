@@ -667,7 +667,7 @@
 
   <div class="quota-blocked" id="quotaBlocked">
     <div class="quota-blocked-title">&#x1F31F; You've used all your worksheets this month!</div>
-    <div class="quota-blocked-text" id="quotaBlockedText">Your plan resets on the 1st of next month.</div>
+    <div class="quota-blocked-text" id="quotaBlockedText">Your plan resets on your next renewal date.</div>
     <div class="quota-blocked-text">Want more? Message us to upgrade your plan.</div>
   </div>
 
@@ -1043,12 +1043,16 @@ function renderQuota() {
   document.getElementById('quotaPlanBadge').textContent = plan.label;
 
   const renewEl = document.getElementById('quotaRenew');
+  const blockedTextEl = document.getElementById('quotaBlockedText');
   if (currentCycleStart) {
     const renewDate = new Date(currentCycleStart);
     renewDate.setMonth(renewDate.getMonth() + 1);
-    renewEl.textContent = '\uD83D\uDD04 Renews ' + renewDate.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+    const renewLabel = renewDate.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+    renewEl.textContent = '\uD83D\uDD04 Renews ' + renewLabel;
+    blockedTextEl.textContent = 'Your worksheet allowance renews on ' + renewLabel + '.';
   } else {
     renewEl.textContent = '';
+    blockedTextEl.textContent = 'Your plan resets on your next renewal date.';
   }
 
   const fill = document.getElementById('quotaFill');
@@ -1645,16 +1649,18 @@ LANGUAGE RULE:
 - If subject is MAPEH: use English as the base, but Filipino terms are welcome (e.g., Mga Larong Pinoy, wastong nutrisyon).
 
 CRITICAL INSTRUCTION: You may be working within a token limit. If you sense you are running out of space before finishing all items \u2014 STOP adding new items and immediately write the Answer Key section. A worksheet with fewer items but a complete Answer Key is far better than one with all items but no Answer Key. Never leave the Answer Key missing or incomplete.
-
-DYSGRAPHIA-FRIENDLY MODE (apply when Dysgraphia-Friendly Format is requested):
-If Dysgraphia-Friendly Mode is selected, generate a worksheet that tests the same learning objective but reduces handwriting burden. Use checkboxes, circle-the-answer formats, word banks, short instructions, larger spacing, and clear sections. Avoid long written answers, crowded layouts, and unnecessary copying. The goal is to assess understanding, not handwriting endurance. Keep the content grade-appropriate and include an answer key. Do not simplify the academic skill unless requested. Only simplify the response method and visual layout.
+${document.getElementById('dysgraphia').checked ? `
+DYSGRAPHIA-FRIENDLY MODE (active for this worksheet):
+Generate a worksheet that tests the same learning objective but reduces handwriting burden. Use checkboxes, circle-the-answer formats, word banks, short instructions, larger spacing, and clear sections. Avoid long written answers, crowded layouts, and unnecessary copying. The goal is to assess understanding, not handwriting endurance. Keep the content grade-appropriate and include an answer key. Do not simplify the academic skill unless requested. Only simplify the response method and visual layout.
 
 Specific formatting rules:
 - For Multiple Choice answers: replace "Answer: ______" with: <span style="font-size:1.1em;">\u2610 A &nbsp;&nbsp;&nbsp; \u2610 B &nbsp;&nbsp;&nbsp; \u2610 C &nbsp;&nbsp;&nbsp; \u2610 D</span>
 - For True/False items: use <span style="font-size:1.1em;">\u2610 TRUE &nbsp;&nbsp;&nbsp; \u2610 FALSE</span>
 - For Fill in the Blank: provide a word bank at the top, and use extra long blank lines (20+ underscores)
 - For Identification: use checkbox squares and clear section headers
-- Add generous spacing and clear visual breaks between every item`;
+- Add generous spacing and clear visual breaks between every item` : `
+STANDARD FORMAT MODE (Dysgraphia-Friendly Format is NOT requested for this worksheet):
+Use normal handwritten-answer formatting \u2014 standard blank lines for answers, regular multiple choice layout (A/B/C/D on one line), normal spacing. Do NOT use checkbox squares (\u2610), do NOT provide word banks unless the activity type calls for one, and do NOT use extra-long blank lines. This is a standard worksheet.`}`;
   }
 
   setLoading(true);
