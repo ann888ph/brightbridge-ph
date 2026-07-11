@@ -88,9 +88,25 @@ exports.handler = async (event) => {
       }
     }
   );
+
+  if (!countRes.ok) {
+    console.error("Usage count failed:", countRes.status);
+    return json(503, {
+      error: "We could not verify your worksheet allowance. Please try again shortly."
+    });
+  }
+
   // Supabase returns total in Content-Range header: "0-0/37"
-  const contentRange = countRes.headers.get("content-range") || "/0";
-  const used = parseInt(contentRange.split("/")[1], 10) || 0;
+  const contentRange = countRes.headers.get("content-range");
+  const totalText = contentRange && contentRange.split("/")[1];
+  const used = Number.parseInt(totalText, 10);
+
+  if (!contentRange || !Number.isFinite(used)) {
+    console.error("Invalid usage count response:", contentRange);
+    return json(503, {
+      error: "We could not verify your worksheet allowance. Please try again shortly."
+    });
+  }
 
   if (used >= limit) {
     return json(429, {
