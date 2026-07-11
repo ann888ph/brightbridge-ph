@@ -26,7 +26,7 @@ exports.handler = async (event) => {
     return json(400, { error: "Invalid request body" });
   }
 
-  const { prompt, subject, mode } = body;
+  const { prompt, subject, mode, grade, topic, difficulty, activity, supportFlags } = body;
   if (!prompt) {
     return json(400, { error: "Missing prompt" });
   }
@@ -138,7 +138,15 @@ exports.handler = async (event) => {
         user_id: userId,
         email: userEmail,
         subject: subject || null,
-        mode: mode || null
+        mode: mode || null,
+        grade: grade || null,
+        topic: topic || null,
+        difficulty: difficulty || null,
+        activity_type: activity || null,
+        dysgraphia_support: !!(supportFlags && supportFlags.dysgraphia),
+        simplified_support: !!(supportFlags && supportFlags.simplified),
+        attention_support: !!(supportFlags && supportFlags.attention),
+        processing_support: !!(supportFlags && supportFlags.processing)
       })
     });
 
