@@ -1668,11 +1668,28 @@ Use normal handwritten-answer formatting \u2014 standard blank lines for answers
   document.getElementById('savedBadge').classList.remove('visible');
 
   try {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) {
+      showError('Please log in again to generate worksheets. \uD83C\uDF3F');
+      setLoading(false);
+      return;
+    }
     const response = await fetch("/.netlify/functions/generate", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt })
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + session.access_token
+      },
+      body: JSON.stringify({ prompt, subject, mode: wsMode })
     });
+    if (response.status === 429) {
+      const errData = await response.json();
+      showError(errData.error || "You've reached your monthly worksheet limit. \uD83C\uDF31");
+      document.getElementById('quotaBlocked').classList.add('visible');
+      await loadPlanAndUsage();
+      setLoading(false);
+      return;
+    }
     const data = await response.json();
     if (data.error) throw new Error(data.error);
     let text = data.result || '';
@@ -1686,12 +1703,10 @@ Use normal handwritten-answer formatting \u2014 standard blank lines for answers
       currentQuiz.activityType = activity;
       renderInteractive(currentQuiz);
       await saveWorksheet(wsTitle, grade, subject, topic, JSON.stringify(currentQuiz), 'interactive');
-      logUsage(subject, 'interactive');
       currentUsageCount++; renderQuota();
     } else {
       showPrintable(text);
       await saveWorksheet(wsTitle, grade, subject, topic, text, 'printable');
-      logUsage(subject, 'printable');
       currentUsageCount++; renderQuota();
     }
 
