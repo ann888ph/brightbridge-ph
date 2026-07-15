@@ -717,3 +717,19 @@
     color: var(--muted);
     margin-top: 8px;
   }
+
+  /* ---------- Mission statement callout ---------- */
+  .mission-statement {
+    max-width: 720px;
+    margin: 32px auto;
+    padding: 18px 22px;
+    background: #E1F5EE;
+    border-left: 4px solid #0F6E56;
+    border-radius: 12px;
+  }
+  .mission-statement p {
+    color: #085041;
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+  }
