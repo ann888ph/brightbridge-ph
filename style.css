@@ -447,17 +447,91 @@
   .quota-blocked-text { font-size: 13px; color: #9a3412; margin-bottom: 4px; }
 
   /* ===== My Worksheets ===== */
-  .ws-list { display: flex; flex-direction: column; gap: 10px; }
-  .ws-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 14px 16px; border: 2px solid var(--mint); border-radius: 12px;
-    background: var(--warm); transition: all 0.2s;
+  .ws-search {
+    width: 100%;
+    padding: 11px 16px;
+    border: 2px solid var(--mint);
+    border-radius: 12px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--warm);
+    margin-bottom: 12px;
   }
-  .ws-item:hover { border-color: var(--teal); background: white; }
-  .ws-info { flex: 1; min-width: 0; }
-  .ws-title { font-weight: 800; font-size: 14px; color: var(--teal-dark); }
-  .ws-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .ws-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .ws-search:focus { outline: none; border-color: var(--teal); background: white; }
+
+  .ws-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .ws-chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 2px solid var(--mint);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Nunito', sans-serif;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .ws-chip:hover { border-color: var(--teal); color: var(--teal-dark); }
+  .ws-chip.active { background: #0F6E56; border-color: #0F6E56; color: #E1F5EE; }
+
+  .ws-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .ws-grade-group {
+    border: 2px solid var(--mint);
+    border-radius: 12px;
+    background: var(--warm);
+    overflow: hidden;
+  }
+  .ws-grade-summary {
+    display: flex; align-items: center; gap: 8px;
+    padding: 14px 16px;
+    cursor: pointer;
+    list-style: none;
+    font-family: 'Nunito', sans-serif;
+    user-select: none;
+  }
+  .ws-grade-summary::-webkit-details-marker { display: none; }
+  .ws-chevron {
+    display: inline-block;
+    color: var(--teal);
+    font-size: 12px;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .ws-grade-group[open] > .ws-grade-summary .ws-chevron { transform: rotate(90deg); }
+  .ws-grade-name { font-weight: 800; font-size: 14.5px; color: var(--teal-dark); }
+  .ws-grade-count { font-size: 12.5px; color: var(--muted); }
+  .ws-dup-badge {
+    background: #fff7ed; color: #c2410c; border: 1.5px solid #fdba74;
+    font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 20px;
+    margin-left: auto;
+  }
+  .ws-grade-body { padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 16px; }
+
+  .ws-subject-group { display: flex; flex-direction: column; gap: 8px; }
+  .ws-subject-label {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .ws-rows { display: flex; flex-direction: column; gap: 8px; }
+
+  .ws-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 14px; border: 2px solid var(--mint); border-radius: 12px;
+    background: white; transition: all 0.2s;
+  }
+  .ws-item:hover { border-color: var(--teal); }
+  .ws-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
+  .ws-mode-icon { flex-shrink: 0; }
+  .ws-title {
+    font-weight: 800; font-size: 13.5px; color: var(--teal-dark);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .ws-date { font-size: 11px; color: var(--muted); flex-shrink: 0; white-space: nowrap; }
+  .ws-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: nowrap; }
   .ws-btn {
     padding: 7px 12px; border-radius: 8px; font-family: 'Nunito', sans-serif;
     font-size: 12px; font-weight: 700; cursor: pointer; border: 2px solid var(--teal);
@@ -467,7 +541,34 @@
   .ws-btn.view:hover { background: var(--mint); }
   .ws-btn.del { background: white; color: #dc2626; border-color: #fca5a5; }
   .ws-btn.del:hover { background: #fff0f0; }
+
+  .ws-version-badge {
+    flex-shrink: 0;
+    background: #fff7ed; color: #c2410c; border: 1.5px solid #fdba74;
+    font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+    cursor: pointer; white-space: nowrap;
+    font-family: 'Nunito', sans-serif;
+  }
+  .ws-version-badge:hover { background: #ffedd5; }
+
+  .ws-stack { display: flex; flex-direction: column; }
+  .ws-stack-versions {
+    display: none;
+    flex-direction: column; gap: 8px;
+    margin-top: 8px; padding-left: 20px;
+    border-left: 2px solid var(--mint);
+  }
+  .ws-stack-versions.open { display: flex; }
+
   .ws-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 24px; }
+
+  @media (max-width: 580px) {
+    .ws-item { padding: 10px 12px; gap: 8px; }
+    .ws-title { font-size: 12.5px; }
+    .ws-date { display: none; }
+    .ws-btn { padding: 6px 9px; font-size: 11px; }
+    .ws-version-badge { font-size: 10px; padding: 3px 8px; }
+  }
   .saved-badge {
     display: none; background: var(--mint); color: var(--teal-dark);
     font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 20px;
