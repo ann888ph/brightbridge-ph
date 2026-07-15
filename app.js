@@ -10,7 +10,9 @@ let currentQuiz = null;
 let userAnswers = {};
 let allWorksheets = [];
 let wsSearchQuery = '';
-let wsActiveChip = 'all';
+let wsGradeFilter = '';
+let wsSubjectFilter = '';
+let wsModeFilter = '';
 
 /* ============ AUTH ============ */
 async function initAuth() {
@@ -58,11 +60,17 @@ function clearSessionState() {
   document.getElementById('wsCount').textContent = '0 saved';
   allWorksheets = [];
   wsSearchQuery = '';
-  wsActiveChip = 'all';
+  wsGradeFilter = '';
+  wsSubjectFilter = '';
+  wsModeFilter = '';
   const wsSearchEl = document.getElementById('wsSearch');
   if (wsSearchEl) wsSearchEl.value = '';
-  const wsChipsEl = document.getElementById('wsChips');
-  if (wsChipsEl) wsChipsEl.innerHTML = '';
+  const wsGradeSelectEl = document.getElementById('wsGradeSelect');
+  if (wsGradeSelectEl) wsGradeSelectEl.innerHTML = '<option value="">All Grades</option>';
+  const wsSubjectSelectEl = document.getElementById('wsSubjectSelect');
+  if (wsSubjectSelectEl) wsSubjectSelectEl.innerHTML = '<option value="">All Subjects</option>';
+  const wsModeChipsEl = document.getElementById('wsModeChips');
+  if (wsModeChipsEl) wsModeChipsEl.innerHTML = '';
   document.getElementById('errorMsg').classList.remove('visible');
   // Reset the form so the next user starts fresh
   document.getElementById('grade').value = '';
@@ -304,7 +312,7 @@ async function loadWorksheets() {
 
   allWorksheets = (!error && data) ? data : [];
   document.getElementById('wsCount').textContent = allWorksheets.length + ' saved';
-  renderWsChips();
+  renderWsFilters();
   renderWorksheetGroups();
 }
 
@@ -323,22 +331,28 @@ function onWsSearchInput(value) {
   renderWorksheetGroups();
 }
 
-function setWsChip(chipKey) {
-  wsActiveChip = chipKey;
-  renderWsChips();
+function setWsGradeFilter(value) {
+  wsGradeFilter = value;
+  renderWsSubjectOptions();
+  renderWorksheetGroups();
+}
+
+function setWsSubjectFilter(value) {
+  wsSubjectFilter = value;
+  renderWorksheetGroups();
+}
+
+function setWsModeFilter(mode) {
+  wsModeFilter = (wsModeFilter === mode) ? '' : mode;
+  renderWsModeChips();
   renderWorksheetGroups();
 }
 
 function getFilteredWorksheets() {
   return allWorksheets.filter(ws => {
-    if (wsActiveChip !== 'all') {
-      const sep = wsActiveChip.indexOf('::');
-      const type = wsActiveChip.slice(0, sep);
-      const value = wsActiveChip.slice(sep + 2);
-      if (type === 'grade' && ws.grade !== value) return false;
-      if (type === 'subject' && ws.subject !== value) return false;
-      if (type === 'mode' && ws.mode !== value) return false;
-    }
+    if (wsGradeFilter && ws.grade !== wsGradeFilter) return false;
+    if (wsSubjectFilter && ws.subject !== wsSubjectFilter) return false;
+    if (wsModeFilter && ws.mode !== wsModeFilter) return false;
     if (wsSearchQuery) {
       const hay = ((ws.title || '') + ' ' + (ws.topic || '')).toLowerCase();
       if (!hay.includes(wsSearchQuery)) return false;
@@ -347,38 +361,66 @@ function getFilteredWorksheets() {
   });
 }
 
-function renderWsChips() {
-  const chipsEl = document.getElementById('wsChips');
-  if (!chipsEl) return;
-  if (allWorksheets.length === 0) { chipsEl.innerHTML = ''; return; }
+function renderWsFilters() {
+  renderWsGradeOptions();
+  renderWsSubjectOptions();
+  renderWsModeChips();
+}
+
+function renderWsGradeOptions() {
+  const sel = document.getElementById('wsGradeSelect');
+  if (!sel) return;
+  if (allWorksheets.length === 0) { sel.innerHTML = '<option value="">All Grades</option>'; return; }
 
   const grades = [...new Set(allWorksheets.map(w => w.grade).filter(Boolean))]
     .sort((a, b) => (parseInt(a.replace(/\D/g, '')) || 0) - (parseInt(b.replace(/\D/g, '')) || 0));
-  const subjects = [...new Set(allWorksheets.map(w => w.subject).filter(Boolean))].sort();
 
-  const chipDefs = [
-    { key: 'all', label: 'All' },
-    ...grades.map(g => ({ key: 'grade::' + g, label: g })),
-    ...subjects.map(s => ({ key: 'subject::' + s, label: s })),
-    { key: 'mode::printable', label: 'Printable' },
-    { key: 'mode::interactive', label: 'Interactive' }
+  if (wsGradeFilter && !grades.includes(wsGradeFilter)) wsGradeFilter = '';
+
+  sel.innerHTML = '<option value="">All Grades</option>' +
+    grades.map(g => `<option value="${escapeHtml(g)}"${g === wsGradeFilter ? ' selected' : ''}>${escapeHtml(g)}</option>`).join('');
+}
+
+function renderWsSubjectOptions() {
+  const sel = document.getElementById('wsSubjectSelect');
+  if (!sel) return;
+  if (allWorksheets.length === 0) { sel.innerHTML = '<option value="">All Subjects</option>'; return; }
+
+  const pool = wsGradeFilter ? allWorksheets.filter(w => w.grade === wsGradeFilter) : allWorksheets;
+  const subjects = [...new Set(pool.map(w => w.subject).filter(Boolean))].sort();
+
+  if (wsSubjectFilter && !subjects.includes(wsSubjectFilter)) wsSubjectFilter = '';
+
+  sel.innerHTML = '<option value="">All Subjects</option>' +
+    subjects.map(s => `<option value="${escapeHtml(s)}"${s === wsSubjectFilter ? ' selected' : ''}>${escapeHtml(s)}</option>`).join('');
+}
+
+function renderWsModeChips() {
+  const el = document.getElementById('wsModeChips');
+  if (!el) return;
+  if (allWorksheets.length === 0) { el.innerHTML = ''; return; }
+
+  const modeDefs = [
+    { key: 'printable', label: 'Printable' },
+    { key: 'interactive', label: 'Interactive' }
   ];
 
-  chipsEl.innerHTML = chipDefs.map(c => {
-    const active = wsActiveChip === c.key;
-    const safeKey = c.key.replace(/'/g, "\\'");
-    return `<button type="button" class="ws-chip${active ? ' active' : ''}" onclick="setWsChip('${safeKey}')">${escapeHtml(c.label)}</button>`;
+  el.innerHTML = modeDefs.map(m => {
+    const active = wsModeFilter === m.key;
+    return `<button type="button" class="ws-chip${active ? ' active' : ''}" onclick="setWsModeFilter('${m.key}')">${m.label}</button>`;
   }).join('');
 }
 
-function renderWsSingleRow(ws) {
+function renderWsSingleRow(ws, fullTitle) {
   const date = wsShortDate(ws.created_at);
   const modeIcon = ws.mode === 'interactive' ? '\uD83D\uDCBB' : '\uD83D\uDDA8\uFE0F';
+  const titleClass = fullTitle ? 'ws-title ws-title-full' : 'ws-title';
+  const safeTitle = escapeHtml(ws.title);
   return `
     <div class="ws-item">
       <div class="ws-info">
         <span class="ws-mode-icon">${modeIcon}</span>
-        <span class="ws-title">${escapeHtml(ws.title)}</span>
+        <span class="${titleClass}" title="${safeTitle}">${safeTitle}</span>
         <span class="ws-date">${date}</span>
       </div>
       <div class="ws-actions">
@@ -394,14 +436,15 @@ function renderWsStackRow(versions) {
   const stackId = newest.id;
   const date = wsShortDate(newest.created_at);
   const modeIcon = newest.mode === 'interactive' ? '\uD83D\uDCBB' : '\uD83D\uDDA8\uFE0F';
-  const olderHtml = older.map(renderWsSingleRow).join('');
+  const safeTitle = escapeHtml(newest.title);
+  const olderHtml = older.map(ws => renderWsSingleRow(ws, true)).join('');
 
   return `
     <div class="ws-stack">
       <div class="ws-item">
         <div class="ws-info">
           <span class="ws-mode-icon">${modeIcon}</span>
-          <span class="ws-title">${escapeHtml(newest.title)}</span>
+          <span class="ws-title" title="${safeTitle}">${safeTitle}</span>
           <span class="ws-date">${date}</span>
           <button type="button" class="ws-version-badge" onclick="toggleWsStack('${stackId}')">&times;${versions.length} versions</button>
         </div>
@@ -433,7 +476,7 @@ function renderWorksheetGroups() {
     return;
   }
 
-  const filtersActive = wsActiveChip !== 'all' || !!wsSearchQuery;
+  const filtersActive = !!wsGradeFilter || !!wsSubjectFilter || !!wsModeFilter || !!wsSearchQuery;
 
   const gradeMap = new Map();
   filtered.forEach(ws => {
