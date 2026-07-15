@@ -231,8 +231,22 @@
 
   <div class="card" id="saved-card" style="margin-top:24px;">
     <div class="card-title">&#x1F4DA; My Worksheets <span class="badge" id="wsCount">0 saved</span></div>
-    <input type="text" class="ws-search" id="wsSearch" placeholder="Search worksheets&hellip;" oninput="onWsSearchInput(this.value)">
-    <div class="ws-chips" id="wsChips"></div>
+    <div class="ws-search-wrap">
+      <svg class="ws-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" class="ws-search" id="wsSearch" placeholder="Search worksheets&hellip;" oninput="onWsSearchInput(this.value)">
+    </div>
+    <div class="ws-filter-row">
+      <select class="ws-select" id="wsGradeSelect" onchange="setWsGradeFilter(this.value)">
+        <option value="">All Grades</option>
+      </select>
+      <select class="ws-select" id="wsSubjectSelect" onchange="setWsSubjectFilter(this.value)">
+        <option value="">All Subjects</option>
+      </select>
+      <div class="ws-mode-chips" id="wsModeChips"></div>
+    </div>
     <div class="ws-list" id="wsList">
       <div class="ws-empty">No saved worksheets yet. Generate one and it will appear here! &#x1F331;</div>
     </div>
