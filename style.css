@@ -447,20 +447,49 @@
   .quota-blocked-text { font-size: 13px; color: #9a3412; margin-bottom: 4px; }
 
   /* ===== My Worksheets ===== */
-  .ws-search {
+  .ws-search-wrap { position: relative; margin-bottom: 12px; }
+  .ws-search-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); pointer-events: none;
+  }
+  input.ws-search {
     width: 100%;
-    padding: 11px 16px;
+    padding: 11px 14px 11px 40px;
     border: 2px solid var(--mint);
     border-radius: 12px;
     font-family: 'Nunito', sans-serif;
     font-size: 14px;
     color: var(--text);
-    background: var(--warm);
-    margin-bottom: 12px;
+    background-color: var(--warm);
+    background-image: none;
+    appearance: none;
   }
-  .ws-search:focus { outline: none; border-color: var(--teal); background: white; }
+  input.ws-search:focus { outline: none; border-color: var(--teal); background-color: white; }
 
-  .ws-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .ws-filter-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+  .ws-select {
+    padding: 10px 32px 10px 14px;
+    border: 2px solid var(--mint);
+    border-radius: 12px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text);
+    background-color: var(--warm);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%232d9e7e' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    flex: 1 1 150px;
+    min-width: 130px;
+  }
+  .ws-select:focus {
+    outline: none; border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(45,158,126,0.18);
+    background-color: white;
+  }
+  .ws-mode-chips { display: flex; gap: 8px; flex-wrap: wrap; }
   .ws-chip {
     padding: 6px 14px;
     border-radius: 20px;
@@ -530,6 +559,13 @@
     font-weight: 800; font-size: 13.5px; color: var(--teal-dark);
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
+  .ws-title-full {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
   .ws-date { font-size: 11px; color: var(--muted); flex-shrink: 0; white-space: nowrap; }
   .ws-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: nowrap; }
   .ws-btn {
@@ -559,6 +595,9 @@
     border-left: 2px solid var(--mint);
   }
   .ws-stack-versions.open { display: flex; }
+  .ws-stack-versions .ws-item { align-items: flex-start; }
+  .ws-stack-versions .ws-info { align-items: flex-start; }
+  .ws-stack-versions .ws-date { margin-top: 2px; }
 
   .ws-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 24px; }
 
