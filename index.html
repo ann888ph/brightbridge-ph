@@ -231,6 +231,8 @@
 
   <div class="card" id="saved-card" style="margin-top:24px;">
     <div class="card-title">&#x1F4DA; My Worksheets <span class="badge" id="wsCount">0 saved</span></div>
+    <input type="text" class="ws-search" id="wsSearch" placeholder="Search worksheets&hellip;" oninput="onWsSearchInput(this.value)">
+    <div class="ws-chips" id="wsChips"></div>
     <div class="ws-list" id="wsList">
       <div class="ws-empty">No saved worksheets yet. Generate one and it will appear here! &#x1F331;</div>
     </div>
