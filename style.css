@@ -392,9 +392,26 @@
     font-size: 14px;
     line-height: 1.6;
   }
-  .auth-msg { font-size: 13px; padding: 11px 14px; border-radius: 10px; margin-top: 14px; display: none; line-height: 1.5; }
-  .auth-msg.error { display: block; background: #fff0f0; border: 1.5px solid #fca5a5; color: #b91c1c; }
-  .auth-msg.success { display: block; background: var(--mint); border: 1.5px solid var(--teal); color: var(--teal-dark); }
+  .auth-msg {
+    font-size: 13px;
+    border-radius: 10px;
+    line-height: 1.5;
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    padding: 0 14px;
+    overflow: hidden;
+    transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s ease, padding 0.25s ease;
+  }
+  .auth-msg.error, .auth-msg.success {
+    max-height: 120px;
+    opacity: 1;
+    margin-top: 14px;
+    margin-bottom: 14px;
+    padding: 11px 14px;
+  }
+  .auth-msg.error { background: #fff0f0; border: 1.5px solid #fca5a5; color: #b91c1c; }
+  .auth-msg.success { background: var(--mint); border: 1.5px solid var(--teal); color: var(--teal-dark); }
 
   @media (max-width: 900px) {
     #auth-screen { flex-direction: column; }
@@ -405,7 +422,7 @@
     .auth-panel { padding: 36px 22px 56px; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .auth-btn, .pw-eye { transition: none; }
+    .auth-btn, .pw-eye, .auth-msg { transition: none; }
   }
 
   /* ===== App header user bar ===== */
