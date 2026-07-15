@@ -100,6 +100,7 @@
   <div class="card">
     <div class="card-title">&#x1F3AF; Worksheet Mode</div>
     <div class="mode-toggle">
+      <div class="mode-toggle-thumb" aria-hidden="true"></div>
       <button class="mode-btn active" id="modePrintable" onclick="setMode('printable')">&#x1F5A8;&#xFE0F; Printable</button>
       <button class="mode-btn" id="modeInteractive" onclick="setMode('interactive')">&#x1F4BB; Interactive</button>
     </div>
@@ -108,7 +109,7 @@
 
   <div class="card">
     <div class="card-title">&#x1F4DA; Learner Settings</div>
-    <div class="grid-3" style="margin-bottom: 16px;">
+    <div class="grid-3 settings-row">
       <div class="field">
         <label>Grade Level</label>
         <select id="grade" onchange="updateSubjects()">
@@ -137,7 +138,7 @@
         </select>
       </div>
     </div>
-    <div class="grid-3" style="margin-bottom: 16px;">
+    <div class="grid-3 settings-row">
       <div class="field">
         <label>Topic / Lesson</label>
         <select id="topic">
@@ -167,7 +168,7 @@
         </select>
       </div>
     </div>
-    <div class="grid-3">
+    <div class="grid-3 settings-row">
       <div class="field">
         <label>Difficulty</label>
         <select id="difficulty">
