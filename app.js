@@ -8,6 +8,9 @@ let authMode = 'login';
 let wsMode = 'printable';
 let currentQuiz = null;
 let userAnswers = {};
+let allWorksheets = [];
+let wsSearchQuery = '';
+let wsActiveChip = 'all';
 
 /* ============ AUTH ============ */
 async function initAuth() {
@@ -53,6 +56,13 @@ function clearSessionState() {
   document.getElementById('savedBadge').classList.remove('visible');
   document.getElementById('wsList').innerHTML = '';
   document.getElementById('wsCount').textContent = '0 saved';
+  allWorksheets = [];
+  wsSearchQuery = '';
+  wsActiveChip = 'all';
+  const wsSearchEl = document.getElementById('wsSearch');
+  if (wsSearchEl) wsSearchEl.value = '';
+  const wsChipsEl = document.getElementById('wsChips');
+  if (wsChipsEl) wsChipsEl.innerHTML = '';
   document.getElementById('errorMsg').classList.remove('visible');
   // Reset the form so the next user starts fresh
   document.getElementById('grade').value = '';
@@ -292,30 +302,198 @@ async function loadWorksheets() {
     .select('id, title, grade, subject, topic, mode, created_at')
     .order('created_at', { ascending: false });
 
-  const list = document.getElementById('wsList');
-  const count = document.getElementById('wsCount');
+  allWorksheets = (!error && data) ? data : [];
+  document.getElementById('wsCount').textContent = allWorksheets.length + ' saved';
+  renderWsChips();
+  renderWorksheetGroups();
+}
 
-  if (error || !data || data.length === 0) {
-    list.innerHTML = '<div class="ws-empty">No saved worksheets yet. Generate one and it will appear here! \uD83C\uDF31</div>';
-    count.textContent = '0 saved';
-    return;
-  }
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = (str === null || str === undefined) ? '' : String(str);
+  return div.innerHTML;
+}
 
-  count.textContent = data.length + ' saved';
-  list.innerHTML = data.map(ws => {
-    const date = new Date(ws.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
-    const modeIcon = ws.mode === 'interactive' ? '\uD83D\uDCBB' : '\uD83D\uDDA8\uFE0F';
-    return `
+function wsShortDate(createdAt) {
+  return new Date(createdAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+}
+
+function onWsSearchInput(value) {
+  wsSearchQuery = value.trim().toLowerCase();
+  renderWorksheetGroups();
+}
+
+function setWsChip(chipKey) {
+  wsActiveChip = chipKey;
+  renderWsChips();
+  renderWorksheetGroups();
+}
+
+function getFilteredWorksheets() {
+  return allWorksheets.filter(ws => {
+    if (wsActiveChip !== 'all') {
+      const sep = wsActiveChip.indexOf('::');
+      const type = wsActiveChip.slice(0, sep);
+      const value = wsActiveChip.slice(sep + 2);
+      if (type === 'grade' && ws.grade !== value) return false;
+      if (type === 'subject' && ws.subject !== value) return false;
+      if (type === 'mode' && ws.mode !== value) return false;
+    }
+    if (wsSearchQuery) {
+      const hay = ((ws.title || '') + ' ' + (ws.topic || '')).toLowerCase();
+      if (!hay.includes(wsSearchQuery)) return false;
+    }
+    return true;
+  });
+}
+
+function renderWsChips() {
+  const chipsEl = document.getElementById('wsChips');
+  if (!chipsEl) return;
+  if (allWorksheets.length === 0) { chipsEl.innerHTML = ''; return; }
+
+  const grades = [...new Set(allWorksheets.map(w => w.grade).filter(Boolean))]
+    .sort((a, b) => (parseInt(a.replace(/\D/g, '')) || 0) - (parseInt(b.replace(/\D/g, '')) || 0));
+  const subjects = [...new Set(allWorksheets.map(w => w.subject).filter(Boolean))].sort();
+
+  const chipDefs = [
+    { key: 'all', label: 'All' },
+    ...grades.map(g => ({ key: 'grade::' + g, label: g })),
+    ...subjects.map(s => ({ key: 'subject::' + s, label: s })),
+    { key: 'mode::printable', label: 'Printable' },
+    { key: 'mode::interactive', label: 'Interactive' }
+  ];
+
+  chipsEl.innerHTML = chipDefs.map(c => {
+    const active = wsActiveChip === c.key;
+    const safeKey = c.key.replace(/'/g, "\\'");
+    return `<button type="button" class="ws-chip${active ? ' active' : ''}" onclick="setWsChip('${safeKey}')">${escapeHtml(c.label)}</button>`;
+  }).join('');
+}
+
+function renderWsSingleRow(ws) {
+  const date = wsShortDate(ws.created_at);
+  const modeIcon = ws.mode === 'interactive' ? '\uD83D\uDCBB' : '\uD83D\uDDA8\uFE0F';
+  return `
     <div class="ws-item">
       <div class="ws-info">
-        <div class="ws-title">${modeIcon} ${ws.title}</div>
-        <div class="ws-meta">${ws.grade} &middot; ${ws.subject} &middot; ${date}</div>
+        <span class="ws-mode-icon">${modeIcon}</span>
+        <span class="ws-title">${escapeHtml(ws.title)}</span>
+        <span class="ws-date">${date}</span>
       </div>
       <div class="ws-actions">
         <button class="ws-btn view" onclick="viewWorksheet('${ws.id}')">\uD83D\uDC41\uFE0F View</button>
         <button class="ws-btn del" onclick="deleteWorksheet('${ws.id}')">\uD83D\uDDD1\uFE0F</button>
       </div>
     </div>`;
+}
+
+function renderWsStackRow(versions) {
+  const newest = versions[0];
+  const older = versions.slice(1);
+  const stackId = newest.id;
+  const date = wsShortDate(newest.created_at);
+  const modeIcon = newest.mode === 'interactive' ? '\uD83D\uDCBB' : '\uD83D\uDDA8\uFE0F';
+  const olderHtml = older.map(renderWsSingleRow).join('');
+
+  return `
+    <div class="ws-stack">
+      <div class="ws-item">
+        <div class="ws-info">
+          <span class="ws-mode-icon">${modeIcon}</span>
+          <span class="ws-title">${escapeHtml(newest.title)}</span>
+          <span class="ws-date">${date}</span>
+          <button type="button" class="ws-version-badge" onclick="toggleWsStack('${stackId}')">&times;${versions.length} versions</button>
+        </div>
+        <div class="ws-actions">
+          <button class="ws-btn view" onclick="viewWorksheet('${newest.id}')">\uD83D\uDC41\uFE0F View</button>
+          <button class="ws-btn del" onclick="deleteWorksheet('${newest.id}')">\uD83D\uDDD1\uFE0F</button>
+        </div>
+      </div>
+      <div class="ws-stack-versions" id="ws-stack-${stackId}">${olderHtml}</div>
+    </div>`;
+}
+
+function toggleWsStack(stackId) {
+  const el = document.getElementById('ws-stack-' + stackId);
+  if (el) el.classList.toggle('open');
+}
+
+function renderWorksheetGroups() {
+  const list = document.getElementById('wsList');
+
+  if (allWorksheets.length === 0) {
+    list.innerHTML = '<div class="ws-empty">No saved worksheets yet. Generate one and it will appear here! \uD83C\uDF31</div>';
+    return;
+  }
+
+  const filtered = getFilteredWorksheets();
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="ws-empty">No worksheets match your search.</div>';
+    return;
+  }
+
+  const filtersActive = wsActiveChip !== 'all' || !!wsSearchQuery;
+
+  const gradeMap = new Map();
+  filtered.forEach(ws => {
+    if (!gradeMap.has(ws.grade)) gradeMap.set(ws.grade, []);
+    gradeMap.get(ws.grade).push(ws);
+  });
+
+  const gradeGroups = [...gradeMap.entries()].map(([grade, rows]) => {
+    const newestTime = rows.reduce((max, r) => Math.max(max, new Date(r.created_at).getTime()), 0);
+    return { grade, rows, newestTime };
+  }).sort((a, b) => b.newestTime - a.newestTime);
+
+  const overallNewestGrade = gradeGroups.length ? gradeGroups[0].grade : null;
+
+  list.innerHTML = gradeGroups.map(({ grade, rows }) => {
+    const subjMap = new Map();
+    rows.forEach(ws => {
+      if (!subjMap.has(ws.subject)) subjMap.set(ws.subject, []);
+      subjMap.get(ws.subject).push(ws);
+    });
+
+    let dupCount = 0;
+    const subjectsHtml = [...subjMap.entries()].map(([subject, subjRows]) => {
+      subjRows.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      const titleMap = new Map();
+      subjRows.forEach(ws => {
+        if (!titleMap.has(ws.title)) titleMap.set(ws.title, []);
+        titleMap.get(ws.title).push(ws);
+      });
+
+      const rowsHtml = [...titleMap.values()].map(versions => {
+        versions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        if (versions.length > 1) {
+          dupCount++;
+          return renderWsStackRow(versions);
+        }
+        return renderWsSingleRow(versions[0]);
+      }).join('');
+
+      return `
+      <div class="ws-subject-group">
+        <div class="ws-subject-label">${escapeHtml(subject || 'Other')}</div>
+        <div class="ws-rows">${rowsHtml}</div>
+      </div>`;
+    }).join('');
+
+    const isOpen = filtersActive || grade === overallNewestGrade;
+    const count = rows.length;
+
+    return `
+    <details class="ws-grade-group"${isOpen ? ' open' : ''}>
+      <summary class="ws-grade-summary">
+        <span class="ws-chevron">&#9656;</span>
+        <span class="ws-grade-name">${escapeHtml(grade || 'Ungraded')}</span>
+        <span class="ws-grade-count">&middot; ${count} worksheet${count !== 1 ? 's' : ''}</span>
+        ${dupCount > 0 ? `<span class="ws-dup-badge">${dupCount} duplicate${dupCount !== 1 ? 's' : ''}</span>` : ''}
+      </summary>
+      <div class="ws-grade-body">${subjectsHtml}</div>
+    </details>`;
   }).join('');
 }
 
