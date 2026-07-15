@@ -378,6 +378,20 @@
   .auth-toggle { text-align: center; font-size: 13.5px; color: var(--muted); margin-top: 20px; }
   .auth-toggle a { color: var(--teal); font-weight: 800; cursor: pointer; text-decoration: none; }
   .auth-toggle a:hover { text-decoration: underline; }
+  .mission-statement {
+    width: 100%;
+    margin-top: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: #E1F5EE;
+    border-left: 4px solid #0F6E56;
+    border-radius: 12px;
+  }
+  .mission-statement p {
+    color: #085041;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
   .auth-msg { font-size: 13px; padding: 11px 14px; border-radius: 10px; margin-top: 14px; display: none; line-height: 1.5; }
   .auth-msg.error { display: block; background: #fff0f0; border: 1.5px solid #fca5a5; color: #b91c1c; }
   .auth-msg.success { display: block; background: var(--mint); border: 1.5px solid var(--teal); color: var(--teal-dark); }
@@ -718,18 +732,3 @@
     margin-top: 8px;
   }
 
-  /* ---------- Mission statement callout ---------- */
-  .mission-statement {
-    max-width: 720px;
-    margin: 32px auto;
-    padding: 18px 22px;
-    background: #E1F5EE;
-    border-left: 4px solid #0F6E56;
-    border-radius: 12px;
-  }
-  .mission-statement p {
-    color: #085041;
-    font-family: 'Nunito', sans-serif;
-    font-size: 15px;
-    line-height: 1.6;
-  }
