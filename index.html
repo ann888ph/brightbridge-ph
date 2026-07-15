@@ -35,18 +35,19 @@
       <p class="auth-sub" id="authSub">Sign in to create worksheets for your learner.</p>
       <div class="field">
         <label>Email</label>
-        <input type="text" id="authEmail" placeholder="you@email.com" autocomplete="email" />
+        <input type="text" id="authEmail" placeholder="you@email.com" autocomplete="email" oninput="authMsg('', '')" />
       </div>
       <div class="field">
         <label>Password</label>
         <div class="pw-wrap">
-          <input type="password" id="authPassword" placeholder="Your password" autocomplete="current-password" />
+          <input type="password" id="authPassword" placeholder="Your password" autocomplete="current-password" oninput="authMsg('', '')" />
           <button type="button" class="pw-eye" id="pwEye" onclick="togglePassword()" title="Show password" aria-label="Show or hide password">&#x1F441;</button>
         </div>
       </div>
       <div class="auth-row">
         <a class="auth-forgot" onclick="handleForgotPassword()">Forgot password?</a>
       </div>
+      <div class="auth-msg" id="authMsg"></div>
       <button class="auth-btn" id="authBtn" onclick="handleAuth()">Sign In</button>
       <div class="auth-toggle" id="authToggle">
         New here? <a onclick="toggleAuthMode()">Create an account</a>
@@ -54,7 +55,6 @@
       <div class="mission-statement">
         <p>BrightBridge PH is built to support Filipino learners. Paid plans help us keep the platform running and allow us to provide free or discounted access to public school teachers and families who need support.</p>
       </div>
-      <div class="auth-msg" id="authMsg"></div>
     </div>
   </div>
 </div>
