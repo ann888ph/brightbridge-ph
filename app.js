@@ -192,7 +192,7 @@ const PLAN_LIMITS = {
   free: { label: 'Free Plan', limit: 5 },
   parent: { label: 'Parent Plan', limit: 20 },
   family_plus: { label: 'Family Plus', limit: 60 },
-  teacher: { label: 'Teacher Plan', limit: 150 }
+  teacher: { label: 'BrightBridge Pro', limit: 150 }
 };
 
 let currentPlan = 'free';
