@@ -742,7 +742,7 @@ function speakPassage() {
   });
 
   const utter = new SpeechSynthesisUtterance(currentQuiz.passage);
-  const filSubjects = ['Filipino', 'Araling Panlipunan', 'GMRC / Values', 'EPP'];
+  const filSubjects = ['Filipino', 'Araling Panlipunan', 'EPP'];
   const wantFil = filSubjects.includes(currentQuiz.subject || '');
   const voices = window.speechSynthesis.getVoices();
   if (wantFil) {
@@ -784,7 +784,7 @@ function speakQuestion(qi) {
   }
 
   const utter = new SpeechSynthesisUtterance(text);
-  const filSubjects = ['Filipino', 'Araling Panlipunan', 'GMRC / Values', 'EPP'];
+  const filSubjects = ['Filipino', 'Araling Panlipunan', 'EPP'];
   const wantFil = filSubjects.includes(currentQuiz.subject || '');
   const voices = window.speechSynthesis.getVoices();
   if (wantFil) {
@@ -1019,7 +1019,8 @@ LANGUAGE RULE:
 - If subject is ENGLISH: use English throughout.
 - If subject is MATH or SCIENCE: use English for all questions. Filipino context allowed in word problems only.
 - Never write Math or Science questions fully in Filipino/Tagalog.
-- If subject is FILIPINO, ARALING PANLIPUNAN, GMRC / VALUES, or EPP: write EVERYTHING in Filipino/Tagalog \u2014 directions, questions, and choices.
+- If subject is FILIPINO, ARALING PANLIPUNAN, or EPP: write EVERYTHING in Filipino/Tagalog \u2014 directions, questions, and choices.
+- If subject is GMRC / VALUES: write EVERYTHING in English \u2014 directions, questions, choices, and any answer labels. Do not use Filipino words like "Panuto" or "Iyong sagot" anywhere; the entire worksheet must read as one single, consistent English document.
 - If subject is MAPEH: use English as the base, Filipino terms welcome.
 
 Output compact JSON (no unnecessary whitespace or newlines). If a token limit approaches, output fewer complete questions rather than incomplete JSON. The JSON must always be complete and parseable.`;
@@ -1050,7 +1051,8 @@ LANGUAGE RULE:
 - If subject is ENGLISH: use English throughout.
 - If subject is MATH or SCIENCE: use English as the medium of instruction for all questions, directions, and labels. Filipino context (local names, foods, places) is allowed in word problems ONLY \u2014 but the question itself must be in English.
 - Never write Math or Science questions fully in Filipino/Tagalog.
-- If subject is FILIPINO, ARALING PANLIPUNAN, GMRC / VALUES, or EPP: write EVERYTHING in Filipino/Tagalog \u2014 directions (Panuto), questions, and choices. This matches how these subjects are taught in DepEd schools.
+- If subject is FILIPINO, ARALING PANLIPUNAN, or EPP: write EVERYTHING in Filipino/Tagalog \u2014 directions (Panuto), questions, and choices. This matches how these subjects are taught in DepEd schools.
+- If subject is GMRC / VALUES: write EVERYTHING in English \u2014 directions, questions, choices, and the answer key labels. Do not use Filipino words like "Panuto" or "Iyong sagot" anywhere; the entire worksheet must read as one single, consistent English document.
 - If subject is MAPEH: use English as the base, but Filipino terms are welcome (e.g., Mga Larong Pinoy, wastong nutrisyon).
 
 CRITICAL INSTRUCTION: You may be working within a token limit. If you sense you are running out of space before finishing all items \u2014 STOP adding new items and immediately write the Answer Key section. A worksheet with fewer items but a complete Answer Key is far better than one with all items but no Answer Key. Never leave the Answer Key missing or incomplete.
