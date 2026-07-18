@@ -947,6 +947,16 @@ async function generateWorksheet() {
     return;
   }
 
+  // TEMPORARY CONTAINMENT (see recon notes): Printable Math has no
+  // structured answer-key validation yet -- server-side blocks this too,
+  // this is just instant client-side feedback so nothing is wasted on a
+  // request the server will refuse anyway. Scoped to Math+printable only;
+  // every other Printable subject is unaffected.
+  if (subject === 'Math' && wsMode === 'printable') {
+    showError('Printable Math worksheets are temporarily unavailable while we fix an answer-key accuracy issue. Please try Math in Interactive mode, or choose Printable for another subject. \uD83C\uDF3F');
+    return;
+  }
+
   const supports = [];
   if (document.getElementById('dysgraphia').checked) supports.push('Dysgraphia-Friendly Format (use large answer spaces, clear lines)');
   if (document.getElementById('simplified').checked) supports.push('Simplified Instructions (use very short and easy-to-understand directions)');

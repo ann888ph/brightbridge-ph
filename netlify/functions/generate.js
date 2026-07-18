@@ -84,6 +84,22 @@ exports.handler = async (event) => {
     return json(400, { error: "Invalid item count." });
   }
 
+  // TEMPORARY CONTAINMENT (see recon notes): Printable Math asks the model
+  // to freehand final HTML directly, with no structured validation of the
+  // answer key at all -- confirmed capable of shipping a wrong answer key
+  // and leaking raw self-correction narration into the visible worksheet.
+  // Blocked here, before any quota reservation or Anthropic call, so it
+  // costs the user nothing. Scoped to subject+mode exactly, so every other
+  // Printable subject (English, Science, Filipino, etc.) is unaffected.
+  // Remove this block once Printable Math is routed through the same
+  // structured-JSON + validateMathQuestions path Interactive Math already
+  // uses.
+  if (subject === "Math" && mode === "printable") {
+    return json(503, {
+      error: "Printable Math worksheets are temporarily unavailable while we fix an answer-key accuracy issue. Please try Math in Interactive mode, or choose Printable for another subject."
+    });
+  }
+
   // ---------- 3. LOAD PLAN + CYCLE START (service role bypasses RLS) ----------
   const profileRes = await fetch(
     `${SUPABASE_URL}/rest/v1/profiles?user_id=eq.${userId}&select=plan,cycle_start`,
