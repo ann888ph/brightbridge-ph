@@ -3,6 +3,14 @@ const SUPABASE_URL = 'https://jyoczjbiskgxuupdcnff.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_G8GcsQSqHkSBj7fmJtJejA_NjlREZyE';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+/* ============ SHARED JSON-REPAIR MODULE ============ */
+// Loaded via <script src="math-validation.js"> before this file (see
+// index.html). Math validation itself is now server-authoritative (see
+// netlify/functions/generate.js) -- app.js only needs the JSON-repair
+// parser, kept shared so client display parsing and server validation
+// parsing can never quietly diverge.
+const { parseQuizJson } = window.MathValidation;
+
 let currentUser = null;
 let authMode = 'login';
 let wsMode = 'printable';
@@ -226,6 +234,7 @@ async function loadPlanAndUsage() {
     const { count } = await db.from('usage_logs')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', currentUser.id)
+      .eq('is_chargeable', true)
       .gte('created_at', sinceDate.toISOString());
     currentUsageCount = count || 0;
   } catch (e) {
@@ -916,38 +925,6 @@ function launchConfetti() {
   }
 }
 
-/* ============ JSON REPAIR ============ */
-function parseQuizJson(text) {
-  // Extract from first { to last }
-  const start = text.indexOf('{');
-  if (start === -1) throw new SyntaxError('No JSON found');
-  let s = text.slice(start);
-
-  // Try direct parse first
-  try { return JSON.parse(s); } catch (e) {}
-
-  // Try cutting at last } 
-  const lastBrace = s.lastIndexOf('}');
-  if (lastBrace !== -1) {
-    try { return JSON.parse(s.slice(0, lastBrace + 1)); } catch (e) {}
-  }
-
-  // Repair truncated JSON: cut at each } from the end, try closing the structure
-  for (let i = s.length; i > 0; i--) {
-    if (s[i - 1] === '}') {
-      const candidate = s.slice(0, i);
-      const suffixes = [']}', '}]}', ']}}', ''];
-      for (const suffix of suffixes) {
-        try {
-          const parsed = JSON.parse(candidate + suffix);
-          if (parsed.questions && parsed.questions.length > 0) return parsed;
-        } catch (e) {}
-      }
-    }
-  }
-  throw new SyntaxError('Unrepairable JSON');
-}
-
 /* ============ GENERATE ============ */
 async function generateWorksheet() {
   const grade = document.getElementById('grade').value;
@@ -980,6 +957,73 @@ async function generateWorksheet() {
     ? `\n\nSpecial Learning Support Needs:\n${supports.map(s => '- ' + s).join('\n')}`
     : '';
 
+  // Math-only prompt guardrails (Part 1). Every other subject's prompt is untouched.
+  const isMath = subject === 'Math';
+  const PHP = String.fromCharCode(0x20B1); // peso sign, built this way to keep app.js ASCII-only
+
+  const mathMcExampleLine = isMath
+    ? `{ "type": "multiple_choice", "question": "question text", "solution_steps": "concise semicolon-separated arithmetic, e.g. 2.5 * 45.50 = 113.75; 200 - 113.75 = 86.25", "final_answer": "the complete final answer including any currency symbol, percent sign, fraction, or unit, e.g. ${PHP}86.25", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "answer": 0 }`
+    : `{ "type": "multiple_choice", "question": "question text", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "answer": 0 }`;
+
+  // V1: Math worksheets must be 100% multiple_choice -- true_false/fill_blank
+  // are not offered as an option in the example schema at all for Math.
+  const questionsArrayExample = isMath
+    ? `    ${mathMcExampleLine}`
+    : `    { "type": "multiple_choice", "question": "question text", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "answer": 0 },
+    { "type": "true_false", "question": "statement here", "answer": true },
+    { "type": "fill_blank", "question": "sentence with _____ for the blank", "answer": "correct word", "alternates": ["acceptable variation 1", "acceptable variation 2"] }`;
+
+  const mathIntegrityBlock = isMath ? `
+
+GENERAL MATH INTEGRITY RULES (this worksheet's subject is Math):
+- Every question in this worksheet MUST be type "multiple_choice". Do NOT generate true_false or fill_blank questions for Math -- this overrides the general "mix question types" instruction above for this subject only.
+- Read and understand the complete question before computing.
+- Compute every answer line by line before creating answer choices.
+- Keep solution_steps concise as one semicolon-separated string.
+- final_answer must contain the complete final answer, including any relevant currency symbol, percent sign, fraction, or unit.
+- choices[answer] must match final_answer.
+- The correct answer must appear exactly once in choices.
+- All choices must be unique after normalization.
+- answer must be the zero-based index of the correct choice.
+- Distractors must represent plausible student errors.
+- No distractor may equal the correct answer after normalization.
+- Do not round unless the question explicitly requires rounding.
+- When rounding is required, apply it exactly as instructed and ensure solution_steps, final_answer, choices, and answer are consistent.
+- Never invent or alter a final result after completing the computation.
+- Keep solution_steps compact to respect the existing 8000 max_tokens budget.
+- solution_steps and final_answer only apply to multiple_choice questions. true_false and fill_blank questions keep their existing shape.
+
+DECIMAL WORD-PROBLEM RULES:
+- Decimal quantities are expected when the selected lesson involves decimals. Do not force all values to be whole numbers.
+- Prefer real-world units where decimal quantities are natural, such as: kilograms, grams, liters, meters, kilometers, hours, ingredients, measurements, or money.
+- Countable objects may use fractional quantities only when the wording clearly explains that partial portions can be sold or measured.
+- Avoid ambiguous wording such as "each loaf costs ${PHP}32.50" when partial loaves are involved, unless proportional pricing is explicitly stated.
+- Do not accidentally require an additional skill such as rounding unless the question clearly instructs the learner to perform that skill.
+
+CURRENCY RULES:
+- Prefer generated values whose exact monetary result has no more than two decimal places.
+- Currency final_answer values and currency choices must normally display exactly two decimal places.
+- Do not generate a final monetary result containing a fraction of a centavo without explicit rounding instructions.
+- If an exact monetary calculation produces more than two decimal places:
+  1. Prefer changing the generated values so the result is exact to centavos; OR
+  2. Explicitly instruct the learner to round to the nearest centavo.
+- When rounding is explicitly required, solution_steps must show: exact result, then rounded result.
+- Example: "28.25 * 32.50 = 918.125; rounded to the nearest centavo = 918.13"
+- final_answer must then be "${PHP}918.13".
+` : '\n';
+
+  const mathPrintableBlock = isMath ? `
+
+MATH ANSWER-KEY INTEGRITY (this worksheet's subject is Math):
+- Before producing the HTML answer key, silently compute every problem step by step.
+- Independently verify every answer-key entry against the computation.
+- Prefer generated values whose exact monetary result has no more than two decimal places. Currency amounts must normally display exactly two decimal places.
+- Do not generate a final monetary result containing a fraction of a centavo without explicit rounding instructions. If an exact calculation produces more than two decimal places, either change the values so it lands on exact centavos, or explicitly instruct the learner to round to the nearest centavo.
+- Do not round unless the question explicitly requires it.
+- Never invent or alter a final result after completing the computation.
+- Do not expose solution_steps or hidden computations anywhere in the visible HTML output: only the final question and the final answer key entry should appear.
+` : '\n';
+
   let prompt;
   if (wsMode === 'interactive') {
     prompt = `You are an expert Filipino elementary school teacher and curriculum designer aligned with DepEd standards.
@@ -999,9 +1043,7 @@ CRITICAL: Respond with ONLY a valid JSON object. No markdown, no backticks, no e
   "directions": "short child-friendly directions here",
   "passage": "ONLY for Reading Comprehension: the complete story text here (3-6 short paragraphs, grade-appropriate). Omit this field for other activity types.",
   "questions": [
-    { "type": "multiple_choice", "question": "question text", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "answer": 0 },
-    { "type": "true_false", "question": "statement here", "answer": true },
-    { "type": "fill_blank", "question": "sentence with _____ for the blank", "answer": "correct word", "alternates": ["acceptable variation 1", "acceptable variation 2"] }
+${questionsArrayExample}
   ]
 }
 
@@ -1021,8 +1063,7 @@ LANGUAGE RULE:
 - Never write Math or Science questions fully in Filipino/Tagalog.
 - If subject is FILIPINO, ARALING PANLIPUNAN, or EPP: write EVERYTHING in Filipino/Tagalog \u2014 directions, questions, and choices.
 - If subject is GMRC / VALUES: write EVERYTHING in English \u2014 directions, questions, choices, and any answer labels. Do not use Filipino words like "Panuto" or "Iyong sagot" anywhere; the entire worksheet must read as one single, consistent English document.
-- If subject is MAPEH: use English as the base, Filipino terms welcome.
-
+- If subject is MAPEH: use English as the base, Filipino terms welcome.${mathIntegrityBlock}
 Output compact JSON (no unnecessary whitespace or newlines). If a token limit approaches, output fewer complete questions rather than incomplete JSON. The JSON must always be complete and parseable.`;
   } else {
     prompt = `You are an expert Filipino elementary school teacher and curriculum designer aligned with DepEd standards.
@@ -1053,8 +1094,7 @@ LANGUAGE RULE:
 - Never write Math or Science questions fully in Filipino/Tagalog.
 - If subject is FILIPINO, ARALING PANLIPUNAN, or EPP: write EVERYTHING in Filipino/Tagalog \u2014 directions (Panuto), questions, and choices. This matches how these subjects are taught in DepEd schools.
 - If subject is GMRC / VALUES: write EVERYTHING in English \u2014 directions, questions, choices, and the answer key labels. Do not use Filipino words like "Panuto" or "Iyong sagot" anywhere; the entire worksheet must read as one single, consistent English document.
-- If subject is MAPEH: use English as the base, but Filipino terms are welcome (e.g., Mga Larong Pinoy, wastong nutrisyon).
-
+- If subject is MAPEH: use English as the base, but Filipino terms are welcome (e.g., Mga Larong Pinoy, wastong nutrisyon).${mathPrintableBlock}
 CRITICAL INSTRUCTION: You may be working within a token limit. If you sense you are running out of space before finishing all items \u2014 STOP adding new items and immediately write the Answer Key section. A worksheet with fewer items but a complete Answer Key is far better than one with all items but no Answer Key. Never leave the Answer Key missing or incomplete.
 ${document.getElementById('dysgraphia').checked ? `
 DYSGRAPHIA-FRIENDLY MODE (active for this worksheet):
@@ -1089,7 +1129,7 @@ Use normal handwritten-answer formatting \u2014 standard blank lines for answers
       },
       body: JSON.stringify({
         prompt, subject, mode: wsMode,
-        grade, topic, difficulty, activity,
+        grade, topic, difficulty, activity, items,
         supportFlags: {
           dysgraphia: document.getElementById('dysgraphia').checked,
           simplified: document.getElementById('simplified').checked,
@@ -1114,9 +1154,16 @@ Use normal handwritten-answer formatting \u2014 standard blank lines for answers
     const wsTitle = `${subject} \u2014 ${topic} (${grade})`;
 
     if (wsMode === 'interactive') {
-      currentQuiz = parseQuizJson(text);
-      currentQuiz.subject = subject;
-      currentQuiz.activityType = activity;
+      // Math validation now happens server-side in generate.js, which only
+      // ever returns { result } for a Math worksheet after its own internal
+      // validate-then-retry-once has succeeded (see math-validation.js and
+      // the reservation RPCs). By the time we get here, content is already
+      // trustworthy -- no client-side re-validation or quota resync needed.
+      const quiz = parseQuizJson(text);
+      quiz.subject = subject;
+      quiz.activityType = activity;
+
+      currentQuiz = quiz;
       renderInteractive(currentQuiz);
       await saveWorksheet(wsTitle, grade, subject, topic, JSON.stringify(currentQuiz), 'interactive');
       currentUsageCount++; renderQuota();
