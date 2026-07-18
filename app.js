@@ -694,24 +694,48 @@ function buildPrintableMathHtml(quiz, opts) {
   html += `<hr>`;
 
   (quiz.questions || []).forEach((q, i) => {
+    // Dysgraphia mode: wrap each question in its own spacious, clearly
+    // bordered block -- matching the "clear sections / generous spacing /
+    // strong visual break between every item" intent that the freehand
+    // dysgraphia prompt already asks for on every other Printable subject
+    // (see the DYSGRAPHIA-FRIENDLY MODE block below), but guaranteed
+    // deterministically here since Math no longer asks the model to lay
+    // out its own printable HTML at all. Standard mode is untouched --
+    // this block only ever opens/closes when dysgraphia is true.
+    if (dysgraphia) {
+      // break-inside/page-break-inside: avoid keeps a whole question (text,
+      // choices or work area, and Final Answer box) from being split across
+      // a page boundary when printed -- these are the only two properties
+      // that matter for print pagination across current browser engines.
+      html += `<div class="dysgraphia-item" style="border:2px solid var(--mint); border-radius:12px; padding:18px 22px; margin-bottom:24px; font-size:1.15em; line-height:1.9; break-inside:avoid; page-break-inside:avoid;">`;
+    }
+
     html += `<p><strong>${i + 1}.</strong> ${escapeHtml(q.question || '')}</p>`;
 
     if (isMultipleChoice && q.type === 'multiple_choice' && Array.isArray(q.choices)) {
       if (dysgraphia) {
-        html += `<p style="font-size:1.1em;">` +
-          q.choices.map((c, ci) => `&#9744; ${String.fromCharCode(65 + ci)}. ${escapeHtml(c)}`).join('&nbsp;&nbsp;&nbsp;') +
-          `</p>`;
+        // Each choice on its own line inside a spacious checkbox area,
+        // not compressed onto one inline row like standard mode. The
+        // wrapper itself carries its own spacing (not just its <p>
+        // children) so the class is never a bare, unstyled hook.
+        html += `<div class="dysgraphia-choices" style="margin-top:8px;">` +
+          q.choices.map((c, ci) => `<p style="margin:10px 0; font-size:1.05em;">&#9744; ${String.fromCharCode(65 + ci)}. ${escapeHtml(c)}</p>`).join('') +
+          `</div>`;
       } else {
         html += `<p>` +
           q.choices.map((c, ci) => `${String.fromCharCode(65 + ci)}. ${escapeHtml(c)}`).join('&nbsp;&nbsp;&nbsp;&nbsp;') +
           `</p>`;
       }
     } else if (dysgraphia) {
-      html += `<p style="line-height:2.4;">Show your work:<br>_______________________________________________<br>_______________________________________________</p>`;
-      html += `<p><strong>Final Answer:</strong> ______________________</p>`;
+      html += `<p style="line-height:2.4; margin-top:14px;">Show your work:<br>_______________________________________________<br>_______________________________________________</p>`;
+      html += `<div class="dysgraphia-final-answer" style="border:2px dashed var(--teal); border-radius:8px; padding:12px 18px; margin-top:14px; display:inline-block;"><strong>Final Answer:</strong> ______________________</div>`;
     } else {
       html += `<p>Show your work:<br>_______________________________________________</p>`;
       html += `<p>Answer: ______________________</p>`;
+    }
+
+    if (dysgraphia) {
+      html += `</div>`;
     }
   });
 
