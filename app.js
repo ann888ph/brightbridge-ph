@@ -666,6 +666,64 @@ function showPrintable(html) {
   document.getElementById('outputTitle').textContent = '\uD83D\uDCC4 Your Generated Worksheet';
 }
 
+// Builds printable Math worksheet HTML directly from server-validated JSON
+// (validation is server-authoritative in generate.js -- see math-validation.js).
+// Renders into the same .worksheet-output container/CSS every other
+// printable subject uses, so print/PDF layout stays consistent.
+//
+// Per product decision: printable Math keeps its open-response worksheet
+// feel by default. The underlying JSON is always multiple_choice (V1
+// restriction, needed for validation), but A/B/C/D choices are only shown
+// on the printed page when the learner actually picked a Multiple Choice
+// Quiz activity -- otherwise this renders a work-space + answer blank, and
+// the choices stay internal-only. The answer key always comes from
+// final_answer, and solution_steps is never read here, so neither a wrong
+// key nor leaked self-correction narration can reach the page.
+function buildPrintableMathHtml(quiz, opts) {
+  const dysgraphia = !!(opts && opts.dysgraphia);
+  const isMultipleChoice = !!(opts && opts.isMultipleChoice);
+
+  let html = `<h1>${escapeHtml(quiz.title || 'Math Worksheet')}</h1>`;
+  html += `<p>Name: _______________&nbsp;&nbsp;&nbsp;&nbsp;Date: _______________&nbsp;&nbsp;&nbsp;&nbsp;Score: ______</p>`;
+  if (quiz.directions) {
+    html += `<p><strong>Directions:</strong> ${escapeHtml(quiz.directions)}</p>`;
+  }
+  if (typeof quiz.passage === 'string' && quiz.passage.trim().length > 0) {
+    html += `<div style="background:var(--mint); border-radius:10px; padding:14px 18px; margin:14px 0;"><strong>Story:</strong><br>${escapeHtml(quiz.passage)}</div>`;
+  }
+  html += `<hr>`;
+
+  (quiz.questions || []).forEach((q, i) => {
+    html += `<p><strong>${i + 1}.</strong> ${escapeHtml(q.question || '')}</p>`;
+
+    if (isMultipleChoice && q.type === 'multiple_choice' && Array.isArray(q.choices)) {
+      if (dysgraphia) {
+        html += `<p style="font-size:1.1em;">` +
+          q.choices.map((c, ci) => `&#9744; ${String.fromCharCode(65 + ci)}. ${escapeHtml(c)}`).join('&nbsp;&nbsp;&nbsp;') +
+          `</p>`;
+      } else {
+        html += `<p>` +
+          q.choices.map((c, ci) => `${String.fromCharCode(65 + ci)}. ${escapeHtml(c)}`).join('&nbsp;&nbsp;&nbsp;&nbsp;') +
+          `</p>`;
+      }
+    } else if (dysgraphia) {
+      html += `<p style="line-height:2.4;">Show your work:<br>_______________________________________________<br>_______________________________________________</p>`;
+      html += `<p><strong>Final Answer:</strong> ______________________</p>`;
+    } else {
+      html += `<p>Show your work:<br>_______________________________________________</p>`;
+      html += `<p>Answer: ______________________</p>`;
+    }
+  });
+
+  html += `<div class="answer-key"><strong>Answer Key</strong><br>`;
+  html += (quiz.questions || [])
+    .map((q, i) => `${i + 1}. ${escapeHtml(q.final_answer != null ? String(q.final_answer) : '')}`)
+    .join('<br>');
+  html += `</div>`;
+
+  return html;
+}
+
 function renderInteractive(quiz) {
   userAnswers = {};
   document.getElementById('worksheetOutput').style.display = 'none';
@@ -947,16 +1005,6 @@ async function generateWorksheet() {
     return;
   }
 
-  // TEMPORARY CONTAINMENT (see recon notes): Printable Math has no
-  // structured answer-key validation yet -- server-side blocks this too,
-  // this is just instant client-side feedback so nothing is wasted on a
-  // request the server will refuse anyway. Scoped to Math+printable only;
-  // every other Printable subject is unaffected.
-  if (subject === 'Math' && wsMode === 'printable') {
-    showError('Printable Math worksheets are temporarily unavailable while we fix an answer-key accuracy issue. Please try Math in Interactive mode, or choose Printable for another subject. \uD83C\uDF3F');
-    return;
-  }
-
   const supports = [];
   if (document.getElementById('dysgraphia').checked) supports.push('Dysgraphia-Friendly Format (use large answer spaces, clear lines)');
   if (document.getElementById('simplified').checked) supports.push('Simplified Instructions (use very short and easy-to-understand directions)');
@@ -1022,23 +1070,20 @@ CURRENCY RULES:
 - final_answer must then be "${PHP}918.13".
 ` : '\n';
 
-  const mathPrintableBlock = isMath ? `
-
-MATH ANSWER-KEY INTEGRITY (this worksheet's subject is Math):
-- Before producing the HTML answer key, silently compute every problem step by step.
-- Independently verify every answer-key entry against the computation.
-- Prefer generated values whose exact monetary result has no more than two decimal places. Currency amounts must normally display exactly two decimal places.
-- Do not generate a final monetary result containing a fraction of a centavo without explicit rounding instructions. If an exact calculation produces more than two decimal places, either change the values so it lands on exact centavos, or explicitly instruct the learner to round to the nearest centavo.
-- Do not round unless the question explicitly requires it.
-- Never invent or alter a final result after completing the computation.
-- Do not expose solution_steps or hidden computations anywhere in the visible HTML output: only the final question and the final answer key entry should appear.
-` : '\n';
+  // Math never asks the model to freehand printable HTML (that was the root
+  // cause of the wrong-answer-key / leaked-narration bug): both modes
+  // request the identical structured JSON below, which generate.js
+  // validates identically either way. Only rendering differs -- interactive
+  // renders it as clickable questions, printable builds clean worksheet
+  // HTML from it client-side via buildPrintableMathHtml(), sourcing the
+  // answer key strictly from each question's final_answer.
+  const useStructuredJsonPrompt = wsMode === 'interactive' || isMath;
 
   let prompt;
-  if (wsMode === 'interactive') {
+  if (useStructuredJsonPrompt) {
     prompt = `You are an expert Filipino elementary school teacher and curriculum designer aligned with DepEd standards.
 
-Create an INTERACTIVE ${activity} for the following:
+Create a${wsMode === 'interactive' ? 'n INTERACTIVE' : ''} ${activity} for the following:
 - Grade Level: ${grade}\n- Quarter: ${quarter} (align content to DepEd MATATAG curriculum for this quarter)
 - Subject: ${subject}
 - Topic: ${topic}
@@ -1104,7 +1149,8 @@ LANGUAGE RULE:
 - Never write Math or Science questions fully in Filipino/Tagalog.
 - If subject is FILIPINO, ARALING PANLIPUNAN, or EPP: write EVERYTHING in Filipino/Tagalog \u2014 directions (Panuto), questions, and choices. This matches how these subjects are taught in DepEd schools.
 - If subject is GMRC / VALUES: write EVERYTHING in English \u2014 directions, questions, choices, and the answer key labels. Do not use Filipino words like "Panuto" or "Iyong sagot" anywhere; the entire worksheet must read as one single, consistent English document.
-- If subject is MAPEH: use English as the base, but Filipino terms are welcome (e.g., Mga Larong Pinoy, wastong nutrisyon).${mathPrintableBlock}
+- If subject is MAPEH: use English as the base, but Filipino terms are welcome (e.g., Mga Larong Pinoy, wastong nutrisyon).
+
 CRITICAL INSTRUCTION: You may be working within a token limit. If you sense you are running out of space before finishing all items \u2014 STOP adding new items and immediately write the Answer Key section. A worksheet with fewer items but a complete Answer Key is far better than one with all items but no Answer Key. Never leave the Answer Key missing or incomplete.
 ${document.getElementById('dysgraphia').checked ? `
 DYSGRAPHIA-FRIENDLY MODE (active for this worksheet):
@@ -1163,19 +1209,39 @@ Use normal handwritten-answer formatting \u2014 standard blank lines for answers
 
     const wsTitle = `${subject} \u2014 ${topic} (${grade})`;
 
-    if (wsMode === 'interactive') {
+    if (wsMode === 'interactive' || isMath) {
       // Math validation now happens server-side in generate.js, which only
       // ever returns { result } for a Math worksheet after its own internal
       // validate-then-retry-once has succeeded (see math-validation.js and
       // the reservation RPCs). By the time we get here, content is already
       // trustworthy -- no client-side re-validation or quota resync needed.
+      // For Math this is now true regardless of mode, since generate.js
+      // always returns the same structured JSON for Math.
       const quiz = parseQuizJson(text);
       quiz.subject = subject;
       quiz.activityType = activity;
 
-      currentQuiz = quiz;
-      renderInteractive(currentQuiz);
-      await saveWorksheet(wsTitle, grade, subject, topic, JSON.stringify(currentQuiz), 'interactive');
+      if (wsMode === 'interactive') {
+        currentQuiz = quiz;
+        renderInteractive(currentQuiz);
+        await saveWorksheet(wsTitle, grade, subject, topic, JSON.stringify(currentQuiz), 'interactive');
+      } else {
+        // isMath && printable: build the printable HTML ourselves from the
+        // validated JSON instead of asking the model to freehand it. The
+        // answer key is sourced strictly from each question's final_answer
+        // -- never a model-authored HTML section -- and solution_steps is
+        // never read here, so it has no path into the rendered worksheet.
+        const html = buildPrintableMathHtml(quiz, {
+          dysgraphia: document.getElementById('dysgraphia').checked,
+          // Exact match against the literal <option> value in index.html's
+          // #activity dropdown -- not a substring/regex test -- so this can
+          // never be tripped by an unrelated activity name that happens to
+          // contain the words "multiple" or "choice".
+          isMultipleChoice: activity === 'Multiple Choice Quiz'
+        });
+        showPrintable(html);
+        await saveWorksheet(wsTitle, grade, subject, topic, html, 'printable');
+      }
       currentUsageCount++; renderQuota();
     } else {
       showPrintable(text);
