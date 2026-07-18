@@ -1,8 +1,10 @@
 // netlify/functions/generate.js
 // BrightBridge PH - worksheet generation with SERVER-SIDE quota enforcement,
 // an independent provider-attempt safety ceiling, and server-authoritative
-// Math validation (Math + interactive mode only). Quota and attempt
-// accounting go through atomic Postgres RPCs (see the accompanying
+// Math validation (Math subject, both interactive and printable mode --
+// app.js always requests the same structured JSON for Math regardless of
+// mode, so this file validates it identically either way). Quota and
+// attempt accounting go through atomic Postgres RPCs (see the accompanying
 // migration) so concurrent requests can never double-book the same quota
 // slot or silently exceed the attempt ceiling.
 //
@@ -82,22 +84,6 @@ exports.handler = async (event) => {
   const parsedItemCount = Number.parseInt(items, 10);
   if (!ALLOWED_ITEM_COUNTS.includes(parsedItemCount)) {
     return json(400, { error: "Invalid item count." });
-  }
-
-  // TEMPORARY CONTAINMENT (see recon notes): Printable Math asks the model
-  // to freehand final HTML directly, with no structured validation of the
-  // answer key at all -- confirmed capable of shipping a wrong answer key
-  // and leaking raw self-correction narration into the visible worksheet.
-  // Blocked here, before any quota reservation or Anthropic call, so it
-  // costs the user nothing. Scoped to subject+mode exactly, so every other
-  // Printable subject (English, Science, Filipino, etc.) is unaffected.
-  // Remove this block once Printable Math is routed through the same
-  // structured-JSON + validateMathQuestions path Interactive Math already
-  // uses.
-  if (subject === "Math" && mode === "printable") {
-    return json(503, {
-      error: "Printable Math worksheets are temporarily unavailable while we fix an answer-key accuracy issue. Please try Math in Interactive mode, or choose Printable for another subject."
-    });
   }
 
   // ---------- 3. LOAD PLAN + CYCLE START (service role bypasses RLS) ----------
@@ -249,7 +235,7 @@ exports.handler = async (event) => {
     return res.ok;
   }
 
-  const isMathInteractive = subject === "Math" && mode === "interactive";
+  const isMathStructured = subject === "Math";
 
   try {
     let attempt = await callAnthropicOnce();
@@ -261,11 +247,10 @@ exports.handler = async (event) => {
       return json(502, { error: attempt.error });
     }
 
-    if (!isMathInteractive) {
-      // Every other subject/mode: unchanged end-user behavior -- one call,
-      // one chargeable row -- just routed through the same atomic
-      // reservation the quota-race fix requires for every request, Math or
-      // not.
+    if (!isMathStructured) {
+      // Every other subject: unchanged end-user behavior -- one call, one
+      // chargeable row -- just routed through the same atomic reservation
+      // the quota-race fix requires for every request, Math or not.
       const fin = await finalizeValidated(sumInputTokens, sumOutputTokens);
       if (!fin.ok || !fin.row || !fin.row.finalized) {
         // Per item 3: never return content whose chargeable record we
@@ -275,7 +260,9 @@ exports.handler = async (event) => {
       return json(200, { result: attempt.text });
     }
 
-    // ---- Math + interactive only, from here down ----
+    // ---- Math (interactive AND printable) from here down. app.js always ----
+    // requests the same structured JSON for Math regardless of mode, so
+    // there is nothing mode-specific left to branch on here.
     function tryValidate(rawText) {
       try {
         const quiz = parseQuizJson(rawText);
