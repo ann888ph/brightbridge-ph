@@ -141,9 +141,28 @@
     <div class="grid-3 settings-row">
       <div class="field">
         <label>Topic / Lesson</label>
-        <select id="topic">
+        <select id="topic" onchange="onCatalogTopicSelected()">
           <option value="">Select Topic</option>
         </select>
+        <button type="button" class="topic-link-btn" id="showCustomTopicBtn" onclick="showCustomTopicInput()">Can't find your topic? Type a custom topic</button>
+
+        <div class="custom-topic-block" id="customTopicBlock" style="display:none;">
+          <label for="customTopicInput" style="font-size:12px; font-weight:700; color:var(--muted-dark); text-transform:uppercase; letter-spacing:1px;">Custom topic</label>
+          <input type="text" id="customTopicInput" placeholder="Fractions using Filipino recipes" oninput="onCustomTopicInput()" aria-describedby="customTopicHelp" maxlength="150" />
+          <div class="custom-topic-help" id="customTopicHelp">We'll keep it appropriate for the selected grade level and subject.</div>
+          <ul class="custom-topic-suggestions" id="customTopicSuggestions" role="listbox" aria-label="Matching catalog topics"></ul>
+          <div id="customTopicUseRow" style="display:none;">
+            <button type="button" class="custom-topic-use-btn" id="useCustomTopicBtn" onclick="useCustomTopic()"></button>
+          </div>
+          <div class="custom-topic-error" id="customTopicError" role="alert" style="display:none;"></div>
+          <button type="button" class="topic-link-btn" id="backToTopicListBtn" onclick="hideCustomTopicInput()">&larr; Back to topic list</button>
+        </div>
+
+        <div class="custom-topic-block" id="customTopicActiveRow" style="display:none;">
+          <span class="custom-topic-source-badge">Custom Topic</span>
+          <div><strong>Using:</strong> <span id="customTopicActiveText"></span></div>
+          <button type="button" class="topic-link-btn" onclick="showCustomTopicInput()">Change custom topic</button>
+        </div>
       </div>
       <div class="field">
         <label>Activity Type</label>
@@ -321,6 +340,7 @@
 </footer>
 
 <script src="math-validation.js"></script>
+<script src="topic-validation.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

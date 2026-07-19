@@ -128,6 +128,99 @@
   .check-item span { font-size: 14px; font-weight: 600; color: var(--text); }
   .check-item small { font-size: 11px; color: var(--muted-dark); margin-left: auto; }
 
+  /* ===== Custom Topic (searchable catalog + free-text fallback) ===== */
+  .topic-link-btn {
+    background: none;
+    border: none;
+    padding: 2px 0;
+    margin-top: 4px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--teal);
+    text-decoration: underline;
+    cursor: pointer;
+    text-align: left;
+    width: fit-content;
+  }
+  .topic-link-btn:hover { color: var(--teal-dark); }
+  .topic-link-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-radius: 4px; }
+
+  .custom-topic-block {
+    margin-top: 10px;
+    padding: 14px 16px;
+    background: var(--warm);
+    border: 2px dashed var(--mint);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .custom-topic-block input[type="text"] {
+    background-image: none;
+    padding-right: 14px;
+  }
+  .custom-topic-help { font-size: 11px; color: var(--muted-dark); }
+  .custom-topic-source-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--teal-dark);
+    background: var(--mint);
+    padding: 2px 8px;
+    border-radius: 20px;
+    width: fit-content;
+  }
+
+  .custom-topic-suggestions {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .custom-topic-suggestions li { margin: 0; }
+  .custom-topic-suggestion-btn {
+    width: 100%;
+    text-align: left;
+    background: white;
+    border: 2px solid var(--mint);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color 0.2s var(--ease-out), background 0.2s var(--ease-out);
+  }
+  .custom-topic-suggestion-btn:hover,
+  .custom-topic-suggestion-btn:focus-visible { border-color: var(--teal); background: var(--mint); }
+
+  .custom-topic-use-btn {
+    width: fit-content;
+    background: var(--mint);
+    border: 2px solid var(--teal);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--teal-dark);
+    cursor: pointer;
+    transition: background 0.2s var(--ease-out);
+  }
+  .custom-topic-use-btn:hover { background: var(--teal); color: white; }
+  .custom-topic-use-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .custom-topic-error {
+    font-size: 12px;
+    font-weight: 600;
+    color: #b91c1c;
+  }
+
   .btn-generate {
     width: 100%;
     padding: 16px;
