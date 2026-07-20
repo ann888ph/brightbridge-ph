@@ -547,7 +547,7 @@ const FINALIZE_OK_LOCAL = () => jsonResponse(200, [{ finalized: true, reason: nu
     const captured = {};
     const mock = makeMockFetch([AUTH_OK, PROFILE_OK, RESERVE_OK_LOCAL(), () => jsonResponse(200, {}), capturePromptMatcher(captured, makeValidMatchingQuiz(5)), FINALIZE_OK_LOCAL]);
     await invoke(mock, { bodyOverrides: { subject: 'Math', mode: 'printable', activity: 'Matching Type', items: '5' } });
-    assert(/distinguishable from every other question/.test(captured.content), 'expected the Matching Type uniqueness requirement restated in the server-owned policy');
+    assert(/mathematically equivalent/.test(captured.content), 'expected the Matching Type uniqueness requirement restated in the server-owned policy');
   });
 
   await run('POLICY: Printable Multiple Choice Quiz (Math) does NOT get the open_response policy block', async () => {

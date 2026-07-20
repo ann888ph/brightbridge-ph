@@ -921,6 +921,61 @@ const MATH_PARENT_TUTOR_GUIDE_ITEMS = [
   "Let the learner explain the answer in their own words."
 ];
 
+// Renderer-owned, static, non-numeric fallback shown when NO validated
+// evidence sentence can be displayed at all (see buildMathReadingComprehensionFacts
+// below) -- this should never happen for a newly generated worksheet, since
+// server validation already requires every passage_evidence to exactly
+// match a complete passage sentence before delivery. It exists purely to
+// fail closed on a historical/malformed saved worksheet, rather than ever
+// falling back to unvalidated text.
+const MATH_RC_FACTS_UNAVAILABLE_MESSAGE = 'Validated story facts are unavailable for this saved worksheet.';
+
+// Reconstructs the DISPLAYED Reading Comprehension passage from ONLY the
+// validated passage_evidence sentences a question actually cited -- never
+// the model's full freehand `quiz.passage` text verbatim. quiz.passage
+// stays in the schema/validator unchanged (still required non-empty, still
+// the anti-fabrication source every passage_evidence must exactly match a
+// complete sentence of -- see math-validation.js), but the renderer ignores
+// it directly: any extra, unreferenced, or internally-contradictory
+// sentences the model padded the passage with are simply never shown.
+//
+// FAILS CLOSED: only a passage_evidence value that exactly matches (after
+// normalization) a real sentence extracted from quiz.passage is ever
+// displayed, and it is always the ORIGINAL sentence text as it appears in
+// quiz.passage (never passage_evidence's own copy, even though they must be
+// normalization-equal by validation). A newly generated worksheet should
+// never hit the "no match" case at all -- server validation already
+// requires this exact match before delivery -- but a HISTORICAL or
+// malformed saved worksheet (predating this rule, or hand-edited) might.
+// In that case the unmatched evidence is silently skipped, never displayed
+// in any form (not even escaped); one unmatched item never prevents other,
+// validly-matched facts from still rendering; if NONE match, the caller
+// shows only the static MATH_RC_FACTS_UNAVAILABLE_MESSAGE instead. Matched
+// sentences are deduplicated (by normalized text), preserving first-
+// question-citing order.
+function buildMathReadingComprehensionFacts(quiz) {
+  const passageSentences = window.MathValidation.extractSentences(quiz.passage || '');
+  const sentenceByNormalized = new Map();
+  passageSentences.forEach((s) => {
+    const key = window.MathValidation.normalizeEvidenceText(s);
+    if (!sentenceByNormalized.has(key)) sentenceByNormalized.set(key, s);
+  });
+
+  const seen = new Set();
+  const facts = [];
+  (quiz.questions || []).forEach((q) => {
+    const evidence = typeof q.passage_evidence === 'string' ? q.passage_evidence.trim() : '';
+    if (!evidence) return;
+    const key = window.MathValidation.normalizeEvidenceText(evidence);
+    const matchedSentence = sentenceByNormalized.get(key);
+    if (!matchedSentence) return; // fail closed: never display unmatched/unvalidated evidence text
+    if (seen.has(key)) return;
+    seen.add(key);
+    facts.push(matchedSentence);
+  });
+  return facts;
+}
+
 // Builds printable Math worksheet HTML directly from server-validated JSON
 // (validation is server-authoritative in generate.js -- see math-validation.js).
 // Renders into the same .worksheet-output container/CSS every other
@@ -940,27 +995,43 @@ function buildPrintableMathHtml(quiz, opts) {
   const activity = (opts && opts.activity) || '';
   const isMatchingType = activity === 'Matching Type';
   const isParentTutor = activity === 'Parent/Tutor Support Sheet';
+  const isReadingComprehension = activity === 'Reading Comprehension';
   const directions = MATH_DIRECTIONS_BY_ACTIVITY[activity] || MATH_DIRECTIONS_BY_ACTIVITY['Worksheet'];
 
   let html = `<h1>${escapeHtml(quiz.title || 'Math Worksheet')}</h1>`;
   html += `<p>Name: _______________&nbsp;&nbsp;&nbsp;&nbsp;Date: _______________&nbsp;&nbsp;&nbsp;&nbsp;Score: ______</p>`;
   html += `<p><strong>Directions:</strong> ${escapeHtml(directions)}</p>`;
-  if (typeof quiz.passage === 'string' && quiz.passage.trim().length > 0) {
-    html += `<div style="background:var(--mint); border-radius:10px; padding:14px 18px; margin:14px 0;"><strong>Story:</strong><br>${escapeHtml(quiz.passage)}</div>`;
+  if (isReadingComprehension) {
+    const facts = buildMathReadingComprehensionFacts(quiz);
+    html += `<div style="background:var(--mint); border-radius:10px; padding:14px 18px; margin:14px 0;"><strong>Math Story Facts:</strong>` +
+      (facts.length > 0
+        ? `<ul style="margin:8px 0 0 20px; padding:0;">` + facts.map((s) => `<li style="margin-bottom:6px;">${escapeHtml(s)}</li>`).join('') + `</ul>`
+        : `<p style="margin:8px 0 0 0;">${escapeHtml(MATH_RC_FACTS_UNAVAILABLE_MESSAGE)}</p>`) +
+      `</div>`;
   }
   html += `<hr>`;
 
   const questions = quiz.questions || [];
 
-  // Matching Type answer bank: built ONLY from validated final_answer
-  // values -- open_response questions carry no choices array at all, so
-  // there is nothing else to build it from, structurally. Reordered by a
-  // fixed left-rotate-by-one (never a sort, which could coincidentally
-  // reproduce question order): [A1,A2,A3,A4,A5] -> [A2,A3,A4,A5,A1].
+  // Matching Type answer bank: built ONLY from each question's EXTRACTED
+  // primary numeric token (e.g. "15" out of "15 marbles"), never the raw
+  // final_answer string -- so the bank can never leak a context noun the
+  // learner could match by ("marbles"/"fruits"/"seashells") instead of
+  // solving the Math, and two answers that are the same underlying value
+  // (validated as pairwise-distinct by generate.js) display identically no
+  // matter what surrounding words the model used. Falls back to the raw
+  // final_answer text only if extraction fails (defensive: a historical
+  // saved worksheet from before this per-question single-token rule
+  // existed) -- never crashes on replay. Reordered by a fixed
+  // left-rotate-by-one (never a sort, which could coincidentally reproduce
+  // question order): [A1,A2,A3,A4,A5] -> [A2,A3,A4,A5,A1].
   let matchingLetterForIndex = null;
   let matchingBankHtml = '';
   if (isMatchingType) {
-    const finalAnswers = questions.map(q => q.final_answer);
+    const finalAnswers = questions.map((q) => {
+      const token = window.MathValidation.extractPrimaryNumericToken(q.final_answer);
+      return token ? token.raw : (q.final_answer != null ? String(q.final_answer) : '');
+    });
     const bank = finalAnswers.length > 1
       ? finalAnswers.slice(1).concat(finalAnswers.slice(0, 1))
       : finalAnswers.slice();
@@ -1379,7 +1450,7 @@ async function generateWorksheet() {
   // shape nothing ever reads. Gains "passage_evidence" only for Reading
   // Comprehension (see math-validation.js's evidence-linkage validation).
   const mathOpenResponseExampleLine = (isMath && !mathProfile.requiresMultipleChoice)
-    ? `{ "type": "open_response", "question": "question text", "solution_steps": "concise semicolon-separated arithmetic, e.g. 2.5 * 45.50 = 113.75; 200 - 113.75 = 86.25", "final_answer": "the complete final answer including any currency symbol, percent sign, fraction, or unit, e.g. ${PHP}86.25"${mathProfile.isPrintableReadingComprehension ? ', "passage_evidence": "an exact short excerpt or fact copied verbatim from the passage that this question depends on, containing at least one number used in the question or solution_steps"' : ''} }`
+    ? `{ "type": "open_response", "question": "question text", "solution_steps": "concise semicolon-separated arithmetic, e.g. 2.5 * 45.50 = 113.75; 200 - 113.75 = 86.25", "final_answer": "the complete final answer including any currency symbol, percent sign, fraction, or unit, e.g. ${PHP}86.25"${mathProfile.isPrintableReadingComprehension ? ', "passage_evidence": "one COMPLETE sentence copied verbatim from the passage field (not a fragment or phrase) that this question depends on, containing at least one number used in the question or solution_steps"' : ''} }`
     : '';
 
   // V1: Math worksheets use exactly one schema shape per the profile above
@@ -1400,8 +1471,8 @@ async function generateWorksheet() {
 - Distractors must represent plausible student errors.
 - No distractor may equal the correct answer after normalization.` : `
 - Every question in this worksheet MUST be type "open_response". Do NOT include a "choices" field or an "answer" field -- they will never be shown to the learner and are not requested.${mathProfile.isPrintableReadingComprehension ? `
-- This is a Reading Comprehension activity: every question MUST also include a "passage_evidence" field that is an exact, verbatim excerpt copied from the "passage" field, containing at least one number actually used in that question or its solution_steps. Do not fabricate an excerpt that does not appear in the passage, and do not include an excerpt whose numbers are never used.` : ''}${mathProfile.isPrintableMatchingType ? `
-- This is a Matching Type activity: every question's final_answer MUST be numerically and textually distinguishable from every other question's final_answer in this worksheet. Do not generate two problems whose final answers are the same or mathematically equivalent (e.g. "0.75" and "3/4").` : ''}`);
+- This is a Reading Comprehension activity: every question MUST also include a "passage_evidence" field that is one COMPLETE, verbatim sentence copied from the "passage" field -- not a fragment, not a phrase, not a paraphrase -- containing at least one number actually used in that question or its solution_steps. Do not fabricate a sentence that does not appear in the passage, and do not include a sentence whose numbers are never used.` : ''}${mathProfile.isPrintableMatchingType ? `
+- This is a Matching Type activity: every question's final_answer MUST contain exactly ONE clear numeric value (a single number, currency amount, fraction, mixed number, or percentage) and no other numbers. Do not generate two problems whose numeric values are the same or mathematically equivalent (e.g. "15" and "15", or "0.75" and "3/4") even if you word them with different objects or units (e.g. "15 marbles" and "15 fruits" are still duplicates -- the words do not make them distinguishable).` : ''}`);
 
   const mathIntegrityBlock = isMath ? `
 

@@ -220,12 +220,12 @@ SERVER-ENFORCED MATH ACTIVITY SCHEMA POLICY (authoritative -- appended by the se
 
     if (mathActivityProfile.isPrintableReadingComprehension) {
       mathActivityPolicy += `
-- This is a Reading Comprehension activity: every question MUST also include a "passage_evidence" field that is an exact, verbatim excerpt copied from the "passage" field, and that excerpt must contain at least one number actually used in that question or its solution_steps. Do not fabricate an excerpt that does not appear in the passage, and do not include an excerpt whose numbers are never used.`;
+- This is a Reading Comprehension activity: every question MUST also include a "passage_evidence" field that is one COMPLETE, verbatim sentence copied from the "passage" field -- not a fragment, not a phrase, not a paraphrase -- and that sentence must contain at least one number actually used in that question or its solution_steps. Do not fabricate a sentence that does not appear in the passage, and do not include a sentence whose numbers are never used.`;
     }
 
     if (mathActivityProfile.isPrintableMatchingType) {
       mathActivityPolicy += `
-- This is a Matching Type activity: every question's final_answer MUST be numerically and textually distinguishable from every other question's final_answer in this worksheet. Do not generate two problems whose final answers are the same or mathematically equivalent (e.g. "0.75" and "3/4").`;
+- This is a Matching Type activity: every question's final_answer MUST contain exactly ONE clear numeric value (a single number, currency amount, fraction, mixed number, or percentage) and no other numbers. Do not generate two problems whose numeric values are the same or mathematically equivalent (e.g. "15" and "15", or "0.75" and "3/4") even if worded with different objects or units -- "15 marbles" and "15 fruits" are still duplicates.`;
     }
 
     effectivePrompt = effectivePrompt + mathActivityPolicy;

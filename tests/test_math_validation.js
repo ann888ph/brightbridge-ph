@@ -6,7 +6,7 @@ const path = require('path');
 const sandbox = require(path.join(__dirname, '..', 'math-validation.js'));
 const { run } = require('./helpers/run.js');
 
-const { safeEvalArithmetic, getMathActivityProfile, extractAllNumericTokens, normalizeEvidenceText } = sandbox;
+const { safeEvalArithmetic, getMathActivityProfile, extractAllNumericTokens, normalizeEvidenceText, extractPrimaryNumericToken } = sandbox;
 
 // Every test ABOVE this point in the file (unchanged from before the
 // Printable-Activity-Type rework) exercises the ORIGINAL V1 behavior: every
@@ -559,9 +559,14 @@ run('Open-response profile: broken arithmetic still fails (correctness validatio
 });
 
 // =====================================================================
-// REV 4: Reading Comprehension evidence linkage (Printable only)
+// REV 4/5: Reading Comprehension evidence linkage (Printable only)
+// passage_evidence must now exactly match one COMPLETE sentence in
+// quiz.passage -- a substring/fragment is no longer sufficient, even if it
+// genuinely appears somewhere in the passage text.
 // =====================================================================
-const RC_PASSAGE = 'Nena has 1/2 cup of sugar and 2 cups of flour for her recipe.';
+const RC_SENTENCE_1 = 'Nena has 1/2 cup of sugar and 2 cups of flour for her recipe.';
+const RC_SENTENCE_2 = 'She also owns 2 cups of milk.';
+const RC_PASSAGE = RC_SENTENCE_1 + ' ' + RC_SENTENCE_2;
 
 function rcQuestion(overrides) {
   return Object.assign({
@@ -569,27 +574,35 @@ function rcQuestion(overrides) {
     question: 'How much sugar does Nena have, in decimal form?',
     solution_steps: '1/2 = 0.5',
     final_answer: '0.5',
-    passage_evidence: '1/2 cup of sugar'
+    passage_evidence: RC_SENTENCE_1
   }, overrides);
 }
 
-run('Reading Comprehension: valid evidence (real excerpt, number used in solution_steps) passes', () => {
+run('Reading Comprehension: a complete matching sentence (number used in solution_steps) passes', () => {
   const quiz = { passage: RC_PASSAGE, questions: [rcQuestion()] };
   const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
   if (!v.ok) throw new Error('expected ok, got: ' + JSON.stringify(v.failures));
 });
 
-run('Reading Comprehension: fabricated evidence (not found in passage) fails', () => {
-  const quiz = { passage: RC_PASSAGE, questions: [rcQuestion({ passage_evidence: 'Nena has 10 apples' })] };
+run('Reading Comprehension: a substring fragment of a real sentence FAILS (not itself a complete sentence)', () => {
+  // "1/2 cup of sugar" genuinely appears inside RC_SENTENCE_1, but it is a
+  // fragment, not the complete sentence -- must fail under the new rule.
+  const quiz = { passage: RC_PASSAGE, questions: [rcQuestion({ passage_evidence: '1/2 cup of sugar' })] };
   const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
-  if (v.ok) throw new Error('expected failure: passage_evidence text does not appear in the passage');
+  if (v.ok) throw new Error('expected failure: passage_evidence is a substring fragment, not a complete passage sentence');
 });
 
-run('Reading Comprehension: evidence found in passage but numerically unused fails', () => {
-  // "2 cups of flour" is a real excerpt, but neither 2 nor anything else in
-  // it is used by this question's text or solution_steps (which are both
-  // about 0.5).
-  const quiz = { passage: RC_PASSAGE, questions: [rcQuestion({ passage_evidence: '2 cups of flour' })] };
+run('Reading Comprehension: a fabricated sentence (not in the passage at all) fails', () => {
+  const quiz = { passage: RC_PASSAGE, questions: [rcQuestion({ passage_evidence: 'Nena has 10 apples.' })] };
+  const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
+  if (v.ok) throw new Error('expected failure: passage_evidence sentence does not appear in the passage');
+});
+
+run('Reading Comprehension: a complete sentence that is numerically unused fails', () => {
+  // RC_SENTENCE_2 is a real, complete sentence in the passage, but neither
+  // 2 nor anything else in it is used by this question's text or
+  // solution_steps (which are both about 0.5).
+  const quiz = { passage: RC_PASSAGE, questions: [rcQuestion({ passage_evidence: RC_SENTENCE_2 })] };
   const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
   if (v.ok) throw new Error('expected failure: passage_evidence number(s) are never used in the question or solution_steps');
 });
@@ -618,13 +631,15 @@ run('Reading Comprehension: valid evidence NEVER bypasses arithmetic validation 
 
 run('Reading Comprehension: a rounding instruction stated only in the passage still satisfies the currency check', () => {
   const PHP = String.fromCharCode(0x20B1);
-  const passage = 'Aling Rosa sells rice for ' + PHP + '32.50 per kilo. Please round all totals to the nearest centavo.';
+  const sentence1 = 'Aling Rosa sells rice for ' + PHP + '32.50 per kilo.';
+  const sentence2 = 'Please round all totals to the nearest centavo.';
+  const passage = sentence1 + ' ' + sentence2;
   const q = {
     type: 'open_response',
     question: 'Aling Rosa sold 28.25 kilos of rice. How much did she earn?', // no mention of rounding here
     solution_steps: '28.25 * 32.50 = 918.125; rounded to the nearest centavo = 918.13',
     final_answer: PHP + '918.13',
-    passage_evidence: PHP + '32.50 per kilo'
+    passage_evidence: sentence1 // the complete first sentence, not a fragment
   };
   const v = sandbox.validateMathQuestions({ passage, questions: [q] }, 1, 'Reading Comprehension', 'printable');
   if (!v.ok) throw new Error('expected ok: rounding instruction in the shared passage should satisfy this question\'s currency check, got: ' + JSON.stringify(v.failures));
@@ -633,6 +648,123 @@ run('Reading Comprehension: a rounding instruction stated only in the passage st
 run('MODE GATING: Interactive Math + Reading Comprehension activity string passes as a normal MCQ with NO passage/passage_evidence at all', () => {
   const v = sandbox.validateMathQuestions({ questions: [baseValidQuestion()] }, 1, 'Reading Comprehension', 'interactive');
   if (!v.ok) throw new Error('Interactive Math must never require passage/passage_evidence merely because the activity dropdown says Reading Comprehension, got: ' + JSON.stringify(v.failures));
+});
+
+// =====================================================================
+// REV 5: extractSentences -- sentence-boundary splitter
+// =====================================================================
+run('extractSentences: splits a multi-sentence passage into complete sentences, preserving original text', () => {
+  const sentences = sandbox.extractSentences(RC_PASSAGE);
+  if (sentences.length !== 2) throw new Error('expected 2 sentences, got ' + JSON.stringify(sentences));
+  if (sentences[0] !== RC_SENTENCE_1) throw new Error('expected first sentence preserved verbatim, got: ' + sentences[0]);
+  if (sentences[1] !== RC_SENTENCE_2) throw new Error('expected second sentence preserved verbatim, got: ' + sentences[1]);
+});
+
+run('extractSentences: a passage with no terminal punctuation still yields the trailing clause', () => {
+  const sentences = sandbox.extractSentences('Just one clause with no period');
+  if (sentences.length !== 1 || sentences[0] !== 'Just one clause with no period') {
+    throw new Error('expected the whole trailing clause as one sentence, got ' + JSON.stringify(sentences));
+  }
+});
+
+run('extractSentences: empty/non-string input returns an empty array (no crash)', () => {
+  if (sandbox.extractSentences('').length !== 0) throw new Error('expected empty array for empty string');
+  if (sandbox.extractSentences(undefined).length !== 0) throw new Error('expected empty array for undefined');
+});
+
+// =====================================================================
+// REV 6: extractSentences regression -- common NON-terminal periods must
+// never be mistaken for a sentence boundary (decimals, currency, and
+// common title/time abbreviations).
+// =====================================================================
+function assertSingleSentence(text) {
+  const sentences = sandbox.extractSentences(text);
+  if (sentences.length !== 1 || sentences[0] !== text) {
+    throw new Error('expected exactly one sentence, verbatim: ' + JSON.stringify(text) + ', got: ' + JSON.stringify(sentences));
+  }
+}
+
+run('extractSentences: a decimal quantity ("Lina bought 2.5 kilograms of rice.") is not split at the decimal point', () => {
+  assertSingleSentence('Lina bought 2.5 kilograms of rice.');
+});
+
+run('extractSentences: a currency amount ("The notebook costs peso32.50.") is not split at the decimal point', () => {
+  const PHP = String.fromCharCode(0x20B1);
+  assertSingleSentence('The notebook costs ' + PHP + '32.50.');
+});
+
+run('extractSentences: a title abbreviation ("Dr. Reyes prepared 5 activity cards.") is not split after "Dr."', () => {
+  assertSingleSentence('Dr. Reyes prepared 5 activity cards.');
+});
+
+run('extractSentences: an ordinal/item abbreviation ("Juan answered item No. 5 correctly.") is not split after "No."', () => {
+  assertSingleSentence('Juan answered item No. 5 correctly.');
+});
+
+run('extractSentences: time-of-day abbreviations ("...7:30 a.m. and closed at 2:00 p.m.") are not split mid-abbreviation', () => {
+  assertSingleSentence('The store opened at 7:30 a.m. and closed at 2:00 p.m.');
+});
+
+run('extractSentences: a genuine next sentence after an abbreviation-containing sentence is STILL correctly separated', () => {
+  const sentences = sandbox.extractSentences('Dr. Reyes prepared 5 activity cards. He also brought some markers.');
+  if (sentences.length !== 2) throw new Error('expected 2 sentences, got ' + JSON.stringify(sentences));
+  if (sentences[0] !== 'Dr. Reyes prepared 5 activity cards.') throw new Error('expected the first sentence preserved verbatim, got: ' + sentences[0]);
+  if (sentences[1] !== 'He also brought some markers.') throw new Error('expected the second sentence preserved verbatim, got: ' + sentences[1]);
+});
+
+// =====================================================================
+// REV 7: context-aware a.m./p.m. trailing-period disambiguation --
+// resolves the previously-documented limitation where an abbreviation-
+// ending sentence immediately followed by another sentence would
+// incorrectly merge the two (or, the alternative failure mode, reject
+// otherwise-valid exact-sentence evidence because the "real" sentence
+// boundary was never found in the first place).
+// =====================================================================
+run('CONTEXT-AWARE a.m./p.m. [1]: "...7:30 a.m. and closed at 2:00 p.m." stays ONE sentence (lowercase continuation word after the first, end of text after the second)', () => {
+  assertSingleSentence('The store opened at 7:30 a.m. and closed at 2:00 p.m.');
+});
+
+run('CONTEXT-AWARE a.m./p.m. [2]: "At 2:00 p.m., Juan counted 5 boxes." stays ONE sentence (comma continuation after the trailing period)', () => {
+  assertSingleSentence('At 2:00 p.m., Juan counted 5 boxes.');
+});
+
+run('CONTEXT-AWARE a.m./p.m. [3]: "The store closed at 2:00 p.m. Juan counted 5 boxes." becomes EXACTLY TWO sentences (capitalized new sentence follows)', () => {
+  const sentences = sandbox.extractSentences('The store closed at 2:00 p.m. Juan counted 5 boxes.');
+  if (sentences.length !== 2) throw new Error('expected 2 sentences, got ' + JSON.stringify(sentences));
+  if (sentences[0] !== 'The store closed at 2:00 p.m.') throw new Error('expected the first sentence preserved verbatim, got: ' + sentences[0]);
+  if (sentences[1] !== 'Juan counted 5 boxes.') throw new Error('expected the second sentence preserved verbatim, got: ' + sentences[1]);
+});
+
+run('CONTEXT-AWARE a.m./p.m. [4]: passage_evidence matching ONLY the first (p.m.-ending) sentence validates successfully', () => {
+  const passage = 'The store closed at 2:00 p.m. Juan counted 5 boxes.';
+  const q = {
+    type: 'open_response',
+    question: 'At what hour did the store close?',
+    solution_steps: 'x = 2:00',
+    final_answer: '2:00',
+    passage_evidence: 'The store closed at 2:00 p.m.'
+  };
+  const v = sandbox.validateMathQuestions({ passage, questions: [q] }, 1, 'Reading Comprehension', 'printable');
+  if (!v.ok) throw new Error('expected ok: evidence exactly matches the first complete sentence, got: ' + JSON.stringify(v.failures));
+});
+
+run('CONTEXT-AWARE a.m./p.m. [5]: the passage sentences correctly split so the second, uncited numeric sentence is a SEPARATE extracted sentence (rendering-level "never displayed" check lives in test_printable_math_render.js)', () => {
+  const sentences = sandbox.extractSentences('The store closed at 2:00 p.m. Juan counted 5 boxes.');
+  if (!sentences.includes('The store closed at 2:00 p.m.')) throw new Error('expected the cited sentence to be independently extractable');
+  if (!sentences.includes('Juan counted 5 boxes.')) throw new Error('expected the second sentence to be independently extractable (so the renderer CAN and must choose to exclude it)');
+});
+
+run('REGRESSION: decimal ("2.5 kilograms"), currency (peso32.50), Dr., Mr./Mrs./Ms., No., e.g., and i.e. still remain single sentences after the a.m./p.m. context-aware change', () => {
+  const PHP = String.fromCharCode(0x20B1);
+  [
+    'Lina bought 2.5 kilograms of rice.',
+    'The notebook costs ' + PHP + '32.50.',
+    'Dr. Reyes prepared 5 activity cards.',
+    'Mr. Santos and Mrs. Cruz greeted Ms. Bautista.',
+    'Juan answered item No. 5 correctly.',
+    'Bring school supplies, e.g. pencils and paper.',
+    'She finished her chores, i.e. sweeping and washing dishes.'
+  ].forEach((text) => assertSingleSentence(text));
 });
 
 // =====================================================================
@@ -663,6 +795,49 @@ run('Matching Type: fails when two final_answer values are Math-equivalent (0.75
   const quiz = { questions: [matchingQuestion('0.75'), matchingQuestion('3/4'), matchingQuestion('2')] };
   const v = sandbox.validateMathQuestions(quiz, 3, 'Matching Type', 'printable');
   if (v.ok) throw new Error('expected failure: "0.75" and "3/4" are the same value after Math-equivalence normalization');
+});
+
+// =====================================================================
+// REV 5: reported bug -- "15 marbles"/"15 fruits"/"15 pieces" must be
+// treated as duplicate Matching Type answers (same numeric value), even
+// though they are textually distinct and were previously missed because
+// valuesMatch() on the FULL noisy string never parses "15 marbles" as a
+// bare number at all.
+// =====================================================================
+run('Matching Type: "15 marbles" and "15 fruits" are duplicates (same numeric value, different nouns)', () => {
+  const quiz = { questions: [matchingQuestion('15 marbles'), matchingQuestion('15 fruits'), matchingQuestion('17 notebooks')] };
+  const v = sandbox.validateMathQuestions(quiz, 3, 'Matching Type', 'printable');
+  if (v.ok) throw new Error('expected failure: "15 marbles" and "15 fruits" share the same numeric value (15)');
+});
+
+run('Matching Type: distinct nouns do NOT make equal numeric values unique -- "15 seashells" also collides with "15 marbles"', () => {
+  const quiz = { questions: [matchingQuestion('15 marbles'), matchingQuestion('15 seashells')] };
+  const v = sandbox.validateMathQuestions(quiz, 2, 'Matching Type', 'printable');
+  if (v.ok) throw new Error('expected failure: "15 seashells" is still numerically 15, same as "15 marbles"');
+});
+
+run('Matching Type: "3/4 cup" and "0.75 kg" are duplicates (fraction vs decimal, same value, different units)', () => {
+  const quiz = { questions: [matchingQuestion('3/4 cup'), matchingQuestion('0.75 kg'), matchingQuestion('2 liters')] };
+  const v = sandbox.validateMathQuestions(quiz, 3, 'Matching Type', 'printable');
+  if (v.ok) throw new Error('expected failure: "3/4 cup" (0.75) and "0.75 kg" (0.75) are the same value');
+});
+
+run('Matching Type: distinct numeric values with distinct nouns pass ("15 marbles" vs "17 notebooks")', () => {
+  const quiz = { questions: [matchingQuestion('15 marbles'), matchingQuestion('17 notebooks')] };
+  const v = sandbox.validateMathQuestions(quiz, 2, 'Matching Type', 'printable');
+  if (!v.ok) throw new Error('expected ok: 15 and 17 are genuinely distinct values, got: ' + JSON.stringify(v.failures));
+});
+
+run('Matching Type: final_answer with ZERO numeric tokens fails ("some marbles" has no number at all)', () => {
+  const quiz = { questions: [matchingQuestion('some marbles'), matchingQuestion('17 notebooks')] };
+  const v = sandbox.validateMathQuestions(quiz, 2, 'Matching Type', 'printable');
+  if (v.ok) throw new Error('expected failure: "some marbles" contains no numeric value at all');
+});
+
+run('Matching Type: final_answer with TWO numeric tokens fails ("15 marbles and 3 friends" is ambiguous)', () => {
+  const quiz = { questions: [matchingQuestion('15 marbles and 3 friends'), matchingQuestion('17 notebooks')] };
+  const v = sandbox.validateMathQuestions(quiz, 2, 'Matching Type', 'printable');
+  if (v.ok) throw new Error('expected failure: exactly one numeric value is required, this final_answer has two (15 and 3)');
 });
 
 run('MODE GATING: Interactive Math + Matching Type activity string passes as a normal MCQ even with duplicate final_answer values', () => {
@@ -711,6 +886,57 @@ run('extractAllNumericTokens: a fraction is NEVER decomposed into separate numer
   }
   const falseMatch = evidenceTokens.some((ev) => questionTokens.some((qt) => Math.abs(ev - qt) < 1e-6));
   if (falseMatch) throw new Error('evidence "1/2" (0.5) must not falsely match the unrelated separate digits 1 and 2');
+});
+
+// =====================================================================
+// REV 5: extractPrimaryNumericToken / extractNumericTokensDetailed --
+// preserve meaningful DISPLAY forms, never collapse to a bare decimal.
+// =====================================================================
+run('extractPrimaryNumericToken: preserves currency/comma display form (peso 1,250.50 stays peso 1,250.50)', () => {
+  const PHP = String.fromCharCode(0x20B1);
+  const token = extractPrimaryNumericToken(PHP + '1,250.50');
+  if (!token || token.raw !== PHP + '1,250.50') throw new Error('expected raw ' + JSON.stringify(PHP + '1,250.50') + ', got ' + JSON.stringify(token));
+  if (Math.abs(token.value - 1250.50) > 1e-6) throw new Error('expected value 1250.50, got ' + token.value);
+});
+
+run('extractPrimaryNumericToken: preserves fraction display form ("3/4 cup" -> raw "3/4", not "0.75")', () => {
+  const token = extractPrimaryNumericToken('3/4 cup');
+  if (!token || token.raw !== '3/4') throw new Error('expected raw "3/4", got ' + JSON.stringify(token));
+  if (Math.abs(token.value - 0.75) > 1e-6) throw new Error('expected value 0.75, got ' + token.value);
+});
+
+run('extractPrimaryNumericToken: preserves percent display form ("25%" stays "25%")', () => {
+  const token = extractPrimaryNumericToken('25%');
+  if (!token || token.raw !== '25%') throw new Error('expected raw "25%", got ' + JSON.stringify(token));
+  if (Math.abs(token.value - 0.25) > 1e-6) throw new Error('expected value 0.25, got ' + token.value);
+});
+
+run('extractPrimaryNumericToken: preserves a negative value ("-8" stays "-8")', () => {
+  const token = extractPrimaryNumericToken('-8 degrees');
+  if (!token || token.raw !== '-8') throw new Error('expected raw "-8", got ' + JSON.stringify(token));
+  if (token.value !== -8) throw new Error('expected value -8, got ' + token.value);
+});
+
+run('extractPrimaryNumericToken: "15 marbles" extracts to raw "15" (noun stripped)', () => {
+  const token = extractPrimaryNumericToken('15 marbles');
+  if (!token || token.raw !== '15') throw new Error('expected raw "15", got ' + JSON.stringify(token));
+});
+
+run('extractPrimaryNumericToken: returns null for zero numeric tokens', () => {
+  if (extractPrimaryNumericToken('some marbles') !== null) throw new Error('expected null for text with no numbers');
+});
+
+run('extractPrimaryNumericToken: returns null for more than one numeric token (ambiguous)', () => {
+  if (extractPrimaryNumericToken('15 marbles and 3 friends') !== null) throw new Error('expected null for text with two numbers');
+});
+
+run('extractNumericTokensDetailed: extractAllNumericTokens is a values-only wrapper over the same detailed tokens', () => {
+  const detailed = sandbox.extractNumericTokensDetailed('15 marbles and 3 friends');
+  const values = extractAllNumericTokens('15 marbles and 3 friends');
+  if (detailed.length !== values.length) throw new Error('expected the same token count from both functions');
+  detailed.forEach((tok, i) => {
+    if (Math.abs(tok.value - values[i]) > 1e-6) throw new Error('expected matching values at index ' + i);
+  });
 });
 
 // =====================================================================
