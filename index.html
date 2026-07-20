@@ -52,9 +52,26 @@
       <div class="auth-toggle" id="authToggle">
         New here? <a onclick="toggleAuthMode()">Create an account</a>
       </div>
+      <div class="pricing-teaser">
+        <p class="pricing-teaser-text">New to BrightBridge? Explore our plans and pricing.</p>
+        <button type="button" class="pricing-teaser-btn" id="pricingTeaserBtn" onclick="openPricingModal()">View Plans &amp; Pricing</button>
+      </div>
       <div class="mission-statement">
         <p>BrightBridge PH is built to support Filipino learners. Paid plans help us keep the platform running and allow us to provide free or discounted access to public school teachers and families who need support.</p>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PRICING PLANS MODAL ============ -->
+<div class="pricing-modal-overlay" id="pricingModalOverlay" onclick="handlePricingOverlayClick(event)">
+  <div class="pricing-modal" role="dialog" aria-modal="true" aria-labelledby="pricingModalTitle" id="pricingModal">
+    <div class="pricing-modal-header">
+      <h2 class="pricing-modal-title" id="pricingModalTitle">Plans &amp; Pricing</h2>
+      <button type="button" class="pricing-modal-close" id="pricingModalCloseBtn" onclick="closePricingModal()" aria-label="Close plans and pricing">&times;</button>
+    </div>
+    <div class="pricing-modal-body">
+      <img src="pricing-leaflet.png" alt="BrightBridge PH plans and pricing leaflet showing the Free, Parent, Family Plus, and Teacher plans with monthly worksheet limits and prices." class="pricing-modal-image" loading="lazy" id="pricingModalImage" />
     </div>
   </div>
 </div>
