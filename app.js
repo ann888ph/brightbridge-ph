@@ -209,6 +209,23 @@ function handlePricingModalKeydown(event) {
 
 document.addEventListener('keydown', handlePricingModalKeydown);
 
+/* ============ SAMPLE WORKSHEETS SHOWCASE (login screen) ============ */
+// Login-page UI only -- reuses the existing toggleAuthMode() behavior
+// as-is, no auth/Supabase logic change. Never submits the form.
+function handleSamplesCta() {
+  if (authMode !== 'signup') {
+    toggleAuthMode();
+  }
+  const authCard = document.getElementById('authCard');
+  if (authCard && typeof authCard.scrollIntoView === 'function') {
+    authCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  const firstSignupInput = document.getElementById('authEmail');
+  if (firstSignupInput && typeof firstSignupInput.focus === 'function') {
+    firstSignupInput.focus();
+  }
+}
+
 async function handleForgotPassword() {
   const email = document.getElementById('authEmail').value.trim();
   if (!email) {

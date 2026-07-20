@@ -30,7 +30,8 @@ const SUITES = [
   'test_catalog_compatibility.js',
   'test_activity_ui.js',
   'test_generate_dormant_helpers.js',
-  'test_pricing_modal.js'
+  'test_pricing_modal.js',
+  'test_samples_section.js'
 ];
 
 function runSuite(fileName) {

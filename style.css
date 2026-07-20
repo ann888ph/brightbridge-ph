@@ -650,6 +650,139 @@
     .pricing-teaser-btn, .pricing-modal-close { transition: none; }
   }
 
+  /* ===== Sample Worksheets showcase (login page) ===== */
+  .samples-section {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 56px 28px 64px;
+  }
+  .samples-intro { text-align: center; max-width: 640px; margin: 0 auto 40px; }
+  .samples-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--teal); margin-bottom: 10px;
+  }
+  .samples-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.9rem;
+    color: var(--teal-dark);
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .samples-support { font-size: 15px; color: var(--muted-dark); line-height: 1.6; margin-bottom: 14px; }
+  .samples-subheading { font-size: 13.5px; font-weight: 800; color: var(--teal); }
+
+  .samples-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+    align-items: stretch;
+  }
+  .sample-card {
+    background: var(--white);
+    border: 1.5px solid var(--mint);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  .sample-thumb {
+    background: var(--warm);
+    border: 1.5px solid var(--mint);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+    height: 110px;
+    display: flex;
+    align-items: center;
+  }
+  .sample-thumb-lines { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+  .sample-thumb-lines span { display: block; height: 7px; border-radius: 4px; background: rgba(var(--teal-rgb), 0.16); }
+  .sample-thumb-lines .sample-thumb-title-line { width: 55%; height: 10px; background: rgba(var(--teal-rgb), 0.3); }
+  .sample-thumb-lines span:nth-child(3) { width: 85%; }
+  .sample-thumb-lines span:nth-child(4) { width: 70%; }
+  .sample-thumb-lines span:nth-child(5) { width: 40%; }
+
+  .sample-badges { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .badge-pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+  }
+  .badge-grade { background: var(--white); color: var(--teal-dark); border: 1.5px solid var(--mint); }
+  .badge-subject { color: var(--teal-dark); }
+  .badge-subject-math { background: var(--mint); }
+  .badge-subject-filipino { background: var(--peach); color: #8a5a2b; }
+  .badge-subject-science { background: #dbe9fb; color: #1e4d7b; }
+
+  .sample-title { font-family: 'Playfair Display', serif; font-size: 1.15rem; color: var(--teal-dark); margin-bottom: 6px; }
+  .sample-details { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  .sample-pdf-indicator {
+    font-size: 12px; font-weight: 800; color: var(--teal-dark);
+    background: var(--mint); display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 8px; margin-bottom: 16px; width: fit-content;
+  }
+  .sample-actions { display: flex; gap: 10px; margin-top: auto; flex-wrap: wrap; }
+  .sample-btn {
+    flex: 1 1 auto;
+    min-width: 110px;
+    text-align: center;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13.5px;
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
+  }
+  .sample-btn-preview {
+    background: var(--white);
+    color: var(--teal-dark);
+    border: 2px solid var(--mint);
+  }
+  .sample-btn-preview:hover { background: var(--mint); }
+  .sample-btn-download {
+    background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+    color: white;
+    border: 2px solid transparent;
+  }
+  .sample-btn-download:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(var(--teal-rgb),0.28); }
+  .sample-btn:focus-visible { outline: 3px solid rgba(var(--teal-rgb),0.4); outline-offset: 2px; }
+
+  .samples-cta {
+    margin-top: 40px;
+    text-align: center;
+    background: #E1F5EE;
+    border: 1.5px solid var(--mint);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+  }
+  .samples-cta-text { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--teal-dark); margin-bottom: 16px; }
+  .samples-cta-btn {
+    padding: 14px 28px;
+    background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+    color: white; border: none; border-radius: 12px;
+    font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+  }
+  .samples-cta-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(var(--teal-rgb),0.32); }
+  .samples-cta-btn:focus-visible { outline: 3px solid rgba(var(--teal-rgb),0.4); outline-offset: 2px; }
+  .samples-cta-support { font-size: 13px; color: var(--muted); margin-top: 14px; }
+
+  @media (max-width: 900px) {
+    .samples-grid { grid-template-columns: 1fr; }
+    .samples-section { padding: 40px 20px 48px; }
+    .samples-headline { font-size: 1.5rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sample-btn, .samples-cta-btn { transition: none; }
+  }
+
   /* ===== App header user bar ===== */
   .user-bar {
     display: flex; align-items: center; gap: 12px; margin-left: auto;

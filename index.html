@@ -30,7 +30,7 @@
   </div>
 
   <div class="auth-panel">
-    <div class="auth-card">
+    <div class="auth-card" id="authCard">
       <div class="auth-heading" id="authHeading">Welcome Back</div>
       <p class="auth-sub" id="authSub">Sign in to create worksheets for your learner.</p>
       <div class="field">
@@ -75,6 +75,86 @@
     </div>
   </div>
 </div>
+
+<!-- ============ SAMPLE WORKSHEETS SHOWCASE ============ -->
+<section class="samples-section" aria-labelledby="samplesHeadline">
+  <div class="samples-intro">
+    <p class="samples-eyebrow">NO SIGN-UP NEEDED</p>
+    <h2 class="samples-headline" id="samplesHeadline">See what your child's next worksheet could look like</h2>
+    <p class="samples-support">Printable and interactive worksheets aligned with DepEd MATATAG, with support for diverse learning needs.</p>
+    <p class="samples-subheading">Preview a few sample worksheets</p>
+  </div>
+
+  <div class="samples-grid">
+
+    <article class="sample-card">
+      <div class="sample-thumb" aria-hidden="true">
+        <div class="sample-thumb-lines">
+          <span class="sample-thumb-title-line"></span>
+          <span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+      <div class="sample-badges">
+        <span class="badge-pill badge-grade">Grade 1</span>
+        <span class="badge-pill badge-subject badge-subject-math">Math</span>
+      </div>
+      <h3 class="sample-title">Addition with Sums up to 20 - Practice Challenge</h3>
+      <p class="sample-details">20 items &middot; With answer key &middot; Printable</p>
+      <p class="sample-pdf-indicator"><span aria-hidden="true">&#x1F4C4;</span> PDF sample</p>
+      <div class="sample-actions">
+        <a class="sample-btn sample-btn-preview" href="sample_worksheets/Addition_with_Sums_up_to_20.pdf" target="_blank" rel="noopener" aria-label="Preview the Addition with Sums up to 20 sample worksheet (opens PDF in a new tab)">Preview</a>
+        <a class="sample-btn sample-btn-download" href="sample_worksheets/Addition_with_Sums_up_to_20.pdf" download="BrightBridge-Grade1-Math-Addition-with-Sums-up-to-20.pdf" aria-label="Download the Addition with Sums up to 20 sample worksheet PDF">Download Sample</a>
+      </div>
+    </article>
+
+    <article class="sample-card">
+      <div class="sample-thumb" aria-hidden="true">
+        <div class="sample-thumb-lines">
+          <span class="sample-thumb-title-line"></span>
+          <span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+      <div class="sample-badges">
+        <span class="badge-pill badge-grade">Grade 3</span>
+        <span class="badge-pill badge-subject badge-subject-filipino">Filipino</span>
+      </div>
+      <h3 class="sample-title">Mga Salitang Kilos sa Iba't Ibang Aspekto</h3>
+      <p class="sample-details">10 items &middot; With answer key &middot; Printable</p>
+      <p class="sample-pdf-indicator"><span aria-hidden="true">&#x1F4C4;</span> PDF sample</p>
+      <div class="sample-actions">
+        <a class="sample-btn sample-btn-preview" href="sample_worksheets/Pandiwa_Reference.pdf" target="_blank" rel="noopener" aria-label="Preview the Pandiwa sample worksheet (opens PDF in a new tab)">Preview</a>
+        <a class="sample-btn sample-btn-download" href="sample_worksheets/Pandiwa_Reference.pdf" download="BrightBridge-Grade3-Filipino-Pandiwa.pdf" aria-label="Download the Pandiwa sample worksheet PDF">Download Sample</a>
+      </div>
+    </article>
+
+    <article class="sample-card">
+      <div class="sample-thumb" aria-hidden="true">
+        <div class="sample-thumb-lines">
+          <span class="sample-thumb-title-line"></span>
+          <span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+      <div class="sample-badges">
+        <span class="badge-pill badge-grade">Grade 5</span>
+        <span class="badge-pill badge-subject badge-subject-science">Science</span>
+      </div>
+      <h3 class="sample-title">Motion: Measuring Time and Distance</h3>
+      <p class="sample-details">10 items &middot; With answer key &middot; Printable</p>
+      <p class="sample-pdf-indicator"><span aria-hidden="true">&#x1F4C4;</span> PDF sample</p>
+      <div class="sample-actions">
+        <a class="sample-btn sample-btn-preview" href="sample_worksheets/Motion_Measuring_Time_and_Distance_Reference.pdf" target="_blank" rel="noopener" aria-label="Preview the Motion: Measuring Time and Distance sample worksheet (opens PDF in a new tab)">Preview</a>
+        <a class="sample-btn sample-btn-download" href="sample_worksheets/Motion_Measuring_Time_and_Distance_Reference.pdf" download="BrightBridge-Grade5-Science-Motion-Measuring-Time-and-Distance.pdf" aria-label="Download the Motion: Measuring Time and Distance sample worksheet PDF">Download Sample</a>
+      </div>
+    </article>
+
+  </div>
+
+  <div class="samples-cta">
+    <p class="samples-cta-text">Liked what you saw? Create worksheets tailored to your child.</p>
+    <button type="button" class="samples-cta-btn" id="samplesCtaBtn" onclick="handleSamplesCta()">&#x2728; Create Your Own Worksheet</button>
+    <p class="samples-cta-support">Get 5 free worksheets when you sign up. No credit card required.</p>
+  </div>
+</section>
 
 <!-- ============ MAIN APP ============ -->
 <div id="app" style="display:none;">
