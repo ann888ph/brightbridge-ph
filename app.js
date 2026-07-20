@@ -655,20 +655,33 @@ function getCurrentTopicList() {
   return gradeData[quarter] || gradeData.all || [];
 }
 
-// Math has no dedicated Fill-in-the-Blanks schema/validator/renderer yet
-// (see math-validation.js) -- rather than silently reinterpreting that
-// selection as something else, hide/disable it while Subject = Math, and
-// safely reset away from it if it was already selected under a different
-// subject. Server-side, generate.js independently rejects this exact
-// subject+activity combination -- this is UX only, not the real gate.
+// PRODUCTION CONTAINMENT (Math activity availability): Reading
+// Comprehension and Matching Type were found to have a fragile
+// generation/validation contract in production; Fill in the Blanks has
+// no dedicated Math schema/validator/renderer at all (see
+// math-validation.js). Rather than silently reinterpreting any of these
+// as something else, all three are hidden/disabled while Subject = Math,
+// and reset away from if one was already selected under a different
+// subject. This is an AVAILABILITY decision only -- the underlying
+// renderer/validator/schema/tests for all three are left fully intact,
+// so this can be revisited later without rebuilding anything. Server-
+// side, generate.js independently rejects these exact subject+activity
+// combinations -- this client-side filtering is UX only, not the real
+// gate. Worksheet, Multiple Choice Quiz, and Parent/Tutor Support Sheet
+// remain available for Math.
+const MATH_UNAVAILABLE_ACTIVITIES = ['Reading Comprehension', 'Matching Type', 'Fill in the Blanks'];
+
 function updateActivityOptionsForSubject(subject) {
   const activitySelect = document.getElementById('activity');
-  const fillBlankOption = Array.from(activitySelect.options).find(o => o.value === 'Fill in the Blanks');
-  if (!fillBlankOption) return;
   const isMath = subject === 'Math';
-  fillBlankOption.disabled = isMath;
-  fillBlankOption.hidden = isMath;
-  if (isMath && activitySelect.value === 'Fill in the Blanks') {
+  const currentValueIsUnavailable = MATH_UNAVAILABLE_ACTIVITIES.includes(activitySelect.value);
+  MATH_UNAVAILABLE_ACTIVITIES.forEach((value) => {
+    const option = Array.from(activitySelect.options).find(o => o.value === value);
+    if (!option) return;
+    option.disabled = isMath;
+    option.hidden = isMath;
+  });
+  if (isMath && currentValueIsUnavailable) {
     activitySelect.value = 'Worksheet';
   }
 }
