@@ -1,8 +1,13 @@
-// Tests updateActivityOptionsForSubject() in app.js: Math has no dedicated
-// Fill-in-the-Blanks schema/validator/renderer yet, so that option must be
-// hidden/disabled while Subject = Math, and any prior selection of it must
-// be safely reset to "Worksheet" rather than left stuck on a disabled
-// value. Exercises the REAL app.js via the shared vm-sandbox helper -- no
+// Tests updateActivityOptionsForSubject() in app.js: PRODUCTION
+// CONTAINMENT decision -- Reading Comprehension, Matching Type, and Fill
+// in the Blanks are all hidden/disabled while Subject = Math (Reading
+// Comprehension/Matching Type were found to have a fragile production
+// contract; Fill in the Blanks has no dedicated Math schema/validator/
+// renderer at all -- see math-validation.js). Any prior selection of one
+// of these three must be safely reset to "Worksheet" rather than left
+// stuck on a disabled value. Worksheet, Multiple Choice Quiz, and
+// Parent/Tutor Support Sheet remain available for Math throughout.
+// Exercises the REAL app.js via the shared vm-sandbox helper -- no
 // hand-copied reimplementation of the function under test.
 const { createAppSandbox } = require('./helpers/load-app-sandbox.js');
 const { makeDocument } = require('./helpers/fake-dom.js');
@@ -10,6 +15,12 @@ const { run, assert } = require('./helpers/run.js');
 
 // Matches the real <select id="activity"> options in index.html exactly.
 const ACTIVITY_OPTIONS = ['', 'Worksheet', 'Multiple Choice Quiz', 'Reading Comprehension', 'Matching Type', 'Fill in the Blanks', 'Parent/Tutor Support Sheet'];
+
+// The three activities currently unavailable for Math.
+const MATH_UNAVAILABLE = ['Reading Comprehension', 'Matching Type', 'Fill in the Blanks'];
+
+// The three activities that MUST remain available for Math.
+const MATH_AVAILABLE = ['Worksheet', 'Multiple Choice Quiz', 'Parent/Tutor Support Sheet'];
 
 // The fake DOM has no HTML parser -- unlike a real browser, it never sees
 // index.html's static <option> markup, so this test seeds the SAME option
@@ -34,57 +45,91 @@ function makeSandboxWithActivitySelect(initialValue) {
   return sandbox;
 }
 
-function fillBlankOption(sandbox) {
+function activityOption(sandbox, value) {
   const select = sandbox.document.getElementById('activity');
-  return select.options.find((o) => o.value === 'Fill in the Blanks');
+  return select.options.find((o) => o.value === value);
 }
 
-run('Subject = English: Fill in the Blanks stays enabled/selectable, prior selection untouched', () => {
-  const sandbox = makeSandboxWithActivitySelect('Fill in the Blanks');
-  sandbox.updateActivityOptionsForSubject('English');
-  const opt = fillBlankOption(sandbox);
-  assert(!opt.disabled, 'expected Fill in the Blanks to remain enabled for a non-Math subject');
-  assert(!opt.hidden, 'expected Fill in the Blanks to remain visible for a non-Math subject');
-  assert(sandbox.document.getElementById('activity').value === 'Fill in the Blanks', 'expected the selection to be left alone for a non-Math subject');
+function assertAllUnavailableDisabledAndHidden(sandbox, message) {
+  MATH_UNAVAILABLE.forEach((value) => {
+    const opt = activityOption(sandbox, value);
+    assert(opt.disabled, message + ' -- expected "' + value + '" to be disabled');
+    assert(opt.hidden, message + ' -- expected "' + value + '" to be hidden');
+  });
+}
+
+function assertAllUnavailableEnabledAndVisible(sandbox, message) {
+  MATH_UNAVAILABLE.forEach((value) => {
+    const opt = activityOption(sandbox, value);
+    assert(!opt.disabled, message + ' -- expected "' + value + '" to be enabled');
+    assert(!opt.hidden, message + ' -- expected "' + value + '" to be visible');
+  });
+}
+
+function assertAllAvailableRemainUsable(sandbox, message) {
+  MATH_AVAILABLE.forEach((value) => {
+    const opt = activityOption(sandbox, value);
+    assert(!opt.disabled, message + ' -- expected "' + value + '" to remain enabled for Math');
+    assert(!opt.hidden, message + ' -- expected "' + value + '" to remain visible for Math');
+  });
+}
+
+run('Subject = English: all three unstable activities stay enabled/selectable, prior selection untouched', () => {
+  MATH_UNAVAILABLE.forEach((selected) => {
+    const sandbox = makeSandboxWithActivitySelect(selected);
+    sandbox.updateActivityOptionsForSubject('English');
+    assertAllUnavailableEnabledAndVisible(sandbox, 'English + "' + selected + '" selected');
+    assert(sandbox.document.getElementById('activity').value === selected, 'expected the selection to be left alone for a non-Math subject, got: ' + sandbox.document.getElementById('activity').value);
+  });
 });
 
-run('TRANSITION: Subject changed English -> Math while Fill in the Blanks is selected: option becomes disabled+hidden AND value resets to Worksheet, same call', () => {
-  const sandbox = makeSandboxWithActivitySelect('Fill in the Blanks');
-  sandbox.updateActivityOptionsForSubject('Math');
-  const opt = fillBlankOption(sandbox);
-  assert(opt.disabled, 'expected Fill in the Blanks to become disabled for Math');
-  assert(opt.hidden, 'expected Fill in the Blanks to become hidden for Math');
-  assert(sandbox.document.getElementById('activity').value === 'Worksheet', 'expected the selection to safely reset to Worksheet, got: ' + sandbox.document.getElementById('activity').value);
+run('TRANSITION: Subject changed English -> Math while an unstable activity is selected: all three become disabled+hidden AND value resets to Worksheet, same call', () => {
+  MATH_UNAVAILABLE.forEach((selected) => {
+    const sandbox = makeSandboxWithActivitySelect(selected);
+    sandbox.updateActivityOptionsForSubject('Math');
+    assertAllUnavailableDisabledAndHidden(sandbox, 'Math after selecting "' + selected + '"');
+    assertAllAvailableRemainUsable(sandbox, 'Math after selecting "' + selected + '"');
+    assert(sandbox.document.getElementById('activity').value === 'Worksheet', 'expected the selection to safely reset to Worksheet after selecting "' + selected + '", got: ' + sandbox.document.getElementById('activity').value);
+  });
 });
 
-run('Subject = Math from the start (nothing previously selected): option is disabled/hidden with no prior selection needed', () => {
+run('Subject = Math from the start (nothing previously selected): all three unstable activities are disabled/hidden with no prior selection needed', () => {
   const sandbox = makeSandboxWithActivitySelect('');
   sandbox.updateActivityOptionsForSubject('Math');
-  const opt = fillBlankOption(sandbox);
-  assert(opt.disabled && opt.hidden, 'expected Fill in the Blanks disabled/hidden for Math even with no prior selection');
+  assertAllUnavailableDisabledAndHidden(sandbox, 'Math from a blank start');
+  assertAllAvailableRemainUsable(sandbox, 'Math from a blank start');
 });
 
-run('TRANSITION: Subject changed Math -> English: option is re-enabled', () => {
+run('TRANSITION: Subject changed Math -> English: all three unstable activities are re-enabled/shown', () => {
   const sandbox = makeSandboxWithActivitySelect('Worksheet');
   sandbox.updateActivityOptionsForSubject('Math');
   sandbox.updateActivityOptionsForSubject('English');
-  const opt = fillBlankOption(sandbox);
-  assert(!opt.disabled && !opt.hidden, 'expected Fill in the Blanks re-enabled after switching back to a non-Math subject');
+  assertAllUnavailableEnabledAndVisible(sandbox, 'after switching back to English');
 });
 
-run('Subject = Math with a DIFFERENT activity already selected (Worksheet): selection is left alone, not reset unnecessarily', () => {
-  const sandbox = makeSandboxWithActivitySelect('Worksheet');
-  sandbox.updateActivityOptionsForSubject('Math');
-  assert(sandbox.document.getElementById('activity').value === 'Worksheet', 'expected the existing non-Fill-in-the-Blanks selection to be preserved');
+run('Subject = Math with an available activity already selected (Worksheet/Multiple Choice Quiz/Parent-Tutor Support Sheet): selection is left alone, not reset unnecessarily', () => {
+  MATH_AVAILABLE.forEach((selected) => {
+    const sandbox = makeSandboxWithActivitySelect(selected);
+    sandbox.updateActivityOptionsForSubject('Math');
+    assert(sandbox.document.getElementById('activity').value === selected, 'expected the existing "' + selected + '" selection to be preserved for Math, got: ' + sandbox.document.getElementById('activity').value);
+  });
 });
 
-run('Subject = Math, then back to Math again (idempotent): still disabled/hidden, no crash', () => {
-  const sandbox = makeSandboxWithActivitySelect('Fill in the Blanks');
+run('Subject = Math, then back to Math again (idempotent): still disabled/hidden, no crash, selection stays reset', () => {
+  const sandbox = makeSandboxWithActivitySelect('Matching Type');
   sandbox.updateActivityOptionsForSubject('Math');
   sandbox.updateActivityOptionsForSubject('Math');
-  const opt = fillBlankOption(sandbox);
-  assert(opt.disabled && opt.hidden, 'expected the option to remain disabled/hidden across repeated Math selections');
+  assertAllUnavailableDisabledAndHidden(sandbox, 'repeated Math selection');
   assert(sandbox.document.getElementById('activity').value === 'Worksheet', 'expected value to remain Worksheet, not re-reset or cleared');
+});
+
+run('SESSION RESET: clearSessionState() (logout) restores all three unstable activities so no disabled state remains on a shared device', () => {
+  const sandbox = makeSandboxWithActivitySelect('Reading Comprehension');
+  sandbox.updateActivityOptionsForSubject('Math');
+  assertAllUnavailableDisabledAndHidden(sandbox, 'before logout (Math selected)');
+  sandbox.clearSessionState();
+  assertAllUnavailableEnabledAndVisible(sandbox, 'after clearSessionState() (logout)');
+  assert(sandbox.document.getElementById('activity').value === '', 'expected the activity selection itself to be cleared on logout, got: ' + sandbox.document.getElementById('activity').value);
 });
 
 console.log('\nDone.');
