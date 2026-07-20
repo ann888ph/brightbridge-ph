@@ -250,7 +250,7 @@ await run('PRINTABLE Math + Reading Comprehension: open_response schema ALSO req
   assert(prompt.includes('"type": "open_response"'), 'expected the open_response schema example');
   assert(!prompt.includes('"choices":'), 'expected no choices field for Reading Comprehension');
   assert(prompt.includes('"passage_evidence":'), 'expected passage_evidence requested for Reading Comprehension');
-  assert(/passage_evidence.*field that is an exact, verbatim excerpt/.test(prompt), 'expected the passage_evidence integrity rule text');
+  assert(/passage_evidence.*field that is one COMPLETE, verbatim sentence/.test(prompt), 'expected the passage_evidence integrity rule text to require a complete sentence, not a fragment');
 });
 
 await run('PRINTABLE Math + Matching Type: open_response schema, integrity rules require distinguishable final answers', async () => {
@@ -263,7 +263,7 @@ await run('PRINTABLE Math + Matching Type: open_response schema, integrity rules
   // FIELD (quote-colon), which only appears when Reading Comprehension is
   // the activity actually in effect.
   assert(!prompt.includes('"passage_evidence":'), 'Matching Type must not request passage_evidence as a schema field');
-  assert(/distinguishable from every other question/.test(prompt), 'expected the Matching Type final-answer-uniqueness rule text');
+  assert(/mathematically equivalent/.test(prompt), 'expected the Matching Type final-answer-uniqueness rule text');
 });
 
 await run('PRINTABLE Math + Parent/Tutor Support Sheet: open_response schema, no coaching field requested from the model', async () => {
@@ -282,7 +282,7 @@ await run('INTERACTIVE Math + Reading Comprehension activity string: STILL reque
 await run('INTERACTIVE Math + Matching Type activity string: STILL requests multiple_choice, no uniqueness rule text', async () => {
   const prompt = await buildPromptViaRealApp({ wsMode: 'interactive', values: { subject: 'Math', activity: 'Matching Type' } });
   assert(prompt.includes('"type": "multiple_choice"'), 'Interactive Math must always request multiple_choice regardless of the activity string');
-  assert(!/distinguishable from every other question/.test(prompt), 'Interactive Math must not get the Printable Matching Type uniqueness rule');
+  assert(!/mathematically equivalent/.test(prompt), 'Interactive Math must not get the Printable Matching Type uniqueness rule');
 });
 
 console.log('\nDone.');

@@ -30,6 +30,11 @@ function build(quiz, opts) {
 // directions are renderer-owned for Math (see MATH_DIRECTIONS_BY_ACTIVITY).
 const IGNORED_MODEL_DIRECTIONS = 'MODEL-AUTHORED DIRECTIONS THAT SHOULD NEVER APPEAR';
 
+// Mirrors app.js's MATH_RC_FACTS_UNAVAILABLE_MESSAGE exactly (checked
+// separately by a SOURCE CHECK test below, so this can never silently
+// drift from the real renderer-owned string).
+const MATH_RC_FACTS_UNAVAILABLE_MESSAGE_TEXT = 'Validated story facts are unavailable for this saved worksheet.';
+
 const mcQuiz = {
   title: 'Money Word Problems',
   directions: IGNORED_MODEL_DIRECTIONS,
@@ -62,17 +67,25 @@ const worksheetQuiz = {
   ]
 };
 
+// passage_evidence values are COMPLETE sentences from the passage (per the
+// exact-sentence-match validation rule), not fragments. The passage also
+// contains an extra, unreferenced sentence with its own numbers -- exactly
+// the "contradictory unexplained totals" scenario from the reported bug --
+// which must NEVER reach the rendered output, since no question cites it.
+const RC_SENTENCE_SUGAR = 'Nena has 1/2 cup of sugar for her recipe.';
+const RC_SENTENCE_FLOUR = 'She also has 2 cups of flour.';
+const RC_SENTENCE_UNREFERENCED = 'Later she somehow has 45 mangoes and 23 papayas.';
 const readingComprehensionQuiz = {
   title: 'Filipino Recipes',
   directions: IGNORED_MODEL_DIRECTIONS,
-  passage: 'Nena has 1/2 cup of sugar and 2 cups of flour for her recipe.',
+  passage: RC_SENTENCE_SUGAR + ' ' + RC_SENTENCE_FLOUR + ' ' + RC_SENTENCE_UNREFERENCED,
   questions: [
     {
       type: 'open_response',
       question: 'How much sugar does Nena have, in decimal form?',
       solution_steps: '1/2 = 0.5',
       final_answer: '0.5',
-      passage_evidence: '1/2 cup of sugar'
+      passage_evidence: RC_SENTENCE_SUGAR
     }
   ]
 };
@@ -174,18 +187,184 @@ run('Reading Comprehension: deterministic directions reference the passage', () 
   assert(/passage/i.test(html.match(/<strong>Directions:<\/strong>[^<]*/)[0]), 'expected directions to reference the passage');
 });
 
-run('Reading Comprehension: passage is rendered before questions', () => {
+run('Reading Comprehension: validated evidence sentence is rendered before questions', () => {
   const html = build(readingComprehensionQuiz, { dysgraphia: false, activity: 'Reading Comprehension' });
-  const passageIdx = html.indexOf('Nena has');
+  const passageIdx = html.indexOf(RC_SENTENCE_SUGAR);
   const questionIdx = html.indexOf('How much sugar');
-  assert(passageIdx !== -1, 'expected the passage text to be rendered');
-  assert(passageIdx < questionIdx, 'expected the passage to render before the questions');
+  assert(passageIdx !== -1, 'expected the validated evidence sentence to be rendered');
+  assert(passageIdx < questionIdx, 'expected the passage facts to render before the questions');
 });
 
 run('Reading Comprehension: open-response (no choices) even though the activity is not Worksheet', () => {
   const html = build(readingComprehensionQuiz, { dysgraphia: false, activity: 'Reading Comprehension' });
   assert(!html.includes('A. '), 'expected no A/B/C/D rendering for Reading Comprehension');
   assert(html.includes('Show your work'), 'expected an open work-space area');
+});
+
+run('Reading Comprehension: displayed passage is derived ONLY from validated (cited) evidence sentences', () => {
+  const html = build(readingComprehensionQuiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  assert(html.includes(RC_SENTENCE_SUGAR), 'expected the cited sentence to appear');
+});
+
+run('Reading Comprehension: an unreferenced/contradictory model passage sentence is NEVER rendered, even though it is genuinely part of quiz.passage', () => {
+  const html = build(readingComprehensionQuiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  assert(!html.includes(RC_SENTENCE_UNREFERENCED), 'an unreferenced passage sentence must never reach the printed worksheet');
+  assert(!html.includes('45 mangoes'), 'the unexplained/contradictory extra numeric fact must never be shown');
+  assert(!html.includes(RC_SENTENCE_FLOUR), 'a real but uncited-by-any-question sentence must also never be shown');
+});
+
+run('Reading Comprehension: duplicate evidence sentences (cited by more than one question) display only once', () => {
+  const quiz = {
+    title: 't',
+    questions: [
+      { type: 'open_response', question: 'Q1', solution_steps: 'x=0.5', final_answer: '0.5', passage_evidence: RC_SENTENCE_SUGAR },
+      { type: 'open_response', question: 'Q2', solution_steps: 'x=0.5', final_answer: '0.5', passage_evidence: RC_SENTENCE_SUGAR }
+    ],
+    passage: RC_SENTENCE_SUGAR + ' ' + RC_SENTENCE_FLOUR
+  };
+  const html = build(quiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  const occurrences = html.split(RC_SENTENCE_SUGAR).length - 1;
+  assert(occurrences === 1, `expected the duplicated evidence sentence to appear exactly once, got ${occurrences}`);
+});
+
+run('Reading Comprehension: evidence sentence order follows QUESTION order, not passage-internal order', () => {
+  // The passage lists sugar first, then flour -- but Q1 cites the FLOUR
+  // sentence and Q2 cites the SUGAR sentence, so the rendered order must be
+  // flour-then-sugar (question order), not sugar-then-flour (passage order).
+  const quiz = {
+    title: 't',
+    passage: RC_SENTENCE_SUGAR + ' ' + RC_SENTENCE_FLOUR,
+    questions: [
+      { type: 'open_response', question: 'Q1', solution_steps: 'x=2', final_answer: '2', passage_evidence: RC_SENTENCE_FLOUR },
+      { type: 'open_response', question: 'Q2', solution_steps: 'x=0.5', final_answer: '0.5', passage_evidence: RC_SENTENCE_SUGAR }
+    ]
+  };
+  const html = build(quiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  const flourIdx = html.indexOf(RC_SENTENCE_FLOUR);
+  const sugarIdx = html.indexOf(RC_SENTENCE_SUGAR);
+  assert(flourIdx !== -1 && sugarIdx !== -1, 'expected both sentences to be rendered');
+  assert(flourIdx < sugarIdx, 'expected evidence order to follow question order (flour cited by Q1, sugar by Q2), got the reverse');
+});
+
+run('Reading Comprehension: no "passage_evidence" or "Evidence" label is ever exposed to the learner', () => {
+  const html = build(readingComprehensionQuiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  assert(!/passage_evidence/i.test(html), 'the field name "passage_evidence" must never appear in learner-facing output');
+  assert(!/\bEvidence\b/.test(html), 'no "Evidence" label should be exposed to the learner');
+  assert(html.includes('Math Story Facts'), 'expected the approved renderer-owned label');
+});
+
+run('Reading Comprehension: solution_steps remain hidden', () => {
+  const html = build(readingComprehensionQuiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  assert(!html.includes('1/2 = 0.5'), 'solution_steps must never reach the rendered output');
+});
+
+run('Reading Comprehension: normal readable list formatting is intact (facts are list items, not one run-on paragraph)', () => {
+  const quiz = {
+    title: 't',
+    passage: RC_SENTENCE_SUGAR + ' ' + RC_SENTENCE_FLOUR,
+    questions: [
+      { type: 'open_response', question: 'Q1', solution_steps: 'x=0.5', final_answer: '0.5', passage_evidence: RC_SENTENCE_SUGAR },
+      { type: 'open_response', question: 'Q2', solution_steps: 'x=2', final_answer: '2', passage_evidence: RC_SENTENCE_FLOUR }
+    ]
+  };
+  const html = build(quiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  const listItems = (html.match(/<li[ >]/g) || []).length;
+  assert(listItems === 2, `expected each validated sentence rendered as its own <li>, got ${listItems}`);
+});
+
+run('Reading Comprehension: Standard and Dysgraphia formats both remain readable (facts box renders in both)', () => {
+  [false, true].forEach((dysgraphia) => {
+    const html = build(readingComprehensionQuiz, { dysgraphia, activity: 'Reading Comprehension' });
+    assert(html.includes(RC_SENTENCE_SUGAR), `expected the facts box to render in dysgraphia=${dysgraphia} mode`);
+  });
+});
+
+// ---------------------------------------------------------------------
+// FAIL CLOSED: buildMathReadingComprehensionFacts() must render ONLY an
+// original sentence successfully matched from quiz.passage -- never
+// passage_evidence's own text as a fallback.
+// ---------------------------------------------------------------------
+run('FAIL CLOSED: matched evidence renders the ORIGINAL passage sentence, not passage_evidence\'s own (trivially different) copy', () => {
+  const canonicalSentence = 'Nena has 1/2 cup of sugar for her recipe.';
+  const quiz = {
+    title: 't',
+    passage: canonicalSentence,
+    questions: [{
+      type: 'open_response', question: 'q', solution_steps: 'x=0.5', final_answer: '0.5',
+      // Double space differs from the canonical sentence but normalizes equal.
+      passage_evidence: 'Nena  has 1/2 cup of sugar for her recipe.'
+    }]
+  };
+  const html = build(quiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  assert(html.includes(canonicalSentence), 'expected the canonical passage sentence text to be rendered');
+  assert(!html.includes('Nena  has'), 'expected passage_evidence\'s own (double-spaced) copy to NEVER be rendered, only the matched original');
+});
+
+run('FAIL CLOSED: unmatched evidence (fragment, not a complete sentence) is never rendered', () => {
+  const quiz = {
+    title: 't',
+    passage: 'Nena has 1/2 cup of sugar for her recipe.',
+    questions: [{
+      type: 'open_response', question: 'q', solution_steps: 'x=0.5', final_answer: '0.5',
+      passage_evidence: '1/2 cup of sugar' // a real substring, but not a complete sentence
+    }]
+  };
+  const html = build(quiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  assert(!html.includes('1/2 cup of sugar'), 'unmatched fragment evidence must never be displayed');
+  assert(html.includes(MATH_RC_FACTS_UNAVAILABLE_MESSAGE_TEXT), 'expected the static fallback message since no evidence matched');
+});
+
+run('FAIL CLOSED: one unmatched item does NOT prevent other validly-matched facts from rendering', () => {
+  const matchedSentence = 'Nena has 1/2 cup of sugar for her recipe.';
+  const quiz = {
+    title: 't',
+    passage: matchedSentence,
+    questions: [
+      { type: 'open_response', question: 'q1', solution_steps: 'x=0.5', final_answer: '0.5', passage_evidence: matchedSentence },
+      { type: 'open_response', question: 'q2', solution_steps: 'x=99', final_answer: '99', passage_evidence: 'This sentence does not exist in the passage.' }
+    ]
+  };
+  const html = build(quiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  assert(html.includes(matchedSentence), 'expected the validly-matched sentence to still render');
+  assert(!html.includes('This sentence does not exist in the passage.'), 'the unmatched sentence from the other question must never render');
+  assert(!html.includes(MATH_RC_FACTS_UNAVAILABLE_MESSAGE_TEXT), 'the fallback message must NOT appear when at least one fact validly matched');
+});
+
+run('FAIL CLOSED: zero matched facts produces ONLY the static, non-numeric fallback message (no list, no unmatched text)', () => {
+  const quiz = {
+    title: 't',
+    passage: 'A completely unrelated sentence with no shared content.',
+    questions: [{
+      type: 'open_response', question: 'q', solution_steps: 'x=1', final_answer: '1',
+      passage_evidence: 'Fabricated sentence not present in the passage.'
+    }]
+  };
+  const html = build(quiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  assert(html.includes(MATH_RC_FACTS_UNAVAILABLE_MESSAGE_TEXT), 'expected the static fallback message');
+  assert(!html.includes('Fabricated sentence'), 'the unmatched evidence text must never appear');
+  assert(!/<li[ >]/.test(html), 'expected no <li> list items when zero facts matched');
+});
+
+// ---------------------------------------------------------------------
+// CONTEXT-AWARE a.m./p.m. sentence boundary: an abbreviation-ending
+// sentence immediately followed by another sentence must correctly split
+// into two, so the second (uncited) sentence is never rendered alongside
+// cited evidence.
+// ---------------------------------------------------------------------
+run('CONTEXT-AWARE a.m./p.m.: cited "...2:00 p.m." sentence renders; the second, uncited sentence never does', () => {
+  const passage = 'The store closed at 2:00 p.m. Juan counted 5 boxes.';
+  const quiz = {
+    title: 't',
+    passage,
+    questions: [{
+      type: 'open_response', question: 'At what hour did the store close?', solution_steps: 'x = 2:00', final_answer: '2:00',
+      passage_evidence: 'The store closed at 2:00 p.m.'
+    }]
+  };
+  const html = build(quiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  assert(html.includes('The store closed at 2:00 p.m.'), 'expected the cited sentence to render');
+  assert(!html.includes('Juan counted 5 boxes.'), 'the second, uncited sentence must never be rendered even though it is genuinely part of quiz.passage');
+  assert(!html.includes(MATH_RC_FACTS_UNAVAILABLE_MESSAGE_TEXT), 'the fallback message must not appear since the cited sentence DID match');
 });
 
 // ---------------------------------------------------------------------
@@ -380,10 +559,22 @@ Object.keys(PAYLOADS).forEach((key) => {
     assertNeverRaw(html, payload, 'title');
   });
 
-  run(`XSS payload [${key}] in passage renders as harmless text only`, () => {
-    const quiz = { title: 't', passage: payload, questions: [{ type: 'open_response', question: 'q', final_answer: 'a' }] };
+  run(`XSS payload [${key}] in an UNREFERENCED quiz.passage never appears at all (renderer ignores quiz.passage entirely)`, () => {
+    // No question cites this payload as passage_evidence, so under the
+    // approved design it is never even a candidate for display -- quiz.passage
+    // itself is never read by the renderer, referenced or not.
+    const quiz = { title: 't', passage: payload, questions: [{ type: 'open_response', question: 'q', final_answer: 'a', passage_evidence: 'A harmless cited sentence.' }] };
     const html = build(quiz, { dysgraphia: false, activity: 'Reading Comprehension' });
-    assertNeverRaw(html, payload, 'passage');
+    assert(!html.includes(payload), 'an unreferenced quiz.passage payload must never reach the output, raw or escaped');
+  });
+
+  run(`XSS payload [${key}] as a MATCHED complete-sentence passage_evidence renders as harmless text only`, () => {
+    // The payload must actually match a real sentence in quiz.passage under
+    // the fail-closed design -- so quiz.passage IS the payload here (its own
+    // sole "sentence"), and passage_evidence cites it exactly.
+    const quiz = { title: 't', passage: payload, questions: [{ type: 'open_response', question: 'q', final_answer: 'a', passage_evidence: payload }] };
+    const html = build(quiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+    assertNeverRaw(html, payload, 'passage_evidence');
   });
 
   run(`XSS payload [${key}] in question text renders as harmless text only`, () => {
@@ -404,10 +595,18 @@ Object.keys(PAYLOADS).forEach((key) => {
     assertNeverRaw(html, payload, 'final_answer');
   });
 
-  run(`XSS payload [${key}] in final_answer renders as harmless text only (inside a Matching Type answer bank)`, () => {
-    const quiz = { title: 't', questions: [{ type: 'open_response', question: 'q1', final_answer: payload }, { type: 'open_response', question: 'q2', final_answer: 'unique-2' }] };
+  run(`XSS payload [${key}] in final_answer never produces a live tag in a Matching Type answer bank`, () => {
+    // Note: the bank displays the EXTRACTED primary numeric token, not the
+    // raw final_answer -- a payload containing exactly one digit (e.g. the
+    // "1" inside "alert(1)") is reduced to that bare digit, so the payload
+    // text itself may not appear at all (an even stronger outcome than
+    // "escaped"); a payload with zero or multiple digits falls back to the
+    // raw (then-escaped) string. Either way, no live markup may reach output.
+    const quiz = { title: 't', questions: [{ type: 'open_response', question: 'q1', final_answer: payload }, { type: 'open_response', question: 'q2', final_answer: 'unique-answer-2' }] };
     const html = build(quiz, { dysgraphia: false, activity: 'Matching Type' });
-    assertNeverRaw(html, payload, 'matching bank final_answer');
+    assert(!html.includes(payload), 'matching bank: raw unescaped payload leaked into HTML verbatim');
+    assert(!/<script[\s>]/i.test(html), 'matching bank: a live, parseable <script> tag reached the HTML output');
+    assert(!/<img\b/i.test(html), 'matching bank: a live, parseable <img> tag reached the HTML output');
   });
 
   run(`XSS payload [${key}] in solution_steps NEVER appears at all (field is never read by the renderer)`, () => {
@@ -420,11 +619,6 @@ Object.keys(PAYLOADS).forEach((key) => {
     }
   });
 
-  run(`XSS payload [${key}] in passage_evidence NEVER appears at all (field is never read by the renderer)`, () => {
-    const quiz = { title: 't', passage: 'harmless passage text', questions: [{ type: 'open_response', question: 'q', passage_evidence: payload, final_answer: 'a' }] };
-    const html = build(quiz, { dysgraphia: false, activity: 'Reading Comprehension' });
-    assert(!html.includes(payload), 'passage_evidence payload leaked into HTML even though this field should never be read');
-  });
 });
 
 // ---------------------------------------------------------------------
@@ -435,22 +629,50 @@ run('SOURCE CHECK: buildPrintableMathHtml keys choice rendering off q.type, not 
   assert(!appJsSource.includes('opts.isMultipleChoice') && !appJsSource.includes('isMultipleChoice:'), 'expected the old isMultipleChoice flag/param to be gone -- schema type is now the single source of truth');
 });
 
-run('SOURCE CHECK: directions are selected from a fixed lookup table, quiz.directions is never read inside buildPrintableMathHtml', () => {
-  const lines = appJsSource.split('\n');
-  const startIdx = lines.findIndex((l) => l.startsWith('function buildPrintableMathHtml('));
-  assert(startIdx !== -1, 'could not locate buildPrintableMathHtml in app.js source for inspection -- has it been renamed or restructured?');
+// Stable named-function boundary helper: finds a function by its
+// declaration text and ends at the NEXT top-level `function` declaration.
+// Fails loudly if either boundary can't be found, rather than silently
+// extracting the wrong range -- never a fixed line number.
+function extractFunctionBody(source, functionSignature) {
+  const lines = source.split('\n');
+  const startIdx = lines.findIndex((l) => l.startsWith(functionSignature));
+  assert(startIdx !== -1, `could not locate ${functionSignature} in app.js source -- has it been renamed or restructured?`);
   const endIdx = lines.findIndex((l, i) => i > startIdx && /^function \w+\(/.test(l));
-  assert(endIdx !== -1, 'could not locate the next top-level function after buildPrintableMathHtml -- boundary detection may be broken');
-  const body = lines.slice(startIdx, endIdx).join('\n');
+  assert(endIdx !== -1, `could not locate the next top-level function after ${functionSignature} -- boundary detection may be broken`);
+  return lines.slice(startIdx, endIdx).join('\n');
+}
+
+run('SOURCE CHECK: directions are selected from a fixed lookup table, quiz.directions is never read inside buildPrintableMathHtml', () => {
+  const body = extractFunctionBody(appJsSource, 'function buildPrintableMathHtml(');
   assert(!body.includes('quiz.directions'), 'buildPrintableMathHtml must never read quiz.directions -- directions are renderer-owned');
   assert(!body.includes('solution_steps'), 'buildPrintableMathHtml\'s source body references solution_steps -- it must never read this field at all');
-  assert(!body.includes('passage_evidence'), 'buildPrintableMathHtml\'s source body references passage_evidence -- it is validation-only metadata and must never be read here');
+});
+
+run('SOURCE CHECK: buildPrintableMathHtml never reads quiz.passage directly -- only via the dedicated buildMathReadingComprehensionFacts() helper', () => {
+  const body = extractFunctionBody(appJsSource, 'function buildPrintableMathHtml(');
+  assert(!body.includes('quiz.passage'), 'buildPrintableMathHtml must delegate to buildMathReadingComprehensionFacts(), never read quiz.passage itself');
+  assert(!body.includes('passage_evidence'), 'buildPrintableMathHtml must delegate to buildMathReadingComprehensionFacts(), never read passage_evidence itself');
+});
+
+run('SOURCE CHECK: buildMathReadingComprehensionFacts() is the ONLY place passage_evidence/quiz.passage feed the displayed passage', () => {
+  const body = extractFunctionBody(appJsSource, 'function buildMathReadingComprehensionFacts(');
+  assert(body.includes('passage_evidence'), 'expected buildMathReadingComprehensionFacts to read passage_evidence');
+  assert(body.includes('quiz.passage'), 'expected buildMathReadingComprehensionFacts to read quiz.passage (to find the matching original sentence)');
 });
 
 run('SOURCE CHECK: MATH_DIRECTIONS_BY_ACTIVITY has an entry for all 5 Math-eligible activities', () => {
   ['Multiple Choice Quiz', 'Worksheet', 'Reading Comprehension', 'Matching Type', 'Parent/Tutor Support Sheet'].forEach((activity) => {
     assert(appJsSource.includes(`'${activity}':`), `expected MATH_DIRECTIONS_BY_ACTIVITY to have a key for "${activity}"`);
   });
+});
+
+run('SOURCE CHECK: this test file\'s fallback-message constant matches the real app.js string exactly (never silently drifts)', () => {
+  assert(appJsSource.includes(MATH_RC_FACTS_UNAVAILABLE_MESSAGE_TEXT), 'expected app.js to contain the exact fallback message string this test suite checks against');
+});
+
+run('SOURCE CHECK: buildMathReadingComprehensionFacts() never falls back to passage_evidence\'s own text (fails closed, no "|| evidence" escape hatch)', () => {
+  const body = extractFunctionBody(appJsSource, 'function buildMathReadingComprehensionFacts(');
+  assert(!/\|\|\s*evidence\b/.test(body), 'expected no fallback to the raw evidence text -- only a matched original sentence may ever be pushed to facts');
 });
 
 console.log('\nDone.');

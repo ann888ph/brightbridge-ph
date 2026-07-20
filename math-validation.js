@@ -357,12 +357,95 @@ function parseMathToken(token) {
   return isPercent ? n / 100 : n;
 }
 
-function extractAllNumericTokens(text) {
+// Detailed variant: keeps the RAW matched substring alongside its parsed
+// value, so a caller that needs to DISPLAY a token (not just compare it)
+// can show the meaningful original form the model/passage actually used --
+// "15" stays "15", peso+"1,250.50" stays peso+"1,250.50", "3/4" stays
+// "3/4", "25%" stays "25%", "-8" stays "-8" -- never collapsed to a bare
+// decimal for presentation. extractAllNumericTokens() below is a thin
+// values-only wrapper over this, kept for the existing callers/tests that
+// only need the numbers.
+function extractNumericTokensDetailed(text) {
   if (typeof text !== 'string') return [];
   let t = text;
   MATH_UNICODE_MINUS_CHARS.forEach(ch => { t = t.split(ch).join('-'); });
   const matches = t.match(MATH_TOKEN_PATTERN) || [];
-  return matches.map(parseMathToken).filter((v) => v !== null);
+  return matches
+    .map((raw) => ({ raw, value: parseMathToken(raw) }))
+    .filter((tok) => tok.value !== null);
+}
+
+function extractAllNumericTokens(text) {
+  return extractNumericTokensDetailed(text).map((tok) => tok.value);
+}
+
+// Used by the Matching Type "final_answer must contain exactly one clear
+// numeric value" rule (see validateMathQuestions below). Returns the single
+// { raw, value } token when the text contains EXACTLY one numeric token,
+// or null when it contains zero or more than one -- either shape is
+// rejected as ambiguous for a Matching Type answer.
+function extractPrimaryNumericToken(text) {
+  const tokens = extractNumericTokensDetailed(text);
+  return tokens.length === 1 ? tokens[0] : null;
+}
+
+// Splits passage text into complete sentences, preserving each sentence's
+// original display text (casing/whitespace-within-sentence untouched, only
+// trimmed at the edges). Used by the Reading Comprehension passage_evidence
+// "must exactly match one complete sentence" rule (see validateMathQuestions
+// below) and by app.js's renderer, which reconstructs the displayed Math
+// Reading Comprehension passage from ONLY the validated sentences a
+// question actually cited -- never the model's full freehand passage
+// verbatim. A sentence boundary is one or more [.!?] terminators; the final
+// clause is still captured even if the passage doesn't end in punctuation.
+// A "." between two digits (e.g. "32.50") is a decimal point, never a
+// sentence terminator -- temporarily replaced with a placeholder before
+// splitting on real [.!?] boundaries, then restored, so a currency/decimal
+// value inside a sentence never gets mistaken for the end of it.
+const DECIMAL_POINT_PLACEHOLDER = ' DECIMAL_POINT ';
+
+// Common abbreviations whose period(s) must never be mistaken for a
+// sentence terminator -- a small, explicit, deterministic allowlist (no
+// NLP library, no new dependency) covering titles/abbreviations that
+// commonly appear in DepEd worksheet passages ("Dr. Reyes...", "item No.
+// 5..."). The ENTIRE abbreviation (including its own period(s)) is
+// protected the same way a decimal point is above, then restored after
+// sentence-splitting. a.m./p.m. are handled separately below (see
+// protectAmPm) since their trailing period is genuinely ambiguous with a
+// real sentence terminator in a way these others are not.
+const SENTENCE_ABBREVIATION_PATTERN = /\b(?:Dr|Mr|Mrs|Ms|Jr|Sr|St|No)\.|\b[eE]\.[gG]\.|\b[iI]\.[eE]\./g;
+
+// a.m./p.m.: the FIRST period (between the letter and "m") is always
+// protected -- unambiguously mid-abbreviation, never a sentence boundary.
+// The SECOND (trailing) period is genuinely ambiguous -- it can also be
+// the sentence's real terminator -- so it needs the smallest possible
+// context-aware rule (no NLP library/dependency): protect it (treat as
+// non-terminal) only when what immediately follows still reads as a
+// continuation of the SAME sentence -- a lowercase word, or a comma/
+// semicolon/colon (e.g. "...a.m. and closed...", "...p.m., Juan...").
+// Otherwise -- end of text, or a new capitalized sentence follows (e.g.
+// "...p.m. Juan counted...") -- it is left as a genuine terminator
+// candidate, so that second sentence is correctly split off rather than
+// merged with (and rendering) an uncited numeric sentence alongside cited
+// evidence.
+const AM_PM_PATTERN = /\b([aApP])\.([mM])\.(\s*)(\S?)/g;
+function protectAmPm(text) {
+  return text.replace(AM_PM_PATTERN, (match, letter1, letter2, whitespace, nextChar) => {
+    const continuesSameSentence = nextChar !== '' && /[a-z,;:]/.test(nextChar);
+    const trailingPeriod = continuesSameSentence ? DECIMAL_POINT_PLACEHOLDER : '.';
+    return letter1 + DECIMAL_POINT_PLACEHOLDER + letter2 + trailingPeriod + whitespace + nextChar;
+  });
+}
+
+function extractSentences(text) {
+  if (typeof text !== 'string') return [];
+  let protectedText = text.replace(/(\d)\.(\d)/g, '$1' + DECIMAL_POINT_PLACEHOLDER + '$2');
+  protectedText = protectedText.replace(SENTENCE_ABBREVIATION_PATTERN, (match) => match.split('.').join(DECIMAL_POINT_PLACEHOLDER));
+  protectedText = protectAmPm(protectedText);
+  const matches = protectedText.match(/[^.!?]*[.!?]+|[^.!?]+$/g) || [];
+  return matches
+    .map((s) => s.split(DECIMAL_POINT_PLACEHOLDER).join('.').trim())
+    .filter((s) => s.length > 0);
 }
 
 // Validates Math questions per the Math prompt guardrails, profile-aware
@@ -467,6 +550,18 @@ function validateMathQuestions(quiz, expectedCount, activity, mode) {
       }
     }
 
+    // Matching Type (Printable only): final_answer must contain EXACTLY ONE
+    // clear numeric value -- "15 marbles and 3 friends" is ambiguous and
+    // rejected outright, independent of the cross-question uniqueness check
+    // below (which needs a single well-defined value per question anyway).
+    let matchingPrimaryToken = null;
+    if (isPrintableMatchingType && hasFinalAnswer) {
+      matchingPrimaryToken = extractPrimaryNumericToken(q.final_answer);
+      if (!matchingPrimaryToken) {
+        reasons.push('final_answer must contain exactly one clear numeric value for Matching Type, got: "' + q.final_answer + '"');
+      }
+    }
+
     // Reading Comprehension evidence linkage (Printable only). Additive to
     // every other check here -- never a substitute for arithmetic/currency
     // validation below.
@@ -476,9 +571,14 @@ function validateMathQuestions(quiz, expectedCount, activity, mode) {
         reasons.push('passage_evidence is missing or empty for Reading Comprehension');
       } else {
         const normalizedEvidence = normalizeEvidenceText(q.passage_evidence);
-        const normalizedPassage = normalizeEvidenceText((quiz && quiz.passage) || '');
-        if (normalizedEvidence.length === 0 || normalizedPassage.indexOf(normalizedEvidence) === -1) {
-          reasons.push('passage_evidence does not appear in the passage (fabricated excerpt)');
+        const passageSentences = extractSentences((quiz && quiz.passage) || '');
+        // Exact match to one COMPLETE sentence, not a substring/fragment --
+        // "25 mangoes" must fail when the passage only contains "On Monday,
+        // Juan had 25 mangoes." as a sentence. This is stricter than (and
+        // replaces) a plain substring-of-passage check.
+        const matchesCompleteSentence = passageSentences.some((s) => normalizeEvidenceText(s) === normalizedEvidence);
+        if (normalizedEvidence.length === 0 || !matchesCompleteSentence) {
+          reasons.push('passage_evidence must exactly match one complete sentence in the passage (fragment or fabricated)');
         } else {
           const evidenceTokens = extractAllNumericTokens(q.passage_evidence);
           const contextTokens = extractAllNumericTokens((q.question || '') + ' ' + (q.solution_steps || ''));
@@ -574,18 +674,27 @@ function validateMathQuestions(quiz, expectedCount, activity, mode) {
   });
 
   // Matching Type (Printable only): every question's final_answer must be
-  // pairwise distinguishable from every other question's, after Math-
-  // equivalence normalization (valuesMatch already treats e.g. "0.75" and
-  // "3/4" as the same answer). O(n^2) over at most 20 questions.
+  // pairwise distinguishable from every other question's, compared by the
+  // EXTRACTED numeric token (not the raw string) -- this is what actually
+  // catches "15 marbles" vs "15 fruits" vs "15 pieces" as duplicates (the
+  // reported bug): those three raw strings are textually different and
+  // extractNumericValue() rejects any of them outright as "not a bare
+  // number," so a raw-string valuesMatch() comparison never flags them.
+  // Extracting the primary token first ("15") and THEN feeding it through
+  // valuesMatch() reuses the same Math-equivalence semantics (e.g. "0.75"
+  // vs "3/4") while ignoring the noun/unit noise around it. Questions whose
+  // final_answer doesn't contain exactly one numeric token already failed
+  // above and are skipped here (nothing well-defined to compare).
+  // O(n^2) over at most 20 questions.
   if (isPrintableMatchingType) {
     for (let i = 0; i < questions.length; i++) {
       for (let j = i + 1; j < questions.length; j++) {
-        const a = questions[i] && questions[i].final_answer;
-        const b = questions[j] && questions[j].final_answer;
-        if (typeof a === 'string' && typeof b === 'string' && valuesMatch(a, b)) {
+        const tokenA = questions[i] && typeof questions[i].final_answer === 'string' ? extractPrimaryNumericToken(questions[i].final_answer) : null;
+        const tokenB = questions[j] && typeof questions[j].final_answer === 'string' ? extractPrimaryNumericToken(questions[j].final_answer) : null;
+        if (tokenA && tokenB && valuesMatch(tokenA.raw, tokenB.raw)) {
           failures.push({
             index: -1,
-            reasons: ['final_answer at index ' + i + ' is equivalent to index ' + j + ' after Math normalization -- Matching Type requires unique answers']
+            reasons: ['final_answer at index ' + i + ' is equivalent to index ' + j + ' after Math normalization -- Matching Type requires unique numeric answers']
           });
         }
       }
@@ -621,6 +730,9 @@ function validateMathQuestions(quiz, expectedCount, activity, mode) {
     lastStepMatchesFinalAnswer,
     normalizeEvidenceText,
     extractAllNumericTokens,
+    extractNumericTokensDetailed,
+    extractPrimaryNumericToken,
+    extractSentences,
     validateMathQuestions
   };
 });
