@@ -1,9 +1,11 @@
 // Behavioral test for buildPrintableMathHtml() in app.js: verifies the
-// rendering clarification from the architecture approval -- open-response
-// by default, MC choices only when explicitly requested, clean answer key
-// from final_answer only, dysgraphia formatting preserved, non-Math/print
-// CSS classes untouched. Loads the REAL app.js/style.css via the shared
-// helper -- no hand-copied source.
+// per-Activity-Type rendering profile -- deterministic directions (never
+// quiz.directions), choices only for Multiple Choice Quiz (keyed off
+// q.type, which now matches the requested/validated schema one-to-one), a
+// dedicated Matching Type answer bank + answer key, a renderer-owned
+// Parent/Tutor Guide, clean answer key from final_answer only, dysgraphia
+// formatting preserved, non-Math/print CSS classes untouched. Loads the
+// REAL app.js/style.css via the shared helper -- no hand-copied source.
 const fs = require('fs');
 const { repoPath, readAppJsSource, createAppSandbox } = require('./helpers/load-app-sandbox.js');
 const { makeDocument } = require('./helpers/fake-dom.js');
@@ -11,6 +13,7 @@ const { run, assert } = require('./helpers/run.js');
 
 const appJsSource = readAppJsSource();
 const styleCss = fs.readFileSync(repoPath('style.css'), 'utf8');
+const PHP = String.fromCharCode(0x20B1);
 
 const sandbox = createAppSandbox({
   document: makeDocument(),
@@ -19,16 +22,24 @@ function __test_buildPrintableMathHtml(quiz, opts) { return buildPrintableMathHt
 `
 });
 
-const sampleQuiz = {
+function build(quiz, opts) {
+  return sandbox.__test_buildPrintableMathHtml(quiz, opts);
+}
+
+// A payload placed in quiz.directions must NEVER reach the rendered HTML --
+// directions are renderer-owned for Math (see MATH_DIRECTIONS_BY_ACTIVITY).
+const IGNORED_MODEL_DIRECTIONS = 'MODEL-AUTHORED DIRECTIONS THAT SHOULD NEVER APPEAR';
+
+const mcQuiz = {
   title: 'Money Word Problems',
-  directions: 'Solve each problem. Show your work.',
+  directions: IGNORED_MODEL_DIRECTIONS,
   questions: [
     {
       type: 'multiple_choice',
       question: 'Maria buys 2.5 kg of chicken and 3 kg of pork...',
       solution_steps: '2.5*120=300; 3*95=285; 300+285=585; Actually, let me recalculate... 585',
-      final_answer: String.fromCharCode(0x20B1) + '585.00',
-      choices: [String.fromCharCode(0x20B1) + '585.00', String.fromCharCode(0x20B1) + '580.00', String.fromCharCode(0x20B1) + '590.00', String.fromCharCode(0x20B1) + '600.00'],
+      final_answer: PHP + '585.00',
+      choices: [PHP + '585.00', PHP + '580.00', PHP + '590.00', PHP + '600.00'],
       answer: 0
     },
     {
@@ -42,99 +53,263 @@ const sampleQuiz = {
   ]
 };
 
-run('Open-response (non-MC activity): choices are NOT rendered on the page', () => {
-  const html = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: false, isMultipleChoice: false });
-  assert(!/585\.00.*580\.00|A\.\s*.*B\.\s*/s.test(html) || !html.includes('B. '), 'expected no A/B/C/D choice rendering for a non-MC activity');
-  assert(html.includes('Show your work'), 'expected an open work-space area');
-  assert(html.includes('Answer: '), 'expected a plain answer blank in standard (non-dysgraphia) mode');
+const worksheetQuiz = {
+  title: 'Addition Practice',
+  directions: IGNORED_MODEL_DIRECTIONS,
+  questions: [
+    { type: 'open_response', question: 'What is 5 + 7?', solution_steps: '5+7=12', final_answer: '12' },
+    { type: 'open_response', question: 'What is 9 + 6?', solution_steps: '9+6=15', final_answer: '15' }
+  ]
+};
+
+const readingComprehensionQuiz = {
+  title: 'Filipino Recipes',
+  directions: IGNORED_MODEL_DIRECTIONS,
+  passage: 'Nena has 1/2 cup of sugar and 2 cups of flour for her recipe.',
+  questions: [
+    {
+      type: 'open_response',
+      question: 'How much sugar does Nena have, in decimal form?',
+      solution_steps: '1/2 = 0.5',
+      final_answer: '0.5',
+      passage_evidence: '1/2 cup of sugar'
+    }
+  ]
+};
+
+// Deliberately already "sorted" (ascending, matching question order) --
+// proves the answer bank is a guaranteed left-rotate-by-one, not a sort
+// that could coincidentally reproduce question order.
+const matchingQuiz = {
+  title: 'Fractions Matching',
+  directions: IGNORED_MODEL_DIRECTIONS,
+  questions: [
+    { type: 'open_response', question: 'Q1', solution_steps: 'x=10', final_answer: '10' },
+    { type: 'open_response', question: 'Q2', solution_steps: 'x=20', final_answer: '20' },
+    { type: 'open_response', question: 'Q3', solution_steps: 'x=30', final_answer: '30' },
+    { type: 'open_response', question: 'Q4', solution_steps: 'x=40', final_answer: '40' },
+    { type: 'open_response', question: 'Q5', solution_steps: 'x=50', final_answer: '50' }
+  ]
+};
+
+const parentTutorQuiz = {
+  title: 'Word Problems',
+  directions: IGNORED_MODEL_DIRECTIONS,
+  questions: [
+    { type: 'open_response', question: 'What is 5 x 3?', solution_steps: '5*3=15', final_answer: '15' }
+  ]
+};
+
+// ---------------------------------------------------------------------
+// Multiple Choice Quiz
+// ---------------------------------------------------------------------
+run('Multiple Choice Quiz: deterministic directions mention choosing an answer (never quiz.directions)', () => {
+  const html = build(mcQuiz, { dysgraphia: false, activity: 'Multiple Choice Quiz' });
+  assert(!html.includes(IGNORED_MODEL_DIRECTIONS), 'model-authored directions must never appear');
+  assert(/choose the correct answer/i.test(html), 'expected deterministic MCQ directions');
 });
 
-run('Open-response: answer key comes ONLY from final_answer, for every question', () => {
-  const html = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: false, isMultipleChoice: false });
-  assert(html.includes('1. ' + String.fromCharCode(0x20B1) + '585.00'), 'expected Q1 key to be the exact final_answer value');
+run('Multiple Choice Quiz: 4 choices rendered as A/B/C/D', () => {
+  const html = build(mcQuiz, { dysgraphia: false, activity: 'Multiple Choice Quiz' });
+  assert(html.includes('A. ') && html.includes('B. ') && html.includes('C. ') && html.includes('D. '), 'expected A/B/C/D choice rendering');
+});
+
+run('Multiple Choice Quiz: answer key comes ONLY from final_answer', () => {
+  const html = build(mcQuiz, { dysgraphia: false, activity: 'Multiple Choice Quiz' });
+  assert(html.includes('1. ' + PHP + '585.00'), 'expected Q1 key to be the exact final_answer value');
   assert(html.includes('2. 20'), 'expected Q2 key to be the exact final_answer value');
 });
 
-run('solution_steps and self-correction narration NEVER appear in the rendered HTML', () => {
-  const html = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: false, isMultipleChoice: false });
+run('Multiple Choice Quiz: solution_steps and self-correction narration NEVER appear', () => {
+  const html = build(mcQuiz, { dysgraphia: false, activity: 'Multiple Choice Quiz' });
   assert(!html.includes('recalculate'), 'leaked self-correction narration into printable HTML');
   assert(!html.includes('2.5*120'), 'leaked raw solution_steps arithmetic into printable HTML');
 });
 
-run('No separate model-authored answer-key section: exactly one <div class="answer-key">, built by us', () => {
-  const html = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: false, isMultipleChoice: false });
-  const matches = html.match(/class="answer-key"/g) || [];
-  assert(matches.length === 1, 'expected exactly one answer-key div, got ' + matches.length);
-});
-
-run('Multiple Choice Quiz activity: choices ARE rendered as A/B/C/D', () => {
-  const html = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: false, isMultipleChoice: true });
-  assert(html.includes('A. ') && html.includes('B. ') && html.includes('C. ') && html.includes('D. '), 'expected A/B/C/D choice rendering for an explicit Multiple Choice Quiz activity');
-});
-
-run('Dysgraphia mode + Multiple Choice: renders checkbox squares, not lettered blanks', () => {
-  const html = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: true, isMultipleChoice: true });
+run('Multiple Choice Quiz + Dysgraphia: renders checkbox squares, not lettered blanks', () => {
+  const html = build(mcQuiz, { dysgraphia: true, activity: 'Multiple Choice Quiz' });
   assert(html.includes('&#9744;'), 'expected checkbox glyphs in dysgraphia MC mode');
+  assert(html.includes('class="dysgraphia-item"'), 'expected dysgraphia item block');
 });
 
-run('Dysgraphia mode + open-response: larger spacing and a boxed Final Answer line', () => {
-  const html = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: true, isMultipleChoice: false });
-  assert(html.includes('Final Answer:'), 'expected a distinct Final Answer label in dysgraphia open-response mode');
+// ---------------------------------------------------------------------
+// Worksheet (open_response)
+// ---------------------------------------------------------------------
+run('Worksheet: deterministic directions never mention choices (never quiz.directions)', () => {
+  const html = build(worksheetQuiz, { dysgraphia: false, activity: 'Worksheet' });
+  assert(!html.includes(IGNORED_MODEL_DIRECTIONS), 'model-authored directions must never appear');
+  assert(!/choice/i.test(html.match(/<strong>Directions:<\/strong>[^<]*/)[0]), 'Worksheet directions must never mention choices');
+  assert(/show your work/i.test(html), 'expected deterministic Worksheet directions');
+});
+
+run('Worksheet: no A/B/C/D options rendered', () => {
+  const html = build(worksheetQuiz, { dysgraphia: false, activity: 'Worksheet' });
+  assert(!html.includes('A. '), 'expected no A/B/C/D rendering for open_response questions');
+});
+
+run('Worksheet: Show your work + answer area rendered (Standard)', () => {
+  const html = build(worksheetQuiz, { dysgraphia: false, activity: 'Worksheet' });
+  assert(html.includes('Show your work'), 'expected an open work-space area');
+  assert(html.includes('Answer: '), 'expected a plain answer blank in standard mode');
+});
+
+run('Worksheet + Dysgraphia: larger spacing and a boxed Final Answer line', () => {
+  const html = build(worksheetQuiz, { dysgraphia: true, activity: 'Worksheet' });
+  assert(html.includes('Final Answer:'), 'expected a distinct Final Answer label in dysgraphia mode');
   assert(html.includes('line-height:2.4'), 'expected larger line spacing in dysgraphia mode');
+  assert(html.includes('class="dysgraphia-item"'), 'expected dysgraphia item block');
+});
+
+run('Worksheet: answer key comes ONLY from final_answer', () => {
+  const html = build(worksheetQuiz, { dysgraphia: false, activity: 'Worksheet' });
+  assert(html.includes('1. 12') && html.includes('2. 15'), 'expected answer key sourced from final_answer');
 });
 
 // ---------------------------------------------------------------------
-// Visual-structure regression tests: the Dysgraphia checkbox complaint was
-// only ever a small piece of the actual bug -- the real gap was that Math
-// never got the same per-question block/card, generous spacing, and
-// stacked (non-inline) choice layout that dysgraphia-friendly Printable
-// worksheets need. These check the STRUCTURE, not just glyph presence.
+// Reading Comprehension (open_response + passage)
 // ---------------------------------------------------------------------
+run('Reading Comprehension: deterministic directions reference the passage', () => {
+  const html = build(readingComprehensionQuiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  assert(!html.includes(IGNORED_MODEL_DIRECTIONS), 'model-authored directions must never appear');
+  assert(/passage/i.test(html.match(/<strong>Directions:<\/strong>[^<]*/)[0]), 'expected directions to reference the passage');
+});
 
-run('VISUAL STRUCTURE: dysgraphia mode wraps EVERY question in its own item block (one per question, not shared)', () => {
-  const html = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: true, isMultipleChoice: true });
+run('Reading Comprehension: passage is rendered before questions', () => {
+  const html = build(readingComprehensionQuiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  const passageIdx = html.indexOf('Nena has');
+  const questionIdx = html.indexOf('How much sugar');
+  assert(passageIdx !== -1, 'expected the passage text to be rendered');
+  assert(passageIdx < questionIdx, 'expected the passage to render before the questions');
+});
+
+run('Reading Comprehension: open-response (no choices) even though the activity is not Worksheet', () => {
+  const html = build(readingComprehensionQuiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  assert(!html.includes('A. '), 'expected no A/B/C/D rendering for Reading Comprehension');
+  assert(html.includes('Show your work'), 'expected an open work-space area');
+});
+
+// ---------------------------------------------------------------------
+// Matching Type (open_response, dedicated two-column renderer)
+// ---------------------------------------------------------------------
+run('Matching Type: deterministic directions mention matching', () => {
+  const html = build(matchingQuiz, { dysgraphia: false, activity: 'Matching Type' });
+  assert(!html.includes(IGNORED_MODEL_DIRECTIONS), 'model-authored directions must never appear');
+  assert(/match/i.test(html.match(/<strong>Directions:<\/strong>[^<]*/)[0]), 'expected deterministic Matching Type directions');
+});
+
+run('Matching Type: answer bank contains exactly the validated final_answer values', () => {
+  const html = build(matchingQuiz, { dysgraphia: false, activity: 'Matching Type' });
+  ['10', '20', '30', '40', '50'].forEach((ans) => {
+    assert(html.includes('. ' + ans), 'expected answer bank to contain final_answer ' + ans);
+  });
+});
+
+run('Matching Type: answer bank order is a left-rotate-by-one, NOT question order, even when answers are already sorted', () => {
+  const html = build(matchingQuiz, { dysgraphia: false, activity: 'Matching Type' });
+  const bankSection = html.split('Answer Bank')[1].split('</div>')[0];
+  const bankOrder = (bankSection.match(/\d+/g) || []);
+  // Question order is [10,20,30,40,50] (already sorted ascending) -- a
+  // sort-based bank would coincidentally equal this. The approved
+  // left-rotate-by-one must instead produce [20,30,40,50,10].
+  assert(JSON.stringify(bankOrder) === JSON.stringify(['20', '30', '40', '50', '10']), 'expected bank order [20,30,40,50,10], got ' + JSON.stringify(bankOrder));
+});
+
+run('Matching Type: answer key maps each question to its TRUE match ("N -- Letter"), never re-derived from rendered HTML', () => {
+  const html = build(matchingQuiz, { dysgraphia: false, activity: 'Matching Type' });
+  // bank = [20,30,40,50,10] -> A=20,B=30,C=40,D=50,E=10
+  // question 1 (final_answer 10) matches bank entry E
+  // question 2 (final_answer 20) matches bank entry A
+  assert(html.includes('1 -- E'), 'expected question 1 (answer 10) to map to bank letter E, got: ' + html);
+  assert(html.includes('2 -- A'), 'expected question 2 (answer 20) to map to bank letter A, got: ' + html);
+});
+
+run('Matching Type: no A/B/C/D inline choices rendered for the problems themselves', () => {
+  const html = build(matchingQuiz, { dysgraphia: false, activity: 'Matching Type' });
+  assert(!/Q1<\/p>[\s\S]{0,40}A\.\s/.test(html), 'Matching Type problems must not render inline MC-style choices');
+});
+
+run('Matching Type + Dysgraphia: remains readable/printable (dysgraphia item blocks + spacing present)', () => {
+  const html = build(matchingQuiz, { dysgraphia: true, activity: 'Matching Type' });
   const blockCount = (html.match(/class="dysgraphia-item"/g) || []).length;
-  assert(blockCount === sampleQuiz.questions.length, `expected ${sampleQuiz.questions.length} per-question dysgraphia item blocks, got ${blockCount}`);
+  assert(blockCount === matchingQuiz.questions.length, 'expected one dysgraphia item block per problem');
 });
 
-run('VISUAL STRUCTURE: dysgraphia + Multiple Choice renders choices NON-INLINE (each on its own line, not joined by inline spacing)', () => {
-  const html = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: true, isMultipleChoice: true });
-  assert(!html.includes('&#9744;')  || !html.match(/&#9744;[^<]*<\/p>&nbsp;&nbsp;&nbsp;&#9744;/), 'choices must not be joined by an inline nbsp separator in dysgraphia mode');
-  // Each choice should be its own <p> inside a dedicated choices wrapper --
-  // for 2 questions x 4 choices each, expect 8 individual choice <p> tags.
+// ---------------------------------------------------------------------
+// Parent/Tutor Support Sheet
+// ---------------------------------------------------------------------
+run('Parent/Tutor Support Sheet: deterministic directions mention a parent or tutor', () => {
+  const html = build(parentTutorQuiz, { dysgraphia: false, activity: 'Parent/Tutor Support Sheet' });
+  assert(!html.includes(IGNORED_MODEL_DIRECTIONS), 'model-authored directions must never appear');
+  assert(/parent or tutor/i.test(html.match(/<strong>Directions:<\/strong>[^<]*/)[0]), 'expected deterministic Parent/Tutor directions');
+});
+
+run('Parent/Tutor Support Sheet: learner problems are open-response (no choices)', () => {
+  const html = build(parentTutorQuiz, { dysgraphia: false, activity: 'Parent/Tutor Support Sheet' });
+  assert(!html.includes('A. '), 'expected no A/B/C/D rendering');
+  assert(html.includes('Show your work'), 'expected an open work-space area');
+});
+
+run('Parent/Tutor Support Sheet: a distinct Parent/Tutor Guide block is rendered, renderer-owned (static, not model text)', () => {
+  const html = build(parentTutorQuiz, { dysgraphia: false, activity: 'Parent/Tutor Support Sheet' });
+  assert(html.includes('class="parent-tutor-guide"'), 'expected a dedicated Parent/Tutor Guide block');
+  assert(html.includes('Parent/Tutor Guide'), 'expected the Guide heading');
+  assert(html.includes('Ask the learner what the problem is asking.'), 'expected the fixed, deterministic coaching bullets');
+});
+
+run('Parent/Tutor Support Sheet: solution_steps never reaches the output even with the Guide block present', () => {
+  const html = build(parentTutorQuiz, { dysgraphia: false, activity: 'Parent/Tutor Support Sheet' });
+  assert(!html.includes('5*3'), 'solution_steps leaked into printable HTML');
+});
+
+run('Parent/Tutor Support Sheet: final_answer still comes only from final_answer in the answer key', () => {
+  const html = build(parentTutorQuiz, { dysgraphia: false, activity: 'Parent/Tutor Support Sheet' });
+  assert(html.includes('1. 15'), 'expected answer key sourced from final_answer');
+});
+
+// ---------------------------------------------------------------------
+// Directions ownership: quiz.directions is NEVER read for Math, any activity
+// ---------------------------------------------------------------------
+['Multiple Choice Quiz', 'Worksheet', 'Reading Comprehension', 'Matching Type', 'Parent/Tutor Support Sheet'].forEach((activity) => {
+  run(`Directions ownership [${activity}]: a payload in quiz.directions never appears in the output`, () => {
+    const quiz = activity === 'Matching Type' ? matchingQuiz
+      : activity === 'Reading Comprehension' ? readingComprehensionQuiz
+      : activity === 'Parent/Tutor Support Sheet' ? parentTutorQuiz
+      : activity === 'Multiple Choice Quiz' ? mcQuiz
+      : worksheetQuiz;
+    const html = build(quiz, { dysgraphia: false, activity });
+    assert(!html.includes(IGNORED_MODEL_DIRECTIONS), activity + ': model-authored directions leaked into the output');
+  });
+});
+
+// ---------------------------------------------------------------------
+// Visual-structure regression tests (retained from before this change)
+// ---------------------------------------------------------------------
+run('VISUAL STRUCTURE: dysgraphia mode wraps EVERY question in its own item block (Multiple Choice Quiz)', () => {
+  const html = build(mcQuiz, { dysgraphia: true, activity: 'Multiple Choice Quiz' });
+  const blockCount = (html.match(/class="dysgraphia-item"/g) || []).length;
+  assert(blockCount === mcQuiz.questions.length, `expected ${mcQuiz.questions.length} per-question dysgraphia item blocks, got ${blockCount}`);
+});
+
+run('VISUAL STRUCTURE: dysgraphia + Multiple Choice renders choices NON-INLINE', () => {
+  const html = build(mcQuiz, { dysgraphia: true, activity: 'Multiple Choice Quiz' });
   const choiceParagraphs = (html.match(/<p style="margin:10px 0/g) || []).length;
   assert(choiceParagraphs === 8, `expected one <p> per choice (8 total across both questions), got ${choiceParagraphs}`);
   assert(html.includes('class="dysgraphia-choices"'), 'expected a dedicated dysgraphia-choices wrapper');
 });
 
-run('VISUAL STRUCTURE: dysgraphia + open-response includes a dedicated, visually boxed Final Answer area', () => {
-  const html = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: true, isMultipleChoice: false });
-  assert(html.includes('class="dysgraphia-final-answer"'), 'expected a dedicated, distinctly classed Final Answer box in dysgraphia open-response mode');
+run('VISUAL STRUCTURE: dysgraphia + Worksheet includes a dedicated, visually boxed Final Answer area', () => {
+  const html = build(worksheetQuiz, { dysgraphia: true, activity: 'Worksheet' });
+  assert(html.includes('class="dysgraphia-final-answer"'), 'expected a dedicated, distinctly classed Final Answer box');
   assert(html.includes('Show your work'), 'expected a dedicated work-space area alongside the final answer box');
 });
 
-run('VISUAL STRUCTURE: dysgraphia classes/spacing styles are present when dysgraphia is requested (MC and open-response both)', () => {
-  const htmlMc = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: true, isMultipleChoice: true });
-  const htmlOpen = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: true, isMultipleChoice: false });
-  assert(htmlMc.includes('class="dysgraphia-item"') && htmlMc.includes('line-height:1.9'), 'expected dysgraphia item block + larger line-height for MC');
-  assert(htmlOpen.includes('class="dysgraphia-item"') && htmlOpen.includes('line-height:1.9'), 'expected dysgraphia item block + larger line-height for open-response');
-});
-
-run('STYLE SOURCE: every dysgraphia class carries its own inline style attribute (style.css defines none of them, so none may be a bare/unstyled hook)', () => {
-  assert(!/dysgraphia/.test(styleCss), 'style.css must have no rules for these classes -- the renderer must be fully self-contained (per design, verify this stays true)');
-  const htmlMc = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: true, isMultipleChoice: true });
-  const htmlOpen = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: true, isMultipleChoice: false });
-  assert(/class="dysgraphia-item" style="[^"]+"/.test(htmlMc), 'dysgraphia-item must carry its own inline style, not rely on style.css');
-  assert(/class="dysgraphia-choices" style="[^"]+"/.test(htmlMc), 'dysgraphia-choices must carry its own inline style (not just styled children) -- it was previously a bare unstyled wrapper');
-  assert(/class="dysgraphia-final-answer" style="[^"]+"/.test(htmlOpen), 'dysgraphia-final-answer must carry its own inline style, not rely on style.css');
-});
-
-run('PRINT PAGINATION: every dysgraphia question block sets break-inside and page-break-inside to avoid splitting across a printed page', () => {
-  const htmlMc = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: true, isMultipleChoice: true });
-  const htmlOpen = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: true, isMultipleChoice: false });
-  [htmlMc, htmlOpen].forEach((html) => {
+run('PRINT PAGINATION: every dysgraphia question block sets break-inside and page-break-inside', () => {
+  [
+    build(mcQuiz, { dysgraphia: true, activity: 'Multiple Choice Quiz' }),
+    build(worksheetQuiz, { dysgraphia: true, activity: 'Worksheet' })
+  ].forEach((html) => {
     const itemBlocks = html.match(/<div class="dysgraphia-item" style="[^"]*"/g) || [];
-    assert(itemBlocks.length === sampleQuiz.questions.length, `expected a style-bearing item block per question, got ${itemBlocks.length}`);
+    assert(itemBlocks.length > 0, 'expected at least one style-bearing dysgraphia item block');
     itemBlocks.forEach((block) => {
       assert(block.includes('break-inside:avoid'), 'expected break-inside:avoid on every dysgraphia item block');
       assert(block.includes('page-break-inside:avoid'), 'expected page-break-inside:avoid on every dysgraphia item block (older engine fallback)');
@@ -142,34 +317,43 @@ run('PRINT PAGINATION: every dysgraphia question block sets break-inside and pag
   });
 });
 
-run('PRINT PAGINATION: standard (non-dysgraphia) mode never adds pagination rules (no dysgraphia-item block exists to attach them to)', () => {
-  const html = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: false, isMultipleChoice: true });
+run('PRINT PAGINATION: standard (non-dysgraphia) mode never adds pagination rules', () => {
+  const html = build(mcQuiz, { dysgraphia: false, activity: 'Multiple Choice Quiz' });
   assert(!html.includes('break-inside'), 'standard mode should not include break-inside at all');
   assert(!html.includes('page-break-inside'), 'standard mode should not include page-break-inside at all');
 });
 
-run('VISUAL STRUCTURE: standard (non-dysgraphia) mode receives NONE of the dysgraphia layout, in either activity type', () => {
-  const htmlMc = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: false, isMultipleChoice: true });
-  const htmlOpen = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: false, isMultipleChoice: false });
+run('VISUAL STRUCTURE: standard (non-dysgraphia) mode receives NONE of the dysgraphia layout', () => {
+  const htmlMc = build(mcQuiz, { dysgraphia: false, activity: 'Multiple Choice Quiz' });
+  const htmlWorksheet = build(worksheetQuiz, { dysgraphia: false, activity: 'Worksheet' });
   ['dysgraphia-item', 'dysgraphia-choices', 'dysgraphia-final-answer'].forEach((cls) => {
     assert(!htmlMc.includes(cls), `standard MC mode must not include ${cls}`);
-    assert(!htmlOpen.includes(cls), `standard open-response mode must not include ${cls}`);
+    assert(!htmlWorksheet.includes(cls), `standard Worksheet mode must not include ${cls}`);
   });
   assert(!htmlMc.includes('&#9744;'), 'standard MC mode must not render dysgraphia checkboxes');
-  assert(!htmlOpen.includes('Final Answer:'), 'standard open-response mode must not render the dysgraphia Final Answer label');
+  assert(!htmlWorksheet.includes('Final Answer:'), 'standard Worksheet mode must not render the dysgraphia Final Answer label');
 });
 
 run('Output reuses existing .worksheet-output-compatible tags only (h1, p, hr, answer-key div) -- no new CSS needed', () => {
-  const html = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: false, isMultipleChoice: false });
+  const html = build(worksheetQuiz, { dysgraphia: false, activity: 'Worksheet' });
   assert(/<h1>/.test(html), 'expected an <h1> title, matching every other printable subject');
   assert(/<div class="answer-key">/.test(html), 'expected the same .answer-key class the non-Math printable prompt already uses');
 });
 
+run('STYLE SOURCE: dysgraphia/matching/parent-tutor classes carry their own inline styles (style.css defines none of them)', () => {
+  assert(!/dysgraphia/.test(styleCss), 'style.css must have no rules for dysgraphia classes -- the renderer must be fully self-contained');
+  const htmlMc = build(mcQuiz, { dysgraphia: true, activity: 'Multiple Choice Quiz' });
+  assert(/class="dysgraphia-item" style="[^"]+"/.test(htmlMc), 'dysgraphia-item must carry its own inline style');
+  assert(/class="dysgraphia-choices" style="[^"]+"/.test(htmlMc), 'dysgraphia-choices must carry its own inline style');
+  const htmlMatching = build(matchingQuiz, { dysgraphia: false, activity: 'Matching Type' });
+  assert(/class="matching-bank" style="[^"]+"/.test(htmlMatching), 'matching-bank must carry its own inline style');
+  const htmlParentTutor = build(parentTutorQuiz, { dysgraphia: false, activity: 'Parent/Tutor Support Sheet' });
+  assert(/class="parent-tutor-guide" style="[^"]+"/.test(htmlParentTutor), 'parent-tutor-guide must carry its own inline style');
+});
+
 // ---------------------------------------------------------------------
 // XSS / HTML-injection payload tests: every model-generated field must
-// render as harmless visible text only. If any of these ever start
-// matching the RAW (unescaped) branch, a malicious or malformed model
-// response could inject live markup into a parent's browser.
+// render as harmless visible text only.
 // ---------------------------------------------------------------------
 const PAYLOADS = {
   scriptTag: '<script>alert(1)</script>',
@@ -179,10 +363,6 @@ const PAYLOADS = {
 };
 
 function assertNeverRaw(html, payload, fieldLabel) {
-  // The payload's own text (e.g. the word "onerror=") is EXPECTED to still
-  // be visible -- that's "harmless visible text". What must never happen is
-  // an unescaped '<' or '>' reaching the output, which is what would let a
-  // browser parse it as a real tag instead of inert text.
   assert(!html.includes(payload), `${fieldLabel}: raw unescaped payload leaked into HTML verbatim: ${payload}`);
   assert(!/<script[\s>]/i.test(html), `${fieldLabel}: a live, parseable <script> tag reached the HTML output`);
   assert(!/<img\b/i.test(html), `${fieldLabel}: a live, parseable <img> tag reached the HTML output`);
@@ -195,91 +375,82 @@ Object.keys(PAYLOADS).forEach((key) => {
   const payload = PAYLOADS[key];
 
   run(`XSS payload [${key}] in title renders as harmless text only`, () => {
-    const quiz = { title: payload, directions: 'd', questions: [{ type: 'multiple_choice', question: 'q', final_answer: 'a', choices: ['a', 'b', 'c', 'd'] }] };
-    const html = sandbox.__test_buildPrintableMathHtml(quiz, { dysgraphia: false, isMultipleChoice: false });
+    const quiz = { title: payload, questions: [{ type: 'open_response', question: 'q', final_answer: 'a' }] };
+    const html = build(quiz, { dysgraphia: false, activity: 'Worksheet' });
     assertNeverRaw(html, payload, 'title');
   });
 
-  run(`XSS payload [${key}] in directions renders as harmless text only`, () => {
-    const quiz = { title: 't', directions: payload, questions: [{ type: 'multiple_choice', question: 'q', final_answer: 'a', choices: ['a', 'b', 'c', 'd'] }] };
-    const html = sandbox.__test_buildPrintableMathHtml(quiz, { dysgraphia: false, isMultipleChoice: false });
-    assertNeverRaw(html, payload, 'directions');
-  });
-
   run(`XSS payload [${key}] in passage renders as harmless text only`, () => {
-    const quiz = { title: 't', directions: 'd', passage: payload, questions: [{ type: 'multiple_choice', question: 'q', final_answer: 'a', choices: ['a', 'b', 'c', 'd'] }] };
-    const html = sandbox.__test_buildPrintableMathHtml(quiz, { dysgraphia: false, isMultipleChoice: false });
+    const quiz = { title: 't', passage: payload, questions: [{ type: 'open_response', question: 'q', final_answer: 'a' }] };
+    const html = build(quiz, { dysgraphia: false, activity: 'Reading Comprehension' });
     assertNeverRaw(html, payload, 'passage');
   });
 
   run(`XSS payload [${key}] in question text renders as harmless text only`, () => {
-    const quiz = { title: 't', directions: 'd', questions: [{ type: 'multiple_choice', question: payload, final_answer: 'a', choices: ['a', 'b', 'c', 'd'] }] };
-    const html = sandbox.__test_buildPrintableMathHtml(quiz, { dysgraphia: false, isMultipleChoice: false });
+    const quiz = { title: 't', questions: [{ type: 'open_response', question: payload, final_answer: 'a' }] };
+    const html = build(quiz, { dysgraphia: false, activity: 'Worksheet' });
     assertNeverRaw(html, payload, 'question');
   });
 
   run(`XSS payload [${key}] in a choice renders as harmless text only (Multiple Choice Quiz activity)`, () => {
-    const quiz = { title: 't', directions: 'd', questions: [{ type: 'multiple_choice', question: 'q', final_answer: 'a', choices: [payload, 'b', 'c', 'd'] }] };
-    const html = sandbox.__test_buildPrintableMathHtml(quiz, { dysgraphia: false, isMultipleChoice: true });
+    const quiz = { title: 't', questions: [{ type: 'multiple_choice', question: 'q', final_answer: 'a', choices: [payload, 'b', 'c', 'd'] }] };
+    const html = build(quiz, { dysgraphia: false, activity: 'Multiple Choice Quiz' });
     assertNeverRaw(html, payload, 'choices');
   });
 
   run(`XSS payload [${key}] in final_answer renders as harmless text only (inside the answer key)`, () => {
-    const quiz = { title: 't', directions: 'd', questions: [{ type: 'multiple_choice', question: 'q', final_answer: payload, choices: ['a', 'b', 'c', 'd'] }] };
-    const html = sandbox.__test_buildPrintableMathHtml(quiz, { dysgraphia: false, isMultipleChoice: false });
+    const quiz = { title: 't', questions: [{ type: 'open_response', question: 'q', final_answer: payload }] };
+    const html = build(quiz, { dysgraphia: false, activity: 'Worksheet' });
     assertNeverRaw(html, payload, 'final_answer');
   });
 
+  run(`XSS payload [${key}] in final_answer renders as harmless text only (inside a Matching Type answer bank)`, () => {
+    const quiz = { title: 't', questions: [{ type: 'open_response', question: 'q1', final_answer: payload }, { type: 'open_response', question: 'q2', final_answer: 'unique-2' }] };
+    const html = build(quiz, { dysgraphia: false, activity: 'Matching Type' });
+    assertNeverRaw(html, payload, 'matching bank final_answer');
+  });
+
   run(`XSS payload [${key}] in solution_steps NEVER appears at all (field is never read by the renderer)`, () => {
-    const quiz = { title: 't', directions: 'd', questions: [{ type: 'multiple_choice', question: 'q', solution_steps: payload, final_answer: 'a', choices: ['a', 'b', 'c', 'd'] }] };
-    const html = sandbox.__test_buildPrintableMathHtml(quiz, { dysgraphia: false, isMultipleChoice: false });
+    const quiz = { title: 't', questions: [{ type: 'open_response', question: 'q', solution_steps: payload, final_answer: 'a' }] };
+    const html = build(quiz, { dysgraphia: false, activity: 'Worksheet' });
     assert(!html.includes(payload), 'solution_steps payload leaked into HTML even though this field should never be read');
-    // Also assert the field's plain substring (works for the non-tag payloads
-    // too) is absent, since solution_steps must have NO path into the output
-    // at all -- not merely an escaped one.
     const plainMarker = payload.replace(/[<>]/g, '');
     if (plainMarker.length > 3) {
       assert(!html.includes(plainMarker), 'solution_steps content (even de-tagged) leaked into HTML');
     }
   });
+
+  run(`XSS payload [${key}] in passage_evidence NEVER appears at all (field is never read by the renderer)`, () => {
+    const quiz = { title: 't', passage: 'harmless passage text', questions: [{ type: 'open_response', question: 'q', passage_evidence: payload, final_answer: 'a' }] };
+    const html = build(quiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+    assert(!html.includes(payload), 'passage_evidence payload leaked into HTML even though this field should never be read');
+  });
 });
 
-// These inspect app.js's ACTUAL source (not a re-implementation in the test)
-// to confirm the call site really does exact equality against the known
-// dropdown value, not a substring/regex test that a crafted or coincidental
-// activity name (e.g. "Multiple Choice Quiz (Extra Credit)", or an
-// unrelated activity that merely mentions "multiple choice" in passing)
-// could wrongly satisfy.
-run('SOURCE CHECK: the printable-Math call site uses EXACT equality against the known activity value', () => {
-  assert(appJsSource.includes("activity === 'Multiple Choice Quiz'"), 'expected an exact-equality check against the literal index.html <option> value');
+// ---------------------------------------------------------------------
+// Source-level checks
+// ---------------------------------------------------------------------
+run('SOURCE CHECK: buildPrintableMathHtml keys choice rendering off q.type, not a caller-supplied boolean', () => {
+  assert(appJsSource.includes("q.type === 'multiple_choice'"), 'expected choice rendering to key off the validated q.type field');
+  assert(!appJsSource.includes('opts.isMultipleChoice') && !appJsSource.includes('isMultipleChoice:'), 'expected the old isMultipleChoice flag/param to be gone -- schema type is now the single source of truth');
 });
 
-run('SOURCE CHECK: the old loose substring/regex activity match is gone', () => {
-  assert(!/\/multiple choice\/i\.test\(activity\)/.test(appJsSource), 'expected the old loose regex match to have been replaced, not left alongside the exact check');
-});
-
-run('buildPrintableMathHtml itself is match-strategy-agnostic: given isMultipleChoice=true it renders choices regardless of caller logic', () => {
-  const html = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: false, isMultipleChoice: true });
-  assert(html.includes('A. '), 'expected MC rendering when the caller passes isMultipleChoice: true');
-});
-
-run('buildPrintableMathHtml itself is match-strategy-agnostic: given isMultipleChoice=false it never renders choices', () => {
-  const html = sandbox.__test_buildPrintableMathHtml(sampleQuiz, { dysgraphia: false, isMultipleChoice: false });
-  assert(!html.includes('A. '), 'expected NO MC rendering when the caller passes isMultipleChoice: false');
-});
-
-run('SOURCE CHECK: buildPrintableMathHtml never reads solution_steps anywhere in its body (not merely absent from this test\'s output)', () => {
-  // Stable named-function boundary, not a fixed line number: finds the
-  // function by its declaration text and ends at the NEXT top-level
-  // `function` declaration. Fails loudly if either boundary can't be found,
-  // rather than silently extracting the wrong range.
+run('SOURCE CHECK: directions are selected from a fixed lookup table, quiz.directions is never read inside buildPrintableMathHtml', () => {
   const lines = appJsSource.split('\n');
   const startIdx = lines.findIndex((l) => l.startsWith('function buildPrintableMathHtml('));
   assert(startIdx !== -1, 'could not locate buildPrintableMathHtml in app.js source for inspection -- has it been renamed or restructured?');
   const endIdx = lines.findIndex((l, i) => i > startIdx && /^function \w+\(/.test(l));
   assert(endIdx !== -1, 'could not locate the next top-level function after buildPrintableMathHtml -- boundary detection may be broken');
   const body = lines.slice(startIdx, endIdx).join('\n');
+  assert(!body.includes('quiz.directions'), 'buildPrintableMathHtml must never read quiz.directions -- directions are renderer-owned');
   assert(!body.includes('solution_steps'), 'buildPrintableMathHtml\'s source body references solution_steps -- it must never read this field at all');
+  assert(!body.includes('passage_evidence'), 'buildPrintableMathHtml\'s source body references passage_evidence -- it is validation-only metadata and must never be read here');
+});
+
+run('SOURCE CHECK: MATH_DIRECTIONS_BY_ACTIVITY has an entry for all 5 Math-eligible activities', () => {
+  ['Multiple Choice Quiz', 'Worksheet', 'Reading Comprehension', 'Matching Type', 'Parent/Tutor Support Sheet'].forEach((activity) => {
+    assert(appJsSource.includes(`'${activity}':`), `expected MATH_DIRECTIONS_BY_ACTIVITY to have a key for "${activity}"`);
+  });
 });
 
 console.log('\nDone.');

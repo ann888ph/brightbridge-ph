@@ -295,7 +295,7 @@ const FINALIZE_OK = () => jsonResponse(200, [{ finalized: true, reason: null }])
     ]);
     const { status } = await invoke(mock, { bodyOverrides: {
       prompt: 'a client prompt', topic: 'Differential Equations', topicSource: 'custom',
-      grade: 'Grade 6', subject: 'Math', quarter: 'Quarter 1', items: String(items)
+      grade: 'Grade 6', subject: 'Math', quarter: 'Quarter 1', activity: 'Multiple Choice Quiz', items: String(items)
     } });
     assert(status === 200, 'expected 200 (valid Math quiz, first attempt succeeds), got ' + status);
     assert(captured.content.includes(JSON.stringify('Differential Equations')), 'expected the topic quoted in the policy');

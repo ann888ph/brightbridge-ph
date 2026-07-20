@@ -6,7 +6,22 @@ const path = require('path');
 const sandbox = require(path.join(__dirname, '..', 'math-validation.js'));
 const { run } = require('./helpers/run.js');
 
-const { validateMathQuestions, safeEvalArithmetic } = sandbox;
+const { safeEvalArithmetic, getMathActivityProfile, extractAllNumericTokens, normalizeEvidenceText } = sandbox;
+
+// Every test ABOVE this point in the file (unchanged from before the
+// Printable-Activity-Type rework) exercises the ORIGINAL V1 behavior: every
+// Math question must be multiple_choice. Rather than editing dozens of call
+// sites, this thin wrapper defaults `mode` to 'interactive' when the caller
+// doesn't specify one -- `mode === 'interactive'` alone is sufficient to
+// require multiple_choice regardless of `activity` (see
+// getMathActivityProfile), so these legacy calls keep testing exactly what
+// they always tested. New tests further down in this file call
+// sandbox.validateMathQuestions directly with explicit activity/mode to
+// exercise the open_response / Reading Comprehension / Matching Type
+// profiles.
+function validateMathQuestions(quiz, expectedCount, activity, mode) {
+  return sandbox.validateMathQuestions(quiz, expectedCount, activity, mode === undefined ? 'interactive' : mode);
+}
 
 // ===== safeEvalArithmetic basics =====
 run('safeEvalArithmetic: basic multiplication', () => {
@@ -455,6 +470,264 @@ run('FIX 4: genuine floating-point noise (e.g. 0.1 + 0.2) still correctly passes
   };
   const v = validateMathQuestions({ questions: [q] }, 1);
   if (!v.ok) throw new Error('expected ok: 0.1 + 0.2 = 0.3 should pass despite JS floating-point representation noise, got: ' + JSON.stringify(v.failures));
+});
+
+// =====================================================================
+// REV 4: getMathActivityProfile -- shared mode+activity -> profile helper
+// =====================================================================
+run('getMathActivityProfile: Interactive + Reading Comprehension is still requiresMultipleChoice, with neither printable-only flag set', () => {
+  const p = getMathActivityProfile('interactive', 'Reading Comprehension');
+  if (!p.requiresMultipleChoice) throw new Error('expected requiresMultipleChoice true for Interactive');
+  if (p.isPrintableReadingComprehension) throw new Error('expected isPrintableReadingComprehension false for Interactive');
+  if (p.isPrintableMatchingType) throw new Error('expected isPrintableMatchingType false');
+});
+run('getMathActivityProfile: Interactive + Matching Type is still requiresMultipleChoice, with neither printable-only flag set', () => {
+  const p = getMathActivityProfile('interactive', 'Matching Type');
+  if (!p.requiresMultipleChoice) throw new Error('expected requiresMultipleChoice true for Interactive');
+  if (p.isPrintableMatchingType) throw new Error('expected isPrintableMatchingType false for Interactive');
+});
+run('getMathActivityProfile: Printable + Multiple Choice Quiz requires multiple_choice', () => {
+  const p = getMathActivityProfile('printable', 'Multiple Choice Quiz');
+  if (!p.requiresMultipleChoice) throw new Error('expected requiresMultipleChoice true');
+});
+run('getMathActivityProfile: Printable + Worksheet/Reading Comprehension/Matching Type/Parent-Tutor all require open_response', () => {
+  ['Worksheet', 'Reading Comprehension', 'Matching Type', 'Parent/Tutor Support Sheet'].forEach((activity) => {
+    const p = getMathActivityProfile('printable', activity);
+    if (p.requiresMultipleChoice) throw new Error(activity + ': expected requiresMultipleChoice false');
+  });
+});
+run('getMathActivityProfile: Printable + Reading Comprehension sets isPrintableReadingComprehension only', () => {
+  const p = getMathActivityProfile('printable', 'Reading Comprehension');
+  if (!p.isPrintableReadingComprehension) throw new Error('expected true');
+  if (p.isPrintableMatchingType) throw new Error('expected false');
+});
+run('getMathActivityProfile: Printable + Matching Type sets isPrintableMatchingType only', () => {
+  const p = getMathActivityProfile('printable', 'Matching Type');
+  if (!p.isPrintableMatchingType) throw new Error('expected true');
+  if (p.isPrintableReadingComprehension) throw new Error('expected false');
+});
+run('getMathActivityProfile: unrecognized/missing mode satisfies none of the three predicates', () => {
+  const p = getMathActivityProfile(undefined, 'Reading Comprehension');
+  if (p.requiresMultipleChoice || p.isPrintableReadingComprehension || p.isPrintableMatchingType) {
+    throw new Error('expected all three false for an unrecognized mode, got: ' + JSON.stringify(p));
+  }
+});
+
+// =====================================================================
+// REV 4: Printable open_response schema profile
+// =====================================================================
+function baseOpenResponseQuestion() {
+  return {
+    type: 'open_response',
+    question: 'What is 2 + 2?',
+    solution_steps: '2 + 2 = 4',
+    final_answer: '4'
+  };
+}
+
+run('Printable Worksheet: passes with NO choices/answer fields at all', () => {
+  const v = sandbox.validateMathQuestions({ questions: [baseOpenResponseQuestion()] }, 1, 'Worksheet', 'printable');
+  if (!v.ok) throw new Error('expected ok, got: ' + JSON.stringify(v.failures));
+});
+
+run('Printable Worksheet: a multiple_choice-typed question FAILS this profile (wrong type for the activity)', () => {
+  const q = Object.assign({}, baseOpenResponseQuestion(), { type: 'multiple_choice', choices: ['3', '4', '5', '6'], answer: 1 });
+  const v = sandbox.validateMathQuestions({ questions: [q] }, 1, 'Worksheet', 'printable');
+  if (v.ok) throw new Error('expected failure: Worksheet profile expects open_response, not multiple_choice');
+});
+
+run('Printable Multiple Choice Quiz: FAILS when choices/answer are missing (profile still enforces MC requirements)', () => {
+  const q = baseOpenResponseQuestion(); // type open_response, no choices/answer
+  const v = sandbox.validateMathQuestions({ questions: [q] }, 1, 'Multiple Choice Quiz', 'printable');
+  if (v.ok) throw new Error('expected failure: Multiple Choice Quiz profile requires multiple_choice + choices + answer');
+});
+
+run('Printable Multiple Choice Quiz: still passes with a normal, complete multiple_choice question', () => {
+  const v = sandbox.validateMathQuestions({ questions: [baseValidQuestion()] }, 1, 'Multiple Choice Quiz', 'printable');
+  if (!v.ok) throw new Error('expected ok, got: ' + JSON.stringify(v.failures));
+});
+
+run('Printable Parent/Tutor Support Sheet: passes with no choices/answer fields', () => {
+  const v = sandbox.validateMathQuestions({ questions: [baseOpenResponseQuestion()] }, 1, 'Parent/Tutor Support Sheet', 'printable');
+  if (!v.ok) throw new Error('expected ok, got: ' + JSON.stringify(v.failures));
+});
+
+run('Open-response profile: broken arithmetic still fails (correctness validation is profile-independent)', () => {
+  const q = Object.assign({}, baseOpenResponseQuestion(), { solution_steps: '2 + 2 = 5' });
+  const v = sandbox.validateMathQuestions({ questions: [q] }, 1, 'Worksheet', 'printable');
+  if (v.ok) throw new Error('expected failure: solution_steps arithmetic (2+2=5) does not check out, regardless of schema profile');
+});
+
+// =====================================================================
+// REV 4: Reading Comprehension evidence linkage (Printable only)
+// =====================================================================
+const RC_PASSAGE = 'Nena has 1/2 cup of sugar and 2 cups of flour for her recipe.';
+
+function rcQuestion(overrides) {
+  return Object.assign({
+    type: 'open_response',
+    question: 'How much sugar does Nena have, in decimal form?',
+    solution_steps: '1/2 = 0.5',
+    final_answer: '0.5',
+    passage_evidence: '1/2 cup of sugar'
+  }, overrides);
+}
+
+run('Reading Comprehension: valid evidence (real excerpt, number used in solution_steps) passes', () => {
+  const quiz = { passage: RC_PASSAGE, questions: [rcQuestion()] };
+  const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
+  if (!v.ok) throw new Error('expected ok, got: ' + JSON.stringify(v.failures));
+});
+
+run('Reading Comprehension: fabricated evidence (not found in passage) fails', () => {
+  const quiz = { passage: RC_PASSAGE, questions: [rcQuestion({ passage_evidence: 'Nena has 10 apples' })] };
+  const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
+  if (v.ok) throw new Error('expected failure: passage_evidence text does not appear in the passage');
+});
+
+run('Reading Comprehension: evidence found in passage but numerically unused fails', () => {
+  // "2 cups of flour" is a real excerpt, but neither 2 nor anything else in
+  // it is used by this question's text or solution_steps (which are both
+  // about 0.5).
+  const quiz = { passage: RC_PASSAGE, questions: [rcQuestion({ passage_evidence: '2 cups of flour' })] };
+  const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
+  if (v.ok) throw new Error('expected failure: passage_evidence number(s) are never used in the question or solution_steps');
+});
+
+run('Reading Comprehension: non-empty passage does NOT excuse a question missing passage_evidence entirely', () => {
+  const q = rcQuestion();
+  delete q.passage_evidence;
+  const quiz = { passage: RC_PASSAGE, questions: [q] };
+  const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
+  if (v.ok) throw new Error('expected failure: passage is present but this question has no passage_evidence at all');
+});
+
+run('Reading Comprehension: missing passage AND missing evidence together fails', () => {
+  const q = rcQuestion();
+  delete q.passage_evidence;
+  const quiz = { questions: [q] }; // no passage field at all
+  const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
+  if (v.ok) throw new Error('expected failure: both passage and passage_evidence are absent');
+});
+
+run('Reading Comprehension: valid evidence NEVER bypasses arithmetic validation (non-bypass check)', () => {
+  const quiz = { passage: RC_PASSAGE, questions: [rcQuestion({ solution_steps: '1/2 = 0.9' })] }; // wrong arithmetic
+  const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
+  if (v.ok) throw new Error('expected failure: solution_steps arithmetic is wrong even though passage_evidence itself is valid');
+});
+
+run('Reading Comprehension: a rounding instruction stated only in the passage still satisfies the currency check', () => {
+  const PHP = String.fromCharCode(0x20B1);
+  const passage = 'Aling Rosa sells rice for ' + PHP + '32.50 per kilo. Please round all totals to the nearest centavo.';
+  const q = {
+    type: 'open_response',
+    question: 'Aling Rosa sold 28.25 kilos of rice. How much did she earn?', // no mention of rounding here
+    solution_steps: '28.25 * 32.50 = 918.125; rounded to the nearest centavo = 918.13',
+    final_answer: PHP + '918.13',
+    passage_evidence: PHP + '32.50 per kilo'
+  };
+  const v = sandbox.validateMathQuestions({ passage, questions: [q] }, 1, 'Reading Comprehension', 'printable');
+  if (!v.ok) throw new Error('expected ok: rounding instruction in the shared passage should satisfy this question\'s currency check, got: ' + JSON.stringify(v.failures));
+});
+
+run('MODE GATING: Interactive Math + Reading Comprehension activity string passes as a normal MCQ with NO passage/passage_evidence at all', () => {
+  const v = sandbox.validateMathQuestions({ questions: [baseValidQuestion()] }, 1, 'Reading Comprehension', 'interactive');
+  if (!v.ok) throw new Error('Interactive Math must never require passage/passage_evidence merely because the activity dropdown says Reading Comprehension, got: ' + JSON.stringify(v.failures));
+});
+
+// =====================================================================
+// REV 4: Matching Type final_answer uniqueness (Printable only)
+// =====================================================================
+function matchingQuestion(finalAnswer) {
+  return {
+    type: 'open_response',
+    question: 'What is ' + finalAnswer + ' as a number?',
+    solution_steps: 'x = ' + finalAnswer,
+    final_answer: finalAnswer
+  };
+}
+
+run('Matching Type: passes when all final_answer values are unique', () => {
+  const quiz = { questions: [matchingQuestion('1'), matchingQuestion('2'), matchingQuestion('3')] };
+  const v = sandbox.validateMathQuestions(quiz, 3, 'Matching Type', 'printable');
+  if (!v.ok) throw new Error('expected ok, got: ' + JSON.stringify(v.failures));
+});
+
+run('Matching Type: fails when two final_answer values are identical', () => {
+  const quiz = { questions: [matchingQuestion('4'), matchingQuestion('4'), matchingQuestion('5')] };
+  const v = sandbox.validateMathQuestions(quiz, 3, 'Matching Type', 'printable');
+  if (v.ok) throw new Error('expected failure: two questions share the identical final_answer "4"');
+});
+
+run('Matching Type: fails when two final_answer values are Math-equivalent (0.75 vs 3/4), not just textually equal', () => {
+  const quiz = { questions: [matchingQuestion('0.75'), matchingQuestion('3/4'), matchingQuestion('2')] };
+  const v = sandbox.validateMathQuestions(quiz, 3, 'Matching Type', 'printable');
+  if (v.ok) throw new Error('expected failure: "0.75" and "3/4" are the same value after Math-equivalence normalization');
+});
+
+run('MODE GATING: Interactive Math + Matching Type activity string passes as a normal MCQ even with duplicate final_answer values', () => {
+  const q1 = baseValidQuestion();
+  const q2 = Object.assign({}, baseValidQuestion(), { question: 'What is 2 + 2? (again)' });
+  const v = sandbox.validateMathQuestions({ questions: [q1, q2] }, 2, 'Matching Type', 'interactive');
+  if (!v.ok) throw new Error('Interactive Math must never apply the Matching Type uniqueness rule merely because the activity dropdown says Matching Type, got: ' + JSON.stringify(v.failures));
+});
+
+// =====================================================================
+// REV 4: extractAllNumericTokens -- value-aware tokenizer
+// =====================================================================
+function tokensEqual(tokens, expectedValues) {
+  if (tokens.length !== expectedValues.length) return false;
+  return tokens.every((t, i) => Math.abs(t - expectedValues[i]) < 1e-6);
+}
+
+run('extractAllNumericTokens: "1/2" tokenizes as ONE token with value 0.5 (fraction vs decimal match)', () => {
+  const tokens = extractAllNumericTokens('1/2');
+  if (!tokensEqual(tokens, [0.5])) throw new Error('expected [0.5], got ' + JSON.stringify(tokens));
+});
+
+run('extractAllNumericTokens: "1 1/2" tokenizes as ONE token with value 1.5 (mixed number vs decimal match)', () => {
+  const tokens = extractAllNumericTokens('1 1/2');
+  if (!tokensEqual(tokens, [1.5])) throw new Error('expected [1.5], got ' + JSON.stringify(tokens));
+});
+
+run('extractAllNumericTokens: peso "1,250.50" tokenizes to 1250.50 (currency/comma vs plain match)', () => {
+  const PHP = String.fromCharCode(0x20B1);
+  const tokens = extractAllNumericTokens(PHP + '1,250.50');
+  if (!tokensEqual(tokens, [1250.50])) throw new Error('expected [1250.50], got ' + JSON.stringify(tokens));
+});
+
+run('extractAllNumericTokens: "25%" tokenizes to 0.25, NOT 25 (percent semantics preserved, matches extractNumericValue)', () => {
+  const tokens = extractAllNumericTokens('25%');
+  if (!tokensEqual(tokens, [0.25])) throw new Error('expected [0.25], got ' + JSON.stringify(tokens));
+  const unrelated = extractAllNumericTokens('25');
+  if (tokensEqual(unrelated, tokens)) throw new Error('"25%" (0.25) must not numerically equal unrelated standalone "25"');
+});
+
+run('extractAllNumericTokens: a fraction is NEVER decomposed into separate numerator/denominator digit tokens', () => {
+  const evidenceTokens = extractAllNumericTokens('1/2');
+  const questionTokens = extractAllNumericTokens('There is 1 apple and 2 oranges');
+  if (questionTokens.length !== 2 || !tokensEqual(questionTokens, [1, 2])) {
+    throw new Error('expected the unrelated question to tokenize as separate [1, 2], got ' + JSON.stringify(questionTokens));
+  }
+  const falseMatch = evidenceTokens.some((ev) => questionTokens.some((qt) => Math.abs(ev - qt) < 1e-6));
+  if (falseMatch) throw new Error('evidence "1/2" (0.5) must not falsely match the unrelated separate digits 1 and 2');
+});
+
+// =====================================================================
+// REV 4: passage_evidence scope boundaries
+// =====================================================================
+run('passage_evidence is NEVER required for Worksheet/Matching Type/Parent-Tutor -- its absence is not penalized', () => {
+  ['Worksheet', 'Matching Type', 'Parent/Tutor Support Sheet'].forEach((activity) => {
+    const q = baseOpenResponseQuestion(); // no passage_evidence field
+    const v = sandbox.validateMathQuestions({ questions: [q] }, 1, activity, 'printable');
+    if (!v.ok) throw new Error(activity + ': expected ok without passage_evidence, got: ' + JSON.stringify(v.failures));
+  });
+});
+
+run('normalizeEvidenceText: lowercases and collapses whitespace only (not a numeric normalizer)', () => {
+  if (normalizeEvidenceText('  The   Recipe  Uses  Sugar ') !== 'the recipe uses sugar') {
+    throw new Error('unexpected normalization: ' + JSON.stringify(normalizeEvidenceText('  The   Recipe  Uses  Sugar ')));
+  }
 });
 
 console.log('\nDone.');

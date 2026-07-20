@@ -8,7 +8,10 @@
        gate before any Math worksheet is returned to a client.
    Keeping this as ONE file (instead of two copies) is the whole point: the
    client and server must never independently drift on what counts as a
-   valid Math worksheet. */
+   valid Math worksheet. This is also why getMathActivityProfile() (below)
+   lives here rather than being independently re-derived in app.js and
+   generate.js: the mode+activity -> schema/validation profile decision is
+   exactly the same class of "must never drift" logic. */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
     module.exports = factory();
@@ -47,6 +50,30 @@ function parseQuizJson(text) {
     }
   }
   throw new SyntaxError('Unrepairable JSON');
+}
+
+/* ============ MATH ACTIVITY PROFILE ============
+   Single shared source of truth for which Math schema/validation profile
+   applies to a given (mode, activity) pair. Both app.js's prompt builder
+   and generate.js's server-side validation call this SAME function --
+   neither file re-derives these booleans with its own formula, so the two
+   can never independently drift (the exact failure mode this module
+   exists to prevent, see the file banner above).
+
+   Interactive Math is explicitly out of scope for the Printable Activity
+   Type profiles below: it always requires multiple_choice, regardless of
+   which Activity Type string happens to be attached to the request. A
+   missing/unrecognized `mode` satisfies none of these three predicates
+   (falls through to the open_response expected-type branch with no
+   activity-specific rules engaged) -- production callers only ever pass
+   one of the two server-validated mode values, so this only matters for a
+   deliberately malformed direct call. */
+function getMathActivityProfile(mode, activity) {
+  return {
+    requiresMultipleChoice: mode === 'interactive' || (mode === 'printable' && activity === 'Multiple Choice Quiz'),
+    isPrintableReadingComprehension: mode === 'printable' && activity === 'Reading Comprehension',
+    isPrintableMatchingType: mode === 'printable' && activity === 'Matching Type'
+  };
 }
 
 /* ============ MATH VALIDATION (Math subject, interactive mode only) ============ */
@@ -262,20 +289,118 @@ function lastStepMatchesFinalAnswer(lastRhsText, finalAnswer) {
   return Math.abs(a - b) < epsilon;
 }
 
-// Validates Math questions per the Math prompt guardrails. Never modifies
-// the quiz; only reports what it found.
+/* ============ TEXT NORMALIZATION FOR PASSAGE-EVIDENCE MATCHING ============ */
+// Lowercase + collapsed whitespace only -- deliberately simpler than
+// normalizeMathValueText (which also folds unicode minus variants and strips
+// commas for NUMERIC comparison). This one is for comparing plain excerpt
+// TEXT against passage text, not numbers.
+function normalizeEvidenceText(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+/* ============ VALUE-AWARE NUMERIC TOKEN EXTRACTION ============
+   Used only by the Reading Comprehension passage_evidence "is this evidence
+   actually USED" check (see validateMathQuestions below). Tokenizes text
+   into complete mathematical values -- integers, decimals, comma-formatted
+   numbers, currency, simple fractions ("1/2"), mixed numbers ("1 1/2"), and
+   percentages -- never as isolated digit substrings. This matters: a naive
+   /\d+/g scan would split "1/2" into separate "1" and "2" tokens and could
+   then falsely "match" unrelated numbers elsewhere in the text that happen
+   to also be 1 or 2. The three alternatives below are tried in priority
+   order (mixed number, then simple fraction, then plain number) so a
+   fraction is always consumed as ONE token; the regex engine's global match
+   advances past whatever it consumed, so a fraction's digits are never
+   independently re-matched afterward. */
+const MATH_TOKEN_PATTERN = new RegExp(
+  '(?:' + MATH_PESO_SIGN + '\\s?)?-?\\d[\\d,]*(?:\\.\\d+)?\\s+\\d+\\/\\d+' + // mixed number: "1 1/2"
+  '|(?:' + MATH_PESO_SIGN + '\\s?)?-?\\d+\\/\\d+' +                          // simple fraction: "1/2"
+  '|(?:' + MATH_PESO_SIGN + '\\s?)?-?\\d[\\d,]*(?:\\.\\d+)?%?',              // integer/decimal/currency/percent
+  'g'
+);
+
+// Parses ONE already-matched token (e.g. "1 1/2", "1/2", "25%", peso+"1,250.50")
+// into a numeric value, reusing the same percent/fraction/comma/peso
+// semantics already established by extractNumericValue() above -- so "25%"
+// means 0.25 here too, never 25, consistent with the rest of this module.
+function parseMathToken(token) {
+  let t = String(token).trim();
+  t = t.split(MATH_PESO_SIGN).join('').trim();
+
+  const isPercent = /%$/.test(t);
+  if (isPercent) t = t.slice(0, -1).trim();
+
+  const mixedMatch = /^(-?\d[\d,]*(?:\.\d+)?)\s+(\d+)\/(\d+)$/.exec(t);
+  if (mixedMatch) {
+    const whole = Number(mixedMatch[1].split(',').join(''));
+    const num = Number(mixedMatch[2]);
+    const den = Number(mixedMatch[3]);
+    if (den === 0 || !Number.isFinite(whole)) return null;
+    const sign = whole < 0 ? -1 : 1;
+    const value = whole + sign * (num / den);
+    return isPercent ? value / 100 : value;
+  }
+
+  const fractionMatch = /^(-?\d+)\/(\d+)$/.exec(t);
+  if (fractionMatch) {
+    const num = Number(fractionMatch[1]);
+    const den = Number(fractionMatch[2]);
+    if (den === 0) return null;
+    const value = num / den;
+    return isPercent ? value / 100 : value;
+  }
+
+  const plain = t.split(',').join('');
+  if (!/^-?\d+(\.\d+)?$/.test(plain)) return null;
+  const n = Number(plain);
+  if (!Number.isFinite(n)) return null;
+  return isPercent ? n / 100 : n;
+}
+
+function extractAllNumericTokens(text) {
+  if (typeof text !== 'string') return [];
+  let t = text;
+  MATH_UNICODE_MINUS_CHARS.forEach(ch => { t = t.split(ch).join('-'); });
+  const matches = t.match(MATH_TOKEN_PATTERN) || [];
+  return matches.map(parseMathToken).filter((v) => v !== null);
+}
+
+// Validates Math questions per the Math prompt guardrails, profile-aware
+// (see getMathActivityProfile above). Never modifies the quiz; only reports
+// what it found.
 //
-// V1 rule: every question in a Math interactive worksheet MUST be
-// multiple_choice. true_false/fill_blank are REJECTED here (each such
-// question is recorded as its own failure), rather than silently skipped --
-// skipping them was the exact bug that let a worksheet with zero validated
-// multiple_choice questions pass, since total question count included them
-// but no rules ever inspected them.
-function validateMathQuestions(quiz, expectedCount) {
+// - Interactive Math (any Activity Type) and Printable "Multiple Choice
+//   Quiz" require every question to be multiple_choice with exactly 4
+//   choices and a valid answer index -- the original V1 rule, unchanged.
+// - Printable "Worksheet"/"Reading Comprehension"/"Matching Type"/
+//   "Parent/Tutor Support Sheet" require open_response instead: question,
+//   final_answer, solution_steps only -- choices/answer are never
+//   requested, required, or inspected.
+// - Reading Comprehension (Printable only -- see isPrintableReadingComprehension)
+//   additionally requires a non-empty quiz.passage and, per question, a
+//   passage_evidence field that is a real (non-fabricated) excerpt from the
+//   passage AND numerically used in the question/solution_steps.
+// - Matching Type (Printable only -- see isPrintableMatchingType)
+//   additionally requires every question's final_answer to be pairwise
+//   distinguishable (via valuesMatch) from every other question's.
+function validateMathQuestions(quiz, expectedCount, activity, mode) {
+  const profile = getMathActivityProfile(mode, activity);
+  const requiresMultipleChoice = profile.requiresMultipleChoice;
+  const isPrintableReadingComprehension = profile.isPrintableReadingComprehension;
+  const isPrintableMatchingType = profile.isPrintableMatchingType;
+  const expectedType = requiresMultipleChoice ? 'multiple_choice' : 'open_response';
+
   const failures = [];
   let validMultipleChoiceCount = 0;
   let totalMultipleChoiceCount = 0;
   const questions = Array.isArray(quiz && quiz.questions) ? quiz.questions : [];
+
+  if (isPrintableReadingComprehension) {
+    const passageNonEmpty = typeof (quiz && quiz.passage) === 'string' && quiz.passage.trim().length > 0;
+    if (!passageNonEmpty) {
+      failures.push({ index: -1, reasons: ['passage is required and must be non-empty for Reading Comprehension'] });
+    }
+  }
 
   questions.forEach((q, index) => {
     const reasons = [];
@@ -285,8 +410,8 @@ function validateMathQuestions(quiz, expectedCount) {
       return;
     }
 
-    if (q.type !== 'multiple_choice') {
-      failures.push({ index, reasons: ['Math questions must be multiple_choice for V1, got: "' + (q.type || 'unknown') + '"'] });
+    if (q.type !== expectedType) {
+      failures.push({ index, reasons: ['Math questions must be ' + expectedType + ' for this activity, got: "' + (q.type || 'unknown') + '"'] });
       return;
     }
 
@@ -296,21 +421,28 @@ function validateMathQuestions(quiz, expectedCount) {
       reasons.push('question is missing or empty');
     }
 
-    const choices = Array.isArray(q.choices) ? q.choices : null;
-    if (!choices || choices.length !== 4) {
-      reasons.push('choices must be an array of exactly 4 items');
-    }
-
-    if (choices && choices.length === 4) {
-      const normSet = new Set(choices.map(normalizeMathValueText));
-      if (normSet.size !== choices.length) {
-        reasons.push('choices are not all unique after normalization');
+    // choices/answer are ONLY requested, required, or validated for the
+    // multiple_choice profile -- for open_response, these fields are never
+    // read, and their presence or absence has no effect on the result.
+    let choices = null;
+    let answerIsValidIndex = false;
+    if (requiresMultipleChoice) {
+      choices = Array.isArray(q.choices) ? q.choices : null;
+      if (!choices || choices.length !== 4) {
+        reasons.push('choices must be an array of exactly 4 items');
       }
-    }
 
-    const answerIsValidIndex = Number.isInteger(q.answer) && !!choices && q.answer >= 0 && q.answer < choices.length;
-    if (!answerIsValidIndex) {
-      reasons.push('answer is missing, not an integer, or out of range for choices');
+      if (choices && choices.length === 4) {
+        const normSet = new Set(choices.map(normalizeMathValueText));
+        if (normSet.size !== choices.length) {
+          reasons.push('choices are not all unique after normalization');
+        }
+      }
+
+      answerIsValidIndex = Number.isInteger(q.answer) && !!choices && q.answer >= 0 && q.answer < choices.length;
+      if (!answerIsValidIndex) {
+        reasons.push('answer is missing, not an integer, or out of range for choices');
+      }
     }
 
     const hasSolutionSteps = typeof q.solution_steps === 'string' && q.solution_steps.trim().length > 0;
@@ -323,7 +455,7 @@ function validateMathQuestions(quiz, expectedCount) {
       reasons.push('final_answer is missing or empty');
     }
 
-    if (choices && choices.length === 4 && hasFinalAnswer) {
+    if (requiresMultipleChoice && choices && choices.length === 4 && hasFinalAnswer) {
       const matchFlags = choices.map(c => valuesMatch(c, q.final_answer));
       const matchCount = matchFlags.filter(Boolean).length;
       if (matchCount === 0) {
@@ -332,6 +464,33 @@ function validateMathQuestions(quiz, expectedCount) {
         reasons.push('final_answer value appears in more than one choice (duplicate correct answer)');
       } else if (answerIsValidIndex && !matchFlags[q.answer]) {
         reasons.push('choices[answer] does not match final_answer');
+      }
+    }
+
+    // Reading Comprehension evidence linkage (Printable only). Additive to
+    // every other check here -- never a substitute for arithmetic/currency
+    // validation below.
+    if (isPrintableReadingComprehension) {
+      const hasEvidence = typeof q.passage_evidence === 'string' && q.passage_evidence.trim().length > 0;
+      if (!hasEvidence) {
+        reasons.push('passage_evidence is missing or empty for Reading Comprehension');
+      } else {
+        const normalizedEvidence = normalizeEvidenceText(q.passage_evidence);
+        const normalizedPassage = normalizeEvidenceText((quiz && quiz.passage) || '');
+        if (normalizedEvidence.length === 0 || normalizedPassage.indexOf(normalizedEvidence) === -1) {
+          reasons.push('passage_evidence does not appear in the passage (fabricated excerpt)');
+        } else {
+          const evidenceTokens = extractAllNumericTokens(q.passage_evidence);
+          const contextTokens = extractAllNumericTokens((q.question || '') + ' ' + (q.solution_steps || ''));
+          if (evidenceTokens.length === 0) {
+            reasons.push('passage_evidence has no numeric value to verify usage');
+          } else {
+            const used = evidenceTokens.some((ev) => contextTokens.some((ct) => Math.abs(ev - ct) < MATH_EXACT_EPSILON));
+            if (!used) {
+              reasons.push('passage_evidence numeric value(s) are not used in the question or solution_steps');
+            }
+          }
+        }
       }
     }
 
@@ -369,6 +528,13 @@ function validateMathQuestions(quiz, expectedCount) {
       }
     }
 
+    // Reading Comprehension: a rounding instruction stated once in the
+    // shared passage (rather than repeated in every question) must still
+    // satisfy this question's currency check -- see questionRequestsRounding.
+    const roundingCheckText = isPrintableReadingComprehension
+      ? ((quiz && quiz.passage) || '') + ' ' + (q.question || '')
+      : (q.question || '');
+
     const currencyContext = isCurrencyLike(q.question) || (choices && choices.some(isCurrencyLike)) || isCurrencyLike(q.final_answer);
     if (currencyContext && hasFinalAnswer) {
       const finalDigitsOnly = q.final_answer.replace(/[^0-9.]/g, '');
@@ -377,12 +543,13 @@ function validateMathQuestions(quiz, expectedCount) {
         reasons.push('currency final_answer must display exactly two decimal places');
       }
 
-      // Deliberately derived from the QUESTION TEXT ONLY, not solution_steps:
-      // whether "rounding was requested" must reflect what the learner was
-      // actually asked to do, not what the model's own narration happened to
-      // say it did. See questionRequestsRounding() for the negation handling
-      // ("Do not round...", "Rounding is not required...").
-      const mentionsRounding = questionRequestsRounding(q.question);
+      // Deliberately derived from the QUESTION TEXT (plus passage, for
+      // Reading Comprehension) ONLY, not solution_steps: whether "rounding
+      // was requested" must reflect what the learner was actually asked to
+      // do, not what the model's own narration happened to say it did. See
+      // questionRequestsRounding() for the negation handling ("Do not
+      // round...", "Rounding is not required...").
+      const mentionsRounding = questionRequestsRounding(roundingCheckText);
 
       if (lastNonRoundingNumericRhs !== null) {
         const cents = lastNonRoundingNumericRhs * 100;
@@ -406,6 +573,25 @@ function validateMathQuestions(quiz, expectedCount) {
     }
   });
 
+  // Matching Type (Printable only): every question's final_answer must be
+  // pairwise distinguishable from every other question's, after Math-
+  // equivalence normalization (valuesMatch already treats e.g. "0.75" and
+  // "3/4" as the same answer). O(n^2) over at most 20 questions.
+  if (isPrintableMatchingType) {
+    for (let i = 0; i < questions.length; i++) {
+      for (let j = i + 1; j < questions.length; j++) {
+        const a = questions[i] && questions[i].final_answer;
+        const b = questions[j] && questions[j].final_answer;
+        if (typeof a === 'string' && typeof b === 'string' && valuesMatch(a, b)) {
+          failures.push({
+            index: -1,
+            reasons: ['final_answer at index ' + i + ' is equivalent to index ' + j + ' after Math normalization -- Matching Type requires unique answers']
+          });
+        }
+      }
+    }
+  }
+
   // expectedCount must itself be a valid positive integer -- a caller passing
   // 0 (or anything invalid) must never trivially satisfy "count complete."
   // Count must match EXACTLY, not just meet-or-exceed.
@@ -424,6 +610,7 @@ function validateMathQuestions(quiz, expectedCount) {
 
   return {
     parseQuizJson,
+    getMathActivityProfile,
     safeEvalArithmetic,
     normalizeMathValueText,
     extractNumericValue,
@@ -432,6 +619,8 @@ function validateMathQuestions(quiz, expectedCount) {
     questionRequestsRounding,
     valuesMatch,
     lastStepMatchesFinalAnswer,
+    normalizeEvidenceText,
+    extractAllNumericTokens,
     validateMathQuestions
   };
 });

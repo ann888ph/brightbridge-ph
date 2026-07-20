@@ -224,5 +224,66 @@ await run('Custom topic: never rejects for a quarter mismatch -- explicit "seque
   assert(prompt.includes('schools sequence lessons differently'), 'expected explicit quarter-independence guidance');
 });
 
+// ---------------------------------------------------------------------
+// REV 4: activity-and-mode-aware Math schema (open_response profile)
+// ---------------------------------------------------------------------
+await run('PRINTABLE Math + Worksheet: requests open_response, NEVER asks for unused choices/answer', async () => {
+  const prompt = await buildPromptViaRealApp({ wsMode: 'printable', values: { subject: 'Math', activity: 'Worksheet' } });
+  assert(prompt.includes('"type": "open_response"'), 'expected the open_response schema example');
+  // Checked as a field KEY (quote-colon), not a bare substring -- the
+  // integrity rules deliberately mention the word "choices" in prose
+  // ("Do NOT include a \"choices\" field...") to instruct the model NOT to
+  // send it, which would otherwise false-positive a naive substring check.
+  assert(!prompt.includes('"choices":'), 'expected NO choices field requested for a Printable Worksheet Math activity');
+  assert(!prompt.includes('"answer":'), 'expected NO answer field requested for a Printable Worksheet Math activity');
+  assert(prompt.includes('"solution_steps"') && prompt.includes('"final_answer"'), 'expected solution_steps/final_answer still requested');
+});
+
+await run('PRINTABLE Math + Multiple Choice Quiz: still requests choices/answer (unchanged)', async () => {
+  const prompt = await buildPromptViaRealApp({ wsMode: 'printable', values: { subject: 'Math', activity: 'Multiple Choice Quiz' } });
+  assert(prompt.includes('"type": "multiple_choice"'), 'expected the multiple_choice schema example');
+  assert(prompt.includes('"choices"') && prompt.includes('"answer"'), 'expected choices/answer still requested for Multiple Choice Quiz');
+});
+
+await run('PRINTABLE Math + Reading Comprehension: open_response schema ALSO requests passage_evidence', async () => {
+  const prompt = await buildPromptViaRealApp({ wsMode: 'printable', values: { subject: 'Math', activity: 'Reading Comprehension' } });
+  assert(prompt.includes('"type": "open_response"'), 'expected the open_response schema example');
+  assert(!prompt.includes('"choices":'), 'expected no choices field for Reading Comprehension');
+  assert(prompt.includes('"passage_evidence":'), 'expected passage_evidence requested for Reading Comprehension');
+  assert(/passage_evidence.*field that is an exact, verbatim excerpt/.test(prompt), 'expected the passage_evidence integrity rule text');
+});
+
+await run('PRINTABLE Math + Matching Type: open_response schema, integrity rules require distinguishable final answers', async () => {
+  const prompt = await buildPromptViaRealApp({ wsMode: 'printable', values: { subject: 'Math', activity: 'Matching Type' } });
+  assert(prompt.includes('"type": "open_response"'), 'expected the open_response schema example');
+  // The generic "If Activity Type is Reading Comprehension..." Rules bullet
+  // is present for every Math request regardless of the SELECTED activity
+  // (it's informational, describing what that OTHER activity requires) --
+  // so this checks for passage_evidence as an actual requested schema
+  // FIELD (quote-colon), which only appears when Reading Comprehension is
+  // the activity actually in effect.
+  assert(!prompt.includes('"passage_evidence":'), 'Matching Type must not request passage_evidence as a schema field');
+  assert(/distinguishable from every other question/.test(prompt), 'expected the Matching Type final-answer-uniqueness rule text');
+});
+
+await run('PRINTABLE Math + Parent/Tutor Support Sheet: open_response schema, no coaching field requested from the model', async () => {
+  const prompt = await buildPromptViaRealApp({ wsMode: 'printable', values: { subject: 'Math', activity: 'Parent/Tutor Support Sheet' } });
+  assert(prompt.includes('"type": "open_response"'), 'expected the open_response schema example');
+  assert(!prompt.includes('"choices":'), 'expected no choices field for Parent/Tutor Support Sheet');
+  assert(!prompt.includes('parent_tutor_guide') && !prompt.includes('"guide"'), 'the Parent/Tutor Guide must be renderer-owned -- no such field should ever be requested from the model');
+});
+
+await run('INTERACTIVE Math + Reading Comprehension activity string: STILL requests multiple_choice (mode gates the profile, not activity alone)', async () => {
+  const prompt = await buildPromptViaRealApp({ wsMode: 'interactive', values: { subject: 'Math', activity: 'Reading Comprehension' } });
+  assert(prompt.includes('"type": "multiple_choice"'), 'Interactive Math must always request multiple_choice regardless of the activity string');
+  assert(prompt.includes('"choices"') && prompt.includes('"answer"'), 'expected choices/answer still requested for Interactive Math');
+});
+
+await run('INTERACTIVE Math + Matching Type activity string: STILL requests multiple_choice, no uniqueness rule text', async () => {
+  const prompt = await buildPromptViaRealApp({ wsMode: 'interactive', values: { subject: 'Math', activity: 'Matching Type' } });
+  assert(prompt.includes('"type": "multiple_choice"'), 'Interactive Math must always request multiple_choice regardless of the activity string');
+  assert(!/distinguishable from every other question/.test(prompt), 'Interactive Math must not get the Printable Matching Type uniqueness rule');
+});
+
 console.log('\nDone.');
 })();
