@@ -30,7 +30,7 @@ const PLAN_LIMITS = {
 };
 
 const ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
-const ANTHROPIC_MAX_TOKENS = 15000;
+const ANTHROPIC_MAX_TOKENS = 8000;
 
 // Matches the <select id="items"> options in index.html exactly.
 const ALLOWED_ITEM_COUNTS = [5, 10, 15, 20];
