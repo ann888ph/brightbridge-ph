@@ -179,7 +179,15 @@ run('Worksheet: answer key comes ONLY from final_answer', () => {
 });
 
 // ---------------------------------------------------------------------
-// Reading Comprehension (open_response + passage)
+// Reading Comprehension -- LEGACY FALLBACK PATH (open_response + the old
+// freehand passage/passage_evidence shape, no story_facts). This whole
+// block exercises buildLegacyReadingComprehensionFacts() via
+// buildMathReadingComprehensionFacts()'s fallback branch -- kept exactly
+// as before to prove the legacy path still works for a worksheet saved
+// before the structured story_facts contract existed. The PRIMARY,
+// newly-generated-worksheet contract (story_facts array order, no IDs/
+// evidence_fact_ids ever exposed) is tested in its own section further
+// below.
 // ---------------------------------------------------------------------
 run('Reading Comprehension: deterministic directions reference the passage', () => {
   const html = build(readingComprehensionQuiz, { dysgraphia: false, activity: 'Reading Comprehension' });
@@ -368,6 +376,93 @@ run('CONTEXT-AWARE a.m./p.m.: cited "...2:00 p.m." sentence renders; the second,
 });
 
 // ---------------------------------------------------------------------
+// Reading Comprehension -- PRIMARY STRUCTURED story_facts CONTRACT. Every
+// newly generated Math Reading Comprehension worksheet uses this path:
+// quiz.story_facts is already server-validated (non-empty, unique ids,
+// unique text, every fact referenced) before delivery, so the renderer
+// displays it directly, in its own array order -- no re-matching, no
+// sentence-splitting, no legacy fallback involved.
+// ---------------------------------------------------------------------
+const RC_STORY_FACTS_QUIZ = {
+  title: 't',
+  story_facts: [
+    { id: 'F1', text: 'Juan had 5 mangoes.' },
+    { id: 'F2', text: 'Nena gave Juan 3 more mangoes.' }
+  ],
+  questions: [{
+    type: 'open_response',
+    question: 'How many mangoes did Juan have after Nena gave him more?',
+    evidence_fact_ids: ['F1', 'F2'],
+    solution_steps: '5 + 3 = 8',
+    final_answer: '8'
+  }]
+};
+
+run('STORY FACTS: renderer shows facts in story_facts ARRAY order (not question-citation order)', () => {
+  const quiz = {
+    title: 't',
+    story_facts: [
+      { id: 'F1', text: 'Second-listed-but-cited-second fact: Nena gave Juan 3 mangoes.' },
+      { id: 'F2', text: 'First-listed-but-cited-first-by-question fact: Juan had 5 mangoes.' }
+    ],
+    questions: [{
+      type: 'open_response', question: 'How many mangoes total?',
+      evidence_fact_ids: ['F2', 'F1'], // question cites F2 before F1 -- array order must still win
+      solution_steps: '5 + 3 = 8', final_answer: '8'
+    }]
+  };
+  const html = build(quiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  const idxFirst = html.indexOf('Second-listed-but-cited-second');
+  const idxSecond = html.indexOf('First-listed-but-cited-first-by-question');
+  assert(idxFirst !== -1 && idxSecond !== -1, 'expected both facts to render');
+  assert(idxFirst < idxSecond, 'expected story_facts ARRAY order (F1 first), not question-citation order');
+});
+
+run('STORY FACTS: renderer does not expose ids, evidence_fact_ids, or solution_steps', () => {
+  const html = build(RC_STORY_FACTS_QUIZ, { dysgraphia: false, activity: 'Reading Comprehension' });
+  assert(!/\bF1\b/.test(html) && !/\bF2\b/.test(html), 'internal fact ids must never be exposed to the learner');
+  assert(!/evidence_fact_ids/i.test(html), 'the field name "evidence_fact_ids" must never appear');
+  assert(!html.includes('5 + 3 = 8'), 'solution_steps must never reach the rendered output');
+  assert(html.includes('Juan had 5 mangoes.') && html.includes('Nena gave Juan 3 more mangoes.'), 'expected the fact text itself to render');
+});
+
+run('STORY FACTS: HTML/script payloads in fact text are escaped', () => {
+  const payload = '<script>alert(1)</script>';
+  const quiz = {
+    title: 't',
+    story_facts: [{ id: 'F1', text: payload }],
+    questions: [{ type: 'open_response', question: 'q', evidence_fact_ids: ['F1'], solution_steps: 'x=1', final_answer: '1' }]
+  };
+  const html = build(quiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  assert(!html.includes(payload), 'raw unescaped payload must never appear');
+  assert(!/<script[\s>]/i.test(html), 'a live, parseable <script> tag must never reach the output');
+  assert(html.includes('&lt;') || html.includes('&gt;'), 'expected the payload to appear only as HTML-escaped text');
+});
+
+run('STORY FACTS: Standard and Dysgraphia layouts both remain readable', () => {
+  [false, true].forEach((dysgraphia) => {
+    const html = build(RC_STORY_FACTS_QUIZ, { dysgraphia, activity: 'Reading Comprehension' });
+    assert(html.includes('Juan had 5 mangoes.'), `expected the facts box to render in dysgraphia=${dysgraphia} mode`);
+    assert(html.includes('Math Story Facts'), 'expected the approved learner-facing label in both modes');
+  });
+});
+
+run('STORY FACTS: solution_steps and final_answer answer-key integrity are unaffected by the schema change', () => {
+  const html = build(RC_STORY_FACTS_QUIZ, { dysgraphia: false, activity: 'Reading Comprehension' });
+  assert(html.includes('1. 8'), 'expected the answer key sourced from final_answer, unaffected by the story_facts schema change');
+});
+
+run('STORY FACTS: takes priority over any leftover legacy passage/passage_evidence fields on the same quiz object', () => {
+  const quiz = Object.assign({}, RC_STORY_FACTS_QUIZ, {
+    passage: 'A completely different legacy passage that must be ignored.',
+    questions: [Object.assign({}, RC_STORY_FACTS_QUIZ.questions[0], { passage_evidence: 'A completely different legacy passage that must be ignored.' })]
+  });
+  const html = build(quiz, { dysgraphia: false, activity: 'Reading Comprehension' });
+  assert(!html.includes('A completely different legacy passage'), 'expected the structured story_facts path to take priority over any legacy fields present');
+  assert(html.includes('Juan had 5 mangoes.'), 'expected the story_facts content to render');
+});
+
+// ---------------------------------------------------------------------
 // Matching Type (open_response, dedicated two-column renderer)
 // ---------------------------------------------------------------------
 run('Matching Type: deterministic directions mention matching', () => {
@@ -400,6 +495,45 @@ run('Matching Type: answer key maps each question to its TRUE match ("N -- Lette
   // question 2 (final_answer 20) matches bank entry A
   assert(html.includes('1 -- E'), 'expected question 1 (answer 10) to map to bank letter E, got: ' + html);
   assert(html.includes('2 -- A'), 'expected question 2 (answer 20) to map to bank letter A, got: ' + html);
+});
+
+run('LEGACY DISPLAY: Matching Type answer bank strips context nouns from a historical (pre-bare-contract) saved worksheet\'s final_answer', () => {
+  // A worksheet generated before the strict bare-value contract existed
+  // could still have final_answer values like "15 marbles" -- the bank
+  // must display only the extracted number, never the noun, even for this
+  // defensive legacy path.
+  const legacyQuiz = {
+    title: 't',
+    questions: [
+      { type: 'open_response', question: 'Q1', solution_steps: 'x=15', final_answer: '15 marbles' },
+      { type: 'open_response', question: 'Q2', solution_steps: 'x=17', final_answer: '17 notebooks' }
+    ]
+  };
+  const html = build(legacyQuiz, { dysgraphia: false, activity: 'Matching Type' });
+  assert(!html.includes('marbles'), 'expected the context noun "marbles" to never appear in the rendered bank');
+  assert(!html.includes('notebooks'), 'expected the context noun "notebooks" to never appear in the rendered bank');
+  assert(html.includes('. 15') && html.includes('. 17'), 'expected the bank to display the bare extracted numbers');
+});
+
+run('Matching Type: display forms are preserved rather than converted to decimals (fraction, percent, currency, mixed number, negative)', () => {
+  const quiz = {
+    title: 't',
+    questions: [
+      { type: 'open_response', question: 'Q1', solution_steps: 'x=3/4', final_answer: '3/4' },
+      { type: 'open_response', question: 'Q2', solution_steps: 'x=25%', final_answer: '25%' },
+      { type: 'open_response', question: 'Q3', solution_steps: 'x=1250.50', final_answer: PHP + '1,250.50' },
+      { type: 'open_response', question: 'Q4', solution_steps: 'x=1.5', final_answer: '1 1/2' },
+      { type: 'open_response', question: 'Q5', solution_steps: 'x=-8', final_answer: '-8' }
+    ]
+  };
+  const html = build(quiz, { dysgraphia: false, activity: 'Matching Type' });
+  assert(html.includes('3/4'), 'expected the fraction display form "3/4" to be preserved, not converted to 0.75');
+  assert(html.includes('25%'), 'expected the percent display form "25%" to be preserved, not converted to 0.25');
+  assert(html.includes(PHP + '1,250.50'), 'expected the currency display form to be preserved with its comma/peso sign');
+  assert(html.includes('1 1/2'), 'expected the mixed-number display form "1 1/2" to be preserved, not converted to 1.5');
+  assert(html.includes('-8'), 'expected the negative value "-8" to be preserved');
+  assert(!html.includes('0.75'), 'the fraction must never be silently converted to a decimal in the bank');
+  assert(!html.includes('0.25'), 'the percent must never be silently converted to a decimal in the bank');
 });
 
 run('Matching Type: no A/B/C/D inline choices rendered for the problems themselves', () => {
@@ -654,10 +788,15 @@ run('SOURCE CHECK: buildPrintableMathHtml never reads quiz.passage directly -- o
   assert(!body.includes('passage_evidence'), 'buildPrintableMathHtml must delegate to buildMathReadingComprehensionFacts(), never read passage_evidence itself');
 });
 
-run('SOURCE CHECK: buildMathReadingComprehensionFacts() is the ONLY place passage_evidence/quiz.passage feed the displayed passage', () => {
+run('SOURCE CHECK: buildMathReadingComprehensionFacts() reads story_facts for the primary (new-generation) contract', () => {
   const body = extractFunctionBody(appJsSource, 'function buildMathReadingComprehensionFacts(');
-  assert(body.includes('passage_evidence'), 'expected buildMathReadingComprehensionFacts to read passage_evidence');
-  assert(body.includes('quiz.passage'), 'expected buildMathReadingComprehensionFacts to read quiz.passage (to find the matching original sentence)');
+  assert(body.includes('story_facts'), 'expected buildMathReadingComprehensionFacts to read quiz.story_facts as the primary contract');
+});
+
+run('SOURCE CHECK: buildLegacyReadingComprehensionFacts() is the ONLY place passage_evidence/quiz.passage feed the displayed passage (legacy fallback only)', () => {
+  const body = extractFunctionBody(appJsSource, 'function buildLegacyReadingComprehensionFacts(');
+  assert(body.includes('passage_evidence'), 'expected buildLegacyReadingComprehensionFacts to read passage_evidence');
+  assert(body.includes('quiz.passage'), 'expected buildLegacyReadingComprehensionFacts to read quiz.passage (to find the matching original sentence)');
 });
 
 run('SOURCE CHECK: MATH_DIRECTIONS_BY_ACTIVITY has an entry for all 5 Math-eligible activities', () => {
@@ -670,8 +809,8 @@ run('SOURCE CHECK: this test file\'s fallback-message constant matches the real 
   assert(appJsSource.includes(MATH_RC_FACTS_UNAVAILABLE_MESSAGE_TEXT), 'expected app.js to contain the exact fallback message string this test suite checks against');
 });
 
-run('SOURCE CHECK: buildMathReadingComprehensionFacts() never falls back to passage_evidence\'s own text (fails closed, no "|| evidence" escape hatch)', () => {
-  const body = extractFunctionBody(appJsSource, 'function buildMathReadingComprehensionFacts(');
+run('SOURCE CHECK: buildLegacyReadingComprehensionFacts() never falls back to passage_evidence\'s own text (fails closed, no "|| evidence" escape hatch)', () => {
+  const body = extractFunctionBody(appJsSource, 'function buildLegacyReadingComprehensionFacts(');
   assert(!/\|\|\s*evidence\b/.test(body), 'expected no fallback to the raw evidence text -- only a matched original sentence may ever be pushed to facts');
 });
 

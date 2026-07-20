@@ -921,39 +921,27 @@ const MATH_PARENT_TUTOR_GUIDE_ITEMS = [
   "Let the learner explain the answer in their own words."
 ];
 
-// Renderer-owned, static, non-numeric fallback shown when NO validated
-// evidence sentence can be displayed at all (see buildMathReadingComprehensionFacts
-// below) -- this should never happen for a newly generated worksheet, since
-// server validation already requires every passage_evidence to exactly
-// match a complete passage sentence before delivery. It exists purely to
-// fail closed on a historical/malformed saved worksheet, rather than ever
-// falling back to unvalidated text.
-const MATH_RC_FACTS_UNAVAILABLE_MESSAGE = 'Validated story facts are unavailable for this saved worksheet.';
-
-// Reconstructs the DISPLAYED Reading Comprehension passage from ONLY the
-// validated passage_evidence sentences a question actually cited -- never
-// the model's full freehand `quiz.passage` text verbatim. quiz.passage
-// stays in the schema/validator unchanged (still required non-empty, still
-// the anti-fabrication source every passage_evidence must exactly match a
-// complete sentence of -- see math-validation.js), but the renderer ignores
-// it directly: any extra, unreferenced, or internally-contradictory
-// sentences the model padded the passage with are simply never shown.
+// LEGACY FALLBACK ONLY: reconstructs the displayed Reading Comprehension
+// passage from ONLY the validated passage_evidence sentences a question
+// actually cited -- never the model's full freehand `quiz.passage` text
+// verbatim. This is the ORIGINAL sentence-rediscovery design, kept solely
+// for a worksheet saved before the structured story_facts contract existed
+// (see buildMathReadingComprehensionFacts below, which is what every
+// newly generated worksheet uses instead -- this function is never invoked
+// for new generations, and no live production data is actually expected to
+// reach it, since Printable Math worksheets are saved as their final
+// rendered HTML, not replayed as raw JSON through this renderer; it exists
+// purely as defensive, belt-and-suspenders legacy support).
 //
 // FAILS CLOSED: only a passage_evidence value that exactly matches (after
 // normalization) a real sentence extracted from quiz.passage is ever
 // displayed, and it is always the ORIGINAL sentence text as it appears in
-// quiz.passage (never passage_evidence's own copy, even though they must be
-// normalization-equal by validation). A newly generated worksheet should
-// never hit the "no match" case at all -- server validation already
-// requires this exact match before delivery -- but a HISTORICAL or
-// malformed saved worksheet (predating this rule, or hand-edited) might.
-// In that case the unmatched evidence is silently skipped, never displayed
-// in any form (not even escaped); one unmatched item never prevents other,
-// validly-matched facts from still rendering; if NONE match, the caller
-// shows only the static MATH_RC_FACTS_UNAVAILABLE_MESSAGE instead. Matched
-// sentences are deduplicated (by normalized text), preserving first-
-// question-citing order.
-function buildMathReadingComprehensionFacts(quiz) {
+// quiz.passage (never passage_evidence's own copy). Unmatched evidence is
+// silently skipped, never displayed in any form (not even escaped); one
+// unmatched item never prevents other, validly-matched facts from still
+// rendering. Matched sentences are deduplicated (by normalized text),
+// preserving first-question-citing order.
+function buildLegacyReadingComprehensionFacts(quiz) {
   const passageSentences = window.MathValidation.extractSentences(quiz.passage || '');
   const sentenceByNormalized = new Map();
   passageSentences.forEach((s) => {
@@ -974,6 +962,42 @@ function buildMathReadingComprehensionFacts(quiz) {
     facts.push(matchedSentence);
   });
   return facts;
+}
+
+// Renderer-owned, static, non-numeric fallback shown when NO validated
+// fact can be displayed at all (neither the structured story_facts
+// contract nor the legacy passage/passage_evidence shape produced
+// anything) -- this should never happen for a newly generated worksheet,
+// since server validation already requires a non-empty, fully-referenced
+// story_facts array before delivery. It exists purely to fail closed on a
+// historical/malformed saved worksheet, rather than ever falling back to
+// unvalidated text.
+const MATH_RC_FACTS_UNAVAILABLE_MESSAGE = 'Validated story facts are unavailable for this saved worksheet.';
+
+// Builds the list of Math Story Facts to display, in order. A newly
+// generated worksheet always uses the STRUCTURED contract: quiz.story_facts
+// is already validated server-side (non-empty, unique ids, unique text,
+// every fact referenced by at least one question) before delivery, so this
+// simply displays it verbatim, in its own array order -- no re-validation,
+// no re-matching against questions needed. quiz.passage/passage_evidence
+// are never requested or read for a new generation at all.
+//
+// LEGACY FALLBACK: if story_facts is absent (a worksheet saved before this
+// structured contract existed, still carrying the old freehand
+// quiz.passage + per-question passage_evidence shape), falls back to
+// buildLegacyReadingComprehensionFacts()'s sentence-rediscovery
+// reconstruction above -- this keeps such a worksheet displaying something
+// coherent instead of nothing, without weakening validation for any new
+// generation (the legacy path is never consulted by the validator, only by
+// this renderer, and only when story_facts is genuinely absent).
+function buildMathReadingComprehensionFacts(quiz) {
+  const storyFacts = Array.isArray(quiz.story_facts) ? quiz.story_facts : null;
+  if (storyFacts && storyFacts.length > 0) {
+    return storyFacts
+      .map((f) => (f && typeof f.text === 'string') ? f.text.trim() : '')
+      .filter((t) => t.length > 0);
+  }
+  return buildLegacyReadingComprehensionFacts(quiz);
 }
 
 // Builds printable Math worksheet HTML directly from server-validated JSON
@@ -1013,24 +1037,28 @@ function buildPrintableMathHtml(quiz, opts) {
 
   const questions = quiz.questions || [];
 
-  // Matching Type answer bank: built ONLY from each question's EXTRACTED
-  // primary numeric token (e.g. "15" out of "15 marbles"), never the raw
-  // final_answer string -- so the bank can never leak a context noun the
-  // learner could match by ("marbles"/"fruits"/"seashells") instead of
-  // solving the Math, and two answers that are the same underlying value
-  // (validated as pairwise-distinct by generate.js) display identically no
-  // matter what surrounding words the model used. Falls back to the raw
-  // final_answer text only if extraction fails (defensive: a historical
-  // saved worksheet from before this per-question single-token rule
-  // existed) -- never crashes on replay. Reordered by a fixed
-  // left-rotate-by-one (never a sort, which could coincidentally reproduce
-  // question order): [A1,A2,A3,A4,A5] -> [A2,A3,A4,A5,A1].
+  // Matching Type answer bank: a newly generated worksheet's final_answer
+  // is ALREADY a bare mathematical value (server-validated via
+  // parseBareMathValue -- see math-validation.js), so displaying it is a
+  // direct pass-through, never a raw noun-containing string like "15
+  // marbles". The extraction chain below exists only for a HISTORICAL
+  // saved worksheet from before that strict bare-value contract existed:
+  // (1) try the bare-value parse first (always succeeds for new data);
+  // (2) if that fails, fall back to searching for a single numeric token
+  // anywhere in the (legacy, noisy) string, e.g. "15" out of "15 marbles"
+  // -- still never leaks the noun itself into the bank; (3) if even that
+  // fails, fall back to the raw string as a last resort so nothing ever
+  // crashes on replay. Reordered by a fixed left-rotate-by-one (never a
+  // sort, which could coincidentally reproduce question order):
+  // [A1,A2,A3,A4,A5] -> [A2,A3,A4,A5,A1].
   let matchingLetterForIndex = null;
   let matchingBankHtml = '';
   if (isMatchingType) {
     const finalAnswers = questions.map((q) => {
-      const token = window.MathValidation.extractPrimaryNumericToken(q.final_answer);
-      return token ? token.raw : (q.final_answer != null ? String(q.final_answer) : '');
+      const bareToken = window.MathValidation.parseBareMathValue(q.final_answer);
+      if (bareToken) return bareToken.raw;
+      const legacyToken = window.MathValidation.extractPrimaryNumericToken(q.final_answer);
+      return legacyToken ? legacyToken.raw : (q.final_answer != null ? String(q.final_answer) : '');
     });
     const bank = finalAnswers.length > 1
       ? finalAnswers.slice(1).concat(finalAnswers.slice(0, 1))
@@ -1439,6 +1467,12 @@ async function generateWorksheet() {
     ? window.MathValidation.getMathActivityProfile(wsMode, activity)
     : { requiresMultipleChoice: false, isPrintableReadingComprehension: false, isPrintableMatchingType: false };
 
+  // Newly generated Math Reading Comprehension worksheets use a STRUCTURED
+  // story_facts/evidence_fact_ids contract, never a freehand passage for
+  // the server to re-parse into sentences -- see the shared validator's
+  // doc comment in math-validation.js for the full rationale.
+  const isMathReadingComprehension = isMath && mathProfile.isPrintableReadingComprehension;
+
   const mathMcExampleLine = (isMath && mathProfile.requiresMultipleChoice)
     ? `{ "type": "multiple_choice", "question": "question text", "solution_steps": "concise semicolon-separated arithmetic, e.g. 2.5 * 45.50 = 113.75; 200 - 113.75 = 86.25", "final_answer": "the complete final answer including any currency symbol, percent sign, fraction, or unit, e.g. ${PHP}86.25", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "answer": 0 }`
     : `{ "type": "multiple_choice", "question": "question text", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "answer": 0 }`;
@@ -1447,11 +1481,20 @@ async function generateWorksheet() {
   // Comprehension, Matching Type, Parent/Tutor Support Sheet) never display
   // choices/an answer index, so they are never requested at all -- saves
   // output tokens and avoids spurious distractor-validation failures for a
-  // shape nothing ever reads. Gains "passage_evidence" only for Reading
-  // Comprehension (see math-validation.js's evidence-linkage validation).
+  // shape nothing ever reads. Gains "evidence_fact_ids" only for Reading
+  // Comprehension (see math-validation.js's story_facts validation).
   const mathOpenResponseExampleLine = (isMath && !mathProfile.requiresMultipleChoice)
-    ? `{ "type": "open_response", "question": "question text", "solution_steps": "concise semicolon-separated arithmetic, e.g. 2.5 * 45.50 = 113.75; 200 - 113.75 = 86.25", "final_answer": "the complete final answer including any currency symbol, percent sign, fraction, or unit, e.g. ${PHP}86.25"${mathProfile.isPrintableReadingComprehension ? ', "passage_evidence": "one COMPLETE sentence copied verbatim from the passage field (not a fragment or phrase) that this question depends on, containing at least one number used in the question or solution_steps"' : ''} }`
+    ? `{ "type": "open_response", "question": "question text", ${isMathReadingComprehension ? '"evidence_fact_ids": ["F1", "F2"], ' : ''}"solution_steps": "concise semicolon-separated arithmetic, e.g. 2.5 * 45.50 = 113.75; 200 - 113.75 = 86.25", "final_answer": "the complete final answer including any currency symbol, percent sign, fraction, or unit, e.g. ${PHP}86.25" }`
     : '';
+
+  // Math Reading Comprehension replaces the generic freehand "passage"
+  // schema field with an explicit array of atomic, ID-tagged facts --
+  // every other activity/subject keeps the original "passage" field
+  // unchanged (non-Math Reading Comprehension is completely untouched by
+  // this whole change).
+  const passageOrStoryFactsSchemaLine = isMathReadingComprehension
+    ? `"story_facts": [\n    { "id": "F1", "text": "a single, complete, self-contained factual sentence, in logical/chronological order" },\n    { "id": "F2", "text": "another single, complete, self-contained factual sentence" }\n  ],`
+    : `"passage": "ONLY for Reading Comprehension: the complete story text here (3-6 short paragraphs, grade-appropriate). Omit this field for other activity types.",`;
 
   // V1: Math worksheets use exactly one schema shape per the profile above
   // -- true_false/fill_blank are not offered as an option in the example
@@ -1470,9 +1513,11 @@ async function generateWorksheet() {
 - answer must be the zero-based index of the correct choice.
 - Distractors must represent plausible student errors.
 - No distractor may equal the correct answer after normalization.` : `
-- Every question in this worksheet MUST be type "open_response". Do NOT include a "choices" field or an "answer" field -- they will never be shown to the learner and are not requested.${mathProfile.isPrintableReadingComprehension ? `
-- This is a Reading Comprehension activity: every question MUST also include a "passage_evidence" field that is one COMPLETE, verbatim sentence copied from the "passage" field -- not a fragment, not a phrase, not a paraphrase -- containing at least one number actually used in that question or its solution_steps. Do not fabricate a sentence that does not appear in the passage, and do not include a sentence whose numbers are never used.` : ''}${mathProfile.isPrintableMatchingType ? `
-- This is a Matching Type activity: every question's final_answer MUST contain exactly ONE clear numeric value (a single number, currency amount, fraction, mixed number, or percentage) and no other numbers. Do not generate two problems whose numeric values are the same or mathematically equivalent (e.g. "15" and "15", or "0.75" and "3/4") even if you word them with different objects or units (e.g. "15 marbles" and "15 fruits" are still duplicates -- the words do not make them distinguishable).` : ''}`);
+- Every question in this worksheet MUST be type "open_response". Do NOT include a "choices" field or an "answer" field -- they will never be shown to the learner and are not requested.${isMathReadingComprehension ? `
+- This is a Reading Comprehension activity: include a "story_facts" array where every entry has a unique string "id" (use "F1", "F2", "F3", ... in that order -- never a bare number) and a "text" field containing ONE complete, self-contained factual sentence. Do not repeat the same fact with different wording. Present facts in a clear, logical/chronological order.
+- Every question MUST include an "evidence_fact_ids" array listing the story_facts id(s) it depends on (e.g. ["F1", "F2"]). Every id must exist in story_facts. Every story fact must be referenced by at least one question -- do not include an unused fact.
+- The numbers used in a question's solution_steps must come from the story_facts it references via evidence_fact_ids.` : ''}${mathProfile.isPrintableMatchingType ? `
+- This is a Matching Type activity: every question's final_answer MUST be a single, complete, BARE mathematical value only -- a plain number, a signed number, a fraction, a mixed number, a decimal, a percentage, or a currency amount -- with absolutely no surrounding words, units, nouns, equations, or explanatory text (e.g. "5" is correct; "5 marbles", "12 / 3 = 4", and "The answer is 5" are all invalid). Before writing the questions, first PLAN a set of ${items} distinct answer values (for example, for five Grade 2 division questions, choose five distinct quotients such as 2, 3, 4, 5, 6), then write one question per planned value. No two questions may share the same or a mathematically equivalent final_answer (e.g. "0.75" and "3/4" are the same value).` : ''}`);
 
   const mathIntegrityBlock = isMath ? `
 
@@ -1554,7 +1599,7 @@ CRITICAL: Respond with ONLY a valid JSON object. No markdown, no backticks, no e
 {
   "title": "worksheet title here",
   "directions": "short child-friendly directions here",
-  "passage": "ONLY for Reading Comprehension: the complete story text here (3-6 short paragraphs, grade-appropriate). Omit this field for other activity types.",
+  ${passageOrStoryFactsSchemaLine}
   "questions": [
 ${questionsArrayExample}
   ]
@@ -1565,7 +1610,9 @@ Rules:
 - "answer" for true_false is boolean true or false
 - "answer" for fill_blank is the expected word/phrase (keep it to 1-2 words for fair checking)
 - "alternates" for fill_blank: list acceptable variations a child might reasonably type (singular/plural forms, with or without "mga"/"ang", synonyms, symbol forms like ">" for "greater"). Be generous - the goal is to assess understanding, not exact wording.
-- If Activity Type is Reading Comprehension: you MUST include the "passage" field with the COMPLETE story. Every question must be answerable from the passage alone. Never reference a story that is not included. For Math, also see the Reading Comprehension "passage_evidence" requirement below.
+${isMathReadingComprehension
+  ? '- If Activity Type is Reading Comprehension: you MUST include the "story_facts" array and every question\'s "evidence_fact_ids" as described in the Math rules below. Every question must be answerable from its referenced story facts alone. Never reference a fact that is not included.'
+  : '- If Activity Type is Reading Comprehension: you MUST include the "passage" field with the COMPLETE story. Every question must be answerable from the passage alone. Never reference a story that is not included.'}
 - Mix question types appropriately for the activity type requested
 - Exactly ${items} questions total
 - Use Filipino-friendly context (names like Nena, Juan, Aling Rosa; places like Maynila, Cebu; foods like adobo, sinigang)

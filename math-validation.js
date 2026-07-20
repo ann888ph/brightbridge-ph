@@ -379,25 +379,55 @@ function extractAllNumericTokens(text) {
   return extractNumericTokensDetailed(text).map((tok) => tok.value);
 }
 
-// Used by the Matching Type "final_answer must contain exactly one clear
-// numeric value" rule (see validateMathQuestions below). Returns the single
-// { raw, value } token when the text contains EXACTLY one numeric token,
-// or null when it contains zero or more than one -- either shape is
-// rejected as ambiguous for a Matching Type answer.
+// Legacy-support helper: returns the single { raw, value } token when text
+// contains EXACTLY one numeric token ANYWHERE within it, or null when it
+// contains zero or more than one. This is NOT the authoritative Matching
+// Type contract (see parseBareMathValue below, which requires the WHOLE
+// string to be bare) -- it is kept only as app.js's defensive rendering
+// fallback for a worksheet saved before that stricter contract existed
+// (see the renderer's Matching Type branch).
 function extractPrimaryNumericToken(text) {
   const tokens = extractNumericTokensDetailed(text);
   return tokens.length === 1 ? tokens[0] : null;
 }
 
+// Bare-value contract for Printable Math Matching Type: the ENTIRE
+// final_answer string (once trimmed) must itself be exactly one complete
+// mathematical value -- a plain/signed number, a fraction, a mixed number,
+// a percentage, or a currency amount -- with NO surrounding nouns, units,
+// equations, or explanatory text at all ("5 marbles", "12 / 3 = 4", and
+// "The answer is 5" must all fail). Reuses parseMathToken(), whose
+// sub-patterns are already anchored (^...$) to the full (peso/percent-
+// adjusted) string, so this is naturally "whole string only" -- unlike
+// extractPrimaryNumericToken/extractAllNumericTokens above, which
+// deliberately search for a token ANYWHERE within a longer string.
+function parseBareMathValue(text) {
+  if (typeof text !== 'string') return null;
+  const trimmed = text.trim();
+  if (trimmed.length === 0) return null;
+  const value = parseMathToken(trimmed);
+  if (value === null) return null;
+  return { raw: trimmed, value };
+}
+
+// Story fact IDs must be stable strings like "F1"/"F2"/"F3" -- never a
+// bare array index -- so a question's evidence_fact_ids can reference a
+// fact unambiguously regardless of story_facts array order.
+const STORY_FACT_ID_PATTERN = /^F\d+$/;
+
 // Splits passage text into complete sentences, preserving each sentence's
 // original display text (casing/whitespace-within-sentence untouched, only
-// trimmed at the edges). Used by the Reading Comprehension passage_evidence
-// "must exactly match one complete sentence" rule (see validateMathQuestions
-// below) and by app.js's renderer, which reconstructs the displayed Math
-// Reading Comprehension passage from ONLY the validated sentences a
-// question actually cited -- never the model's full freehand passage
-// verbatim. A sentence boundary is one or more [.!?] terminators; the final
-// clause is still captured even if the passage doesn't end in punctuation.
+// trimmed at the edges). LEGACY SUPPORT ONLY: newly generated Math Reading
+// Comprehension worksheets use the structured story_facts/evidence_fact_ids
+// contract (see validateMathQuestions below) and never ask the model for a
+// freehand passage to re-parse into sentences at all. This function (and
+// normalizeEvidenceText below) remain exported purely for app.js's
+// defensive rendering fallback for a worksheet saved before story_facts
+// existed, which may still carry the old passage/passage_evidence shape --
+// validateMathQuestions itself no longer calls this for any new
+// generation. A sentence boundary is one or more [.!?] terminators; the
+// final clause is still captured even if the passage doesn't end in
+// punctuation.
 // A "." between two digits (e.g. "32.50") is a decimal point, never a
 // sentence terminator -- temporarily replaced with a placeholder before
 // splitting on real [.!?] boundaries, then restored, so a currency/decimal
@@ -460,12 +490,17 @@ function extractSentences(text) {
 //   final_answer, solution_steps only -- choices/answer are never
 //   requested, required, or inspected.
 // - Reading Comprehension (Printable only -- see isPrintableReadingComprehension)
-//   additionally requires a non-empty quiz.passage and, per question, a
-//   passage_evidence field that is a real (non-fabricated) excerpt from the
-//   passage AND numerically used in the question/solution_steps.
-// - Matching Type (Printable only -- see isPrintableMatchingType)
-//   additionally requires every question's final_answer to be pairwise
-//   distinguishable (via valuesMatch) from every other question's.
+//   uses a STRUCTURED story_facts contract, never a freehand passage to
+//   re-parse into sentences: a non-empty story_facts array of unique-id,
+//   non-duplicate-text facts, every one of which must be referenced by at
+//   least one question's evidence_fact_ids, and every evidence_fact_ids
+//   entry must reference a real fact whose combined text is numerically
+//   used by that question/its solution_steps.
+// - Matching Type (Printable only -- see isPrintableMatchingType) requires
+//   every question's final_answer to be a single, complete, BARE
+//   mathematical value (see parseBareMathValue) -- no surrounding nouns,
+//   units, or explanatory text -- and pairwise distinguishable (via
+//   valuesMatch on the parsed value) from every other question's.
 function validateMathQuestions(quiz, expectedCount, activity, mode) {
   const profile = getMathActivityProfile(mode, activity);
   const requiresMultipleChoice = profile.requiresMultipleChoice;
@@ -478,10 +513,47 @@ function validateMathQuestions(quiz, expectedCount, activity, mode) {
   let totalMultipleChoiceCount = 0;
   const questions = Array.isArray(quiz && quiz.questions) ? quiz.questions : [];
 
+  // Story facts (Reading Comprehension, Printable only): validated ONCE,
+  // before the per-question loop, into a lookup map (id -> trimmed text)
+  // that the loop below uses to resolve each question's evidence_fact_ids.
+  // storyFactTextById stays null if story_facts itself is structurally
+  // invalid, so every question's own evidence check below correctly
+  // reports "unknown story fact" rather than silently skipping.
+  let storyFactTextById = null;
+  const referencedFactIds = new Set();
+
   if (isPrintableReadingComprehension) {
-    const passageNonEmpty = typeof (quiz && quiz.passage) === 'string' && quiz.passage.trim().length > 0;
-    if (!passageNonEmpty) {
-      failures.push({ index: -1, reasons: ['passage is required and must be non-empty for Reading Comprehension'] });
+    const storyFacts = Array.isArray(quiz && quiz.story_facts) ? quiz.story_facts : null;
+    if (!storyFacts || storyFacts.length === 0) {
+      failures.push({ index: -1, reasons: ['story_facts must be a non-empty array for Reading Comprehension'] });
+    } else {
+      storyFactTextById = new Map();
+      const seenIds = new Set();
+      const seenNormalizedText = new Set();
+      storyFacts.forEach((fact, factIndex) => {
+        const id = fact && fact.id;
+        const text = fact && typeof fact.text === 'string' ? fact.text.trim() : '';
+        if (typeof id !== 'string' || !STORY_FACT_ID_PATTERN.test(id)) {
+          failures.push({ index: -1, reasons: ['story_facts[' + factIndex + '] has an invalid id (expected a format like "F1", "F2"), got: ' + JSON.stringify(id)] });
+          return;
+        }
+        if (text.length === 0) {
+          failures.push({ index: -1, reasons: ['story_facts id "' + id + '" has missing or empty text'] });
+          return;
+        }
+        if (seenIds.has(id)) {
+          failures.push({ index: -1, reasons: ['story_facts id "' + id + '" is duplicated'] });
+          return;
+        }
+        seenIds.add(id);
+        const normalizedText = normalizeEvidenceText(text);
+        if (seenNormalizedText.has(normalizedText)) {
+          failures.push({ index: -1, reasons: ['story_facts id "' + id + '" duplicates another fact\'s text after normalization'] });
+          return;
+        }
+        seenNormalizedText.add(normalizedText);
+        storyFactTextById.set(id, text);
+      });
     }
   }
 
@@ -550,44 +622,45 @@ function validateMathQuestions(quiz, expectedCount, activity, mode) {
       }
     }
 
-    // Matching Type (Printable only): final_answer must contain EXACTLY ONE
-    // clear numeric value -- "15 marbles and 3 friends" is ambiguous and
-    // rejected outright, independent of the cross-question uniqueness check
-    // below (which needs a single well-defined value per question anyway).
-    let matchingPrimaryToken = null;
+    // Matching Type (Printable only): final_answer must be a single,
+    // complete, BARE mathematical value -- "15 marbles", "12 / 3 = 4", and
+    // "The answer is 5" are all rejected outright, independent of the
+    // cross-question uniqueness check below (which needs a single
+    // well-defined value per question anyway).
     if (isPrintableMatchingType && hasFinalAnswer) {
-      matchingPrimaryToken = extractPrimaryNumericToken(q.final_answer);
-      if (!matchingPrimaryToken) {
-        reasons.push('final_answer must contain exactly one clear numeric value for Matching Type, got: "' + q.final_answer + '"');
+      if (!parseBareMathValue(q.final_answer)) {
+        reasons.push('final_answer must be a single, complete, bare mathematical value for Matching Type (no surrounding words, units, or equations), got: ' + JSON.stringify(q.final_answer));
       }
     }
 
-    // Reading Comprehension evidence linkage (Printable only). Additive to
-    // every other check here -- never a substitute for arithmetic/currency
-    // validation below.
+    // Reading Comprehension (Printable only): every question must cite at
+    // least one story fact by id, every cited id must be a real fact, and
+    // the COMBINED text of the cited facts must be numerically used by
+    // this question/its solution_steps. Additive to every other check
+    // here -- never a substitute for arithmetic/currency validation below.
+    let combinedFactText = '';
     if (isPrintableReadingComprehension) {
-      const hasEvidence = typeof q.passage_evidence === 'string' && q.passage_evidence.trim().length > 0;
-      if (!hasEvidence) {
-        reasons.push('passage_evidence is missing or empty for Reading Comprehension');
+      const rawIds = Array.isArray(q.evidence_fact_ids) ? q.evidence_fact_ids : null;
+      if (!rawIds || rawIds.length === 0) {
+        reasons.push('evidence_fact_ids is missing or empty for Reading Comprehension');
       } else {
-        const normalizedEvidence = normalizeEvidenceText(q.passage_evidence);
-        const passageSentences = extractSentences((quiz && quiz.passage) || '');
-        // Exact match to one COMPLETE sentence, not a substring/fragment --
-        // "25 mangoes" must fail when the passage only contains "On Monday,
-        // Juan had 25 mangoes." as a sentence. This is stricter than (and
-        // replaces) a plain substring-of-passage check.
-        const matchesCompleteSentence = passageSentences.some((s) => normalizeEvidenceText(s) === normalizedEvidence);
-        if (normalizedEvidence.length === 0 || !matchesCompleteSentence) {
-          reasons.push('passage_evidence must exactly match one complete sentence in the passage (fragment or fabricated)');
-        } else {
-          const evidenceTokens = extractAllNumericTokens(q.passage_evidence);
+        // Duplicate ids within one question are harmless redundancy, not
+        // ambiguity -- normalized away (deduped) rather than rejected.
+        const uniqueIds = Array.from(new Set(rawIds));
+        const unknownIds = uniqueIds.filter((id) => !storyFactTextById || !storyFactTextById.has(id));
+        if (unknownIds.length > 0) {
+          unknownIds.forEach((id) => reasons.push('references unknown story fact ' + JSON.stringify(id)));
+        } else if (storyFactTextById) {
+          uniqueIds.forEach((id) => referencedFactIds.add(id));
+          combinedFactText = uniqueIds.map((id) => storyFactTextById.get(id)).join(' ');
+          const evidenceTokens = extractAllNumericTokens(combinedFactText);
           const contextTokens = extractAllNumericTokens((q.question || '') + ' ' + (q.solution_steps || ''));
           if (evidenceTokens.length === 0) {
-            reasons.push('passage_evidence has no numeric value to verify usage');
+            reasons.push('referenced story facts contain no numeric value to verify usage');
           } else {
             const used = evidenceTokens.some((ev) => contextTokens.some((ct) => Math.abs(ev - ct) < MATH_EXACT_EPSILON));
             if (!used) {
-              reasons.push('passage_evidence numeric value(s) are not used in the question or solution_steps');
+              reasons.push('referenced story facts\' numeric value(s) are not used in the question or solution_steps');
             }
           }
         }
@@ -628,11 +701,11 @@ function validateMathQuestions(quiz, expectedCount, activity, mode) {
       }
     }
 
-    // Reading Comprehension: a rounding instruction stated once in the
-    // shared passage (rather than repeated in every question) must still
+    // Reading Comprehension: a rounding instruction stated in a REFERENCED
+    // story fact (rather than repeated in the question itself) must still
     // satisfy this question's currency check -- see questionRequestsRounding.
     const roundingCheckText = isPrintableReadingComprehension
-      ? ((quiz && quiz.passage) || '') + ' ' + (q.question || '')
+      ? (combinedFactText + ' ' + (q.question || ''))
       : (q.question || '');
 
     const currencyContext = isCurrencyLike(q.question) || (choices && choices.some(isCurrencyLike)) || isCurrencyLike(q.final_answer);
@@ -675,30 +748,40 @@ function validateMathQuestions(quiz, expectedCount, activity, mode) {
 
   // Matching Type (Printable only): every question's final_answer must be
   // pairwise distinguishable from every other question's, compared by the
-  // EXTRACTED numeric token (not the raw string) -- this is what actually
+  // PARSED bare value (see parseBareMathValue) -- this is what actually
   // catches "15 marbles" vs "15 fruits" vs "15 pieces" as duplicates (the
-  // reported bug): those three raw strings are textually different and
-  // extractNumericValue() rejects any of them outright as "not a bare
-  // number," so a raw-string valuesMatch() comparison never flags them.
-  // Extracting the primary token first ("15") and THEN feeding it through
-  // valuesMatch() reuses the same Math-equivalence semantics (e.g. "0.75"
-  // vs "3/4") while ignoring the noun/unit noise around it. Questions whose
-  // final_answer doesn't contain exactly one numeric token already failed
-  // above and are skipped here (nothing well-defined to compare).
-  // O(n^2) over at most 20 questions.
+  // originally reported bug), on top of the per-question check above that
+  // now also rejects either answer outright for not being bare in the
+  // first place. Questions whose final_answer isn't a valid bare value
+  // already failed above and are skipped here (nothing well-defined to
+  // compare). Attached to the LATER question's real index (not -1) so the
+  // retry-repair-block builder in generate.js can address it directly as
+  // "Question N: ...". O(n^2) over at most 20 questions.
   if (isPrintableMatchingType) {
     for (let i = 0; i < questions.length; i++) {
       for (let j = i + 1; j < questions.length; j++) {
-        const tokenA = questions[i] && typeof questions[i].final_answer === 'string' ? extractPrimaryNumericToken(questions[i].final_answer) : null;
-        const tokenB = questions[j] && typeof questions[j].final_answer === 'string' ? extractPrimaryNumericToken(questions[j].final_answer) : null;
+        const tokenA = questions[i] && typeof questions[i].final_answer === 'string' ? parseBareMathValue(questions[i].final_answer) : null;
+        const tokenB = questions[j] && typeof questions[j].final_answer === 'string' ? parseBareMathValue(questions[j].final_answer) : null;
         if (tokenA && tokenB && valuesMatch(tokenA.raw, tokenB.raw)) {
           failures.push({
-            index: -1,
-            reasons: ['final_answer at index ' + i + ' is equivalent to index ' + j + ' after Math normalization -- Matching Type requires unique numeric answers']
+            index: j,
+            reasons: ['final_answer is the same or a mathematically equivalent value as Question ' + (i + 1) + ' (Matching Type requires unique numeric answers)']
           });
         }
       }
     }
+  }
+
+  // Reading Comprehension (Printable only): every validated story fact
+  // must be referenced by at least one question -- an unused fact is
+  // rejected rather than silently allowed through, so nothing the learner
+  // sees in the Math Story Facts box was ever irrelevant filler.
+  if (isPrintableReadingComprehension && storyFactTextById) {
+    storyFactTextById.forEach((text, id) => {
+      if (!referencedFactIds.has(id)) {
+        failures.push({ index: -1, reasons: ['story fact ' + JSON.stringify(id) + ' is not referenced by any question'] });
+      }
+    });
   }
 
   // expectedCount must itself be a valid positive integer -- a caller passing
@@ -732,7 +815,9 @@ function validateMathQuestions(quiz, expectedCount, activity, mode) {
     extractAllNumericTokens,
     extractNumericTokensDetailed,
     extractPrimaryNumericToken,
+    parseBareMathValue,
     extractSentences,
-    validateMathQuestions
+    validateMathQuestions,
+    STORY_FACT_ID_PATTERN
   };
 });
