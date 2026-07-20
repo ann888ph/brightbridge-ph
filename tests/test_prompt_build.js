@@ -245,25 +245,31 @@ await run('PRINTABLE Math + Multiple Choice Quiz: still requests choices/answer 
   assert(prompt.includes('"choices"') && prompt.includes('"answer"'), 'expected choices/answer still requested for Multiple Choice Quiz');
 });
 
-await run('PRINTABLE Math + Reading Comprehension: open_response schema ALSO requests passage_evidence', async () => {
+await run('PRINTABLE Math + Reading Comprehension: open_response schema requests structured story_facts/evidence_fact_ids, NEVER passage/passage_evidence', async () => {
   const prompt = await buildPromptViaRealApp({ wsMode: 'printable', values: { subject: 'Math', activity: 'Reading Comprehension' } });
   assert(prompt.includes('"type": "open_response"'), 'expected the open_response schema example');
   assert(!prompt.includes('"choices":'), 'expected no choices field for Reading Comprehension');
-  assert(prompt.includes('"passage_evidence":'), 'expected passage_evidence requested for Reading Comprehension');
-  assert(/passage_evidence.*field that is one COMPLETE, verbatim sentence/.test(prompt), 'expected the passage_evidence integrity rule text to require a complete sentence, not a fragment');
+  assert(prompt.includes('"story_facts":'), 'expected story_facts requested for Reading Comprehension');
+  assert(prompt.includes('"evidence_fact_ids":'), 'expected evidence_fact_ids requested per question');
+  assert(!prompt.includes('"passage":'), 'Math Reading Comprehension must never request the old freehand passage field');
+  assert(!prompt.includes('"passage_evidence":'), 'Math Reading Comprehension must never request the old passage_evidence field');
+  assert(/story_facts.*array where every entry has a unique string "id"/.test(prompt), 'expected the story_facts structural integrity rule text');
+  assert(/evidence_fact_ids.*array listing the story_facts id/.test(prompt), 'expected the evidence_fact_ids integrity rule text');
 });
 
-await run('PRINTABLE Math + Matching Type: open_response schema, integrity rules require distinguishable final answers', async () => {
+await run('PRINTABLE Math + Matching Type: open_response schema, integrity rules require a bare value and a pre-planned distinct set', async () => {
   const prompt = await buildPromptViaRealApp({ wsMode: 'printable', values: { subject: 'Math', activity: 'Matching Type' } });
   assert(prompt.includes('"type": "open_response"'), 'expected the open_response schema example');
-  // The generic "If Activity Type is Reading Comprehension..." Rules bullet
-  // is present for every Math request regardless of the SELECTED activity
-  // (it's informational, describing what that OTHER activity requires) --
-  // so this checks for passage_evidence as an actual requested schema
-  // FIELD (quote-colon), which only appears when Reading Comprehension is
-  // the activity actually in effect.
-  assert(!prompt.includes('"passage_evidence":'), 'Matching Type must not request passage_evidence as a schema field');
+  assert(!prompt.includes('"passage_evidence":') && !prompt.includes('"story_facts":'), 'Matching Type must not request Reading-Comprehension-only fields');
   assert(/mathematically equivalent/.test(prompt), 'expected the Matching Type final-answer-uniqueness rule text');
+  assert(/BARE mathematical value/.test(prompt), 'expected the bare-value-only rule text');
+  assert(/PLAN a set of \d+ distinct answer values/.test(prompt), 'expected the explicit plan-distinct-values-first instruction');
+});
+
+await run('INTERACTIVE non-Math Reading Comprehension: still requests the original "passage" JSON field, completely unaffected by the Math story_facts change', async () => {
+  const prompt = await buildPromptViaRealApp({ wsMode: 'interactive', values: { subject: 'English', activity: 'Reading Comprehension' } });
+  assert(prompt.includes('"passage":'), 'expected the original freehand passage field for non-Math Reading Comprehension');
+  assert(!prompt.includes('"story_facts":'), 'non-Math Reading Comprehension must never request story_facts');
 });
 
 await run('PRINTABLE Math + Parent/Tutor Support Sheet: open_response schema, no coaching field requested from the model', async () => {

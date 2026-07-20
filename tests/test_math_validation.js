@@ -559,96 +559,167 @@ run('Open-response profile: broken arithmetic still fails (correctness validatio
 });
 
 // =====================================================================
-// REV 4/5: Reading Comprehension evidence linkage (Printable only)
-// passage_evidence must now exactly match one COMPLETE sentence in
-// quiz.passage -- a substring/fragment is no longer sufficient, even if it
-// genuinely appears somewhere in the passage text.
+// REV 8: Reading Comprehension STRUCTURED story_facts/evidence_fact_ids
+// contract (replaces the old freehand-passage/passage_evidence design
+// entirely for validation -- see math-validation.js's validateMathQuestions
+// banner). The old sentence-rediscovery validation path is GONE; these
+// tests exercise the new ID-based contract directly. (extractSentences()
+// itself remains covered separately below -- it is still exported for
+// app.js's LEGACY RENDERING fallback, just no longer called by the
+// validator.)
 // =====================================================================
-const RC_SENTENCE_1 = 'Nena has 1/2 cup of sugar and 2 cups of flour for her recipe.';
-const RC_SENTENCE_2 = 'She also owns 2 cups of milk.';
-const RC_PASSAGE = RC_SENTENCE_1 + ' ' + RC_SENTENCE_2;
+function storyFact(id, text) { return { id, text }; }
 
-function rcQuestion(overrides) {
+const RC_FACT_1 = storyFact('F1', 'Juan had 5 mangoes.');
+const RC_FACT_2 = storyFact('F2', 'Nena gave Juan 3 more mangoes.');
+
+function rcStoryQuiz(overrides) {
   return Object.assign({
-    type: 'open_response',
-    question: 'How much sugar does Nena have, in decimal form?',
-    solution_steps: '1/2 = 0.5',
-    final_answer: '0.5',
-    passage_evidence: RC_SENTENCE_1
+    title: 't',
+    story_facts: [RC_FACT_1, RC_FACT_2],
+    questions: [{
+      type: 'open_response',
+      question: 'How many mangoes did Juan have after Nena gave him more?',
+      evidence_fact_ids: ['F1', 'F2'],
+      solution_steps: '5 + 3 = 8',
+      final_answer: '8'
+    }]
   }, overrides);
 }
 
-run('Reading Comprehension: a complete matching sentence (number used in solution_steps) passes', () => {
-  const quiz = { passage: RC_PASSAGE, questions: [rcQuestion()] };
-  const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
+run('Reading Comprehension (story_facts): valid facts + evidence_fact_ids pass', () => {
+  const v = sandbox.validateMathQuestions(rcStoryQuiz(), 1, 'Reading Comprehension', 'printable');
   if (!v.ok) throw new Error('expected ok, got: ' + JSON.stringify(v.failures));
 });
 
-run('Reading Comprehension: a substring fragment of a real sentence FAILS (not itself a complete sentence)', () => {
-  // "1/2 cup of sugar" genuinely appears inside RC_SENTENCE_1, but it is a
-  // fragment, not the complete sentence -- must fail under the new rule.
-  const quiz = { passage: RC_PASSAGE, questions: [rcQuestion({ passage_evidence: '1/2 cup of sugar' })] };
+run('Reading Comprehension (story_facts): duplicate fact ids fail', () => {
+  const quiz = rcStoryQuiz({ story_facts: [RC_FACT_1, { id: 'F1', text: 'A different fact text.' }] });
   const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
-  if (v.ok) throw new Error('expected failure: passage_evidence is a substring fragment, not a complete passage sentence');
+  if (v.ok) throw new Error('expected failure: duplicate story_facts id "F1"');
 });
 
-run('Reading Comprehension: a fabricated sentence (not in the passage at all) fails', () => {
-  const quiz = { passage: RC_PASSAGE, questions: [rcQuestion({ passage_evidence: 'Nena has 10 apples.' })] };
+run('Reading Comprehension (story_facts): duplicate normalized fact text fails', () => {
+  const quiz = rcStoryQuiz({ story_facts: [RC_FACT_1, { id: 'F2', text: '  Juan   had 5 mangoes.  ' }] });
   const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
-  if (v.ok) throw new Error('expected failure: passage_evidence sentence does not appear in the passage');
+  if (v.ok) throw new Error('expected failure: normalized duplicate fact text');
 });
 
-run('Reading Comprehension: a complete sentence that is numerically unused fails', () => {
-  // RC_SENTENCE_2 is a real, complete sentence in the passage, but neither
-  // 2 nor anything else in it is used by this question's text or
-  // solution_steps (which are both about 0.5).
-  const quiz = { passage: RC_PASSAGE, questions: [rcQuestion({ passage_evidence: RC_SENTENCE_2 })] };
+run('Reading Comprehension (story_facts): invalid fact id format fails (must look like "F1", "F2")', () => {
+  const quiz = rcStoryQuiz({ story_facts: [{ id: 'Fact1', text: 'Juan had 5 mangoes.' }, RC_FACT_2] });
   const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
-  if (v.ok) throw new Error('expected failure: passage_evidence number(s) are never used in the question or solution_steps');
+  if (v.ok) throw new Error('expected failure: fact id must match the "F1" style format');
 });
 
-run('Reading Comprehension: non-empty passage does NOT excuse a question missing passage_evidence entirely', () => {
-  const q = rcQuestion();
-  delete q.passage_evidence;
-  const quiz = { passage: RC_PASSAGE, questions: [q] };
+run('Reading Comprehension (story_facts): a fact with missing/empty text fails', () => {
+  const quiz = rcStoryQuiz({ story_facts: [{ id: 'F1', text: '   ' }, RC_FACT_2] });
   const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
-  if (v.ok) throw new Error('expected failure: passage is present but this question has no passage_evidence at all');
+  if (v.ok) throw new Error('expected failure: F1 has empty text');
 });
 
-run('Reading Comprehension: missing passage AND missing evidence together fails', () => {
-  const q = rcQuestion();
-  delete q.passage_evidence;
-  const quiz = { questions: [q] }; // no passage field at all
+run('Reading Comprehension (story_facts): unknown evidence_fact_ids id fails, and the failure names the unknown id', () => {
+  const quiz = rcStoryQuiz({ questions: [Object.assign({}, rcStoryQuiz().questions[0], { evidence_fact_ids: ['F1', 'F7'] })] });
   const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
-  if (v.ok) throw new Error('expected failure: both passage and passage_evidence are absent');
+  if (v.ok) throw new Error('expected failure: F7 does not exist in story_facts');
+  const reasons = v.failures.map((f) => f.reasons.join(' ')).join(' ');
+  if (!reasons.includes('F7')) throw new Error('expected the failure reason to mention the unknown id F7, got: ' + reasons);
 });
 
-run('Reading Comprehension: valid evidence NEVER bypasses arithmetic validation (non-bypass check)', () => {
-  const quiz = { passage: RC_PASSAGE, questions: [rcQuestion({ solution_steps: '1/2 = 0.9' })] }; // wrong arithmetic
+run('Reading Comprehension (story_facts): missing evidence_fact_ids fails', () => {
+  const quiz = rcStoryQuiz();
+  delete quiz.questions[0].evidence_fact_ids;
   const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
-  if (v.ok) throw new Error('expected failure: solution_steps arithmetic is wrong even though passage_evidence itself is valid');
+  if (v.ok) throw new Error('expected failure: evidence_fact_ids missing entirely');
 });
 
-run('Reading Comprehension: a rounding instruction stated only in the passage still satisfies the currency check', () => {
+run('Reading Comprehension (story_facts): duplicate ids WITHIN one question\'s evidence_fact_ids are normalized away, not rejected', () => {
+  const quiz = rcStoryQuiz({ questions: [Object.assign({}, rcStoryQuiz().questions[0], { evidence_fact_ids: ['F1', 'F1', 'F2'] })] });
+  const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
+  if (!v.ok) throw new Error('expected ok: a duplicate id within one question is harmless redundancy, not a failure, got: ' + JSON.stringify(v.failures));
+});
+
+run('Reading Comprehension (story_facts): an unused story fact fails -- every fact must be referenced by at least one question', () => {
+  const quiz = rcStoryQuiz({ story_facts: [RC_FACT_1, RC_FACT_2, storyFact('F3', 'Aling Rosa sells mangoes too.')] });
+  const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
+  if (v.ok) throw new Error('expected failure: F3 is never referenced by any question (unreferenced/contradictory extra fact)');
+});
+
+run('Reading Comprehension (story_facts): numeric linkage to the referenced facts is required', () => {
+  const quiz = rcStoryQuiz({
+    questions: [{
+      type: 'open_response', question: 'What is the capital of the Philippines?',
+      evidence_fact_ids: ['F1', 'F2'], solution_steps: 'x = 1', final_answer: 'Manila'
+    }]
+  });
+  const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
+  if (v.ok) throw new Error('expected failure: referenced facts\' numbers (5, 3) are never used in the question or solution_steps');
+});
+
+run('Reading Comprehension (story_facts): arithmetic validation remains mandatory even with perfectly valid evidence', () => {
+  const quiz = rcStoryQuiz({ questions: [Object.assign({}, rcStoryQuiz().questions[0], { solution_steps: '5 + 3 = 9' })] });
+  const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
+  if (v.ok) throw new Error('expected failure: solution_steps arithmetic (5+3=9) does not check out');
+});
+
+run('Reading Comprehension (story_facts): a rounding instruction stated in a REFERENCED fact still satisfies the currency check', () => {
   const PHP = String.fromCharCode(0x20B1);
-  const sentence1 = 'Aling Rosa sells rice for ' + PHP + '32.50 per kilo.';
-  const sentence2 = 'Please round all totals to the nearest centavo.';
-  const passage = sentence1 + ' ' + sentence2;
-  const q = {
-    type: 'open_response',
-    question: 'Aling Rosa sold 28.25 kilos of rice. How much did she earn?', // no mention of rounding here
-    solution_steps: '28.25 * 32.50 = 918.125; rounded to the nearest centavo = 918.13',
-    final_answer: PHP + '918.13',
-    passage_evidence: sentence1 // the complete first sentence, not a fragment
+  const quiz = {
+    title: 't',
+    story_facts: [
+      storyFact('F1', 'Aling Rosa sells rice for ' + PHP + '32.50 per kilo.'),
+      storyFact('F2', 'Please round all totals to the nearest centavo.')
+    ],
+    questions: [{
+      type: 'open_response',
+      question: 'Aling Rosa sold 28.25 kilos of rice. How much did she earn?',
+      evidence_fact_ids: ['F1', 'F2'],
+      solution_steps: '28.25 * 32.50 = 918.125; rounded to the nearest centavo = 918.13',
+      final_answer: PHP + '918.13'
+    }]
   };
-  const v = sandbox.validateMathQuestions({ passage, questions: [q] }, 1, 'Reading Comprehension', 'printable');
-  if (!v.ok) throw new Error('expected ok: rounding instruction in the shared passage should satisfy this question\'s currency check, got: ' + JSON.stringify(v.failures));
+  const v = sandbox.validateMathQuestions(quiz, 1, 'Reading Comprehension', 'printable');
+  if (!v.ok) throw new Error('expected ok: rounding instruction in a referenced fact should satisfy the currency check, got: ' + JSON.stringify(v.failures));
 });
 
-run('MODE GATING: Interactive Math + Reading Comprehension activity string passes as a normal MCQ with NO passage/passage_evidence at all', () => {
-  const v = sandbox.validateMathQuestions({ questions: [baseValidQuestion()] }, 1, 'Reading Comprehension', 'interactive');
-  if (!v.ok) throw new Error('Interactive Math must never require passage/passage_evidence merely because the activity dropdown says Reading Comprehension, got: ' + JSON.stringify(v.failures));
+run('Reading Comprehension (story_facts): story_facts must be a non-empty array', () => {
+  const v = sandbox.validateMathQuestions({ title: 't', story_facts: [], questions: [rcStoryQuiz().questions[0]] }, 1, 'Reading Comprehension', 'printable');
+  if (v.ok) throw new Error('expected failure: story_facts is empty');
 });
+
+run('Reading Comprehension (story_facts): missing story_facts AND missing evidence_fact_ids together fails', () => {
+  const q = Object.assign({}, rcStoryQuiz().questions[0]);
+  delete q.evidence_fact_ids;
+  const v = sandbox.validateMathQuestions({ title: 't', questions: [q] }, 1, 'Reading Comprehension', 'printable');
+  if (v.ok) throw new Error('expected failure: both story_facts and evidence_fact_ids are absent');
+});
+
+run('Reading Comprehension (story_facts): a LEGACY passage/passage_evidence-shaped response is REJECTED for new generation, even when mathematically correct -- the old fields are display-only for historical saved worksheets and must never satisfy the new contract', () => {
+  const legacyShapedQuiz = {
+    title: 't',
+    passage: 'Juan had 5 mangoes. Nena gave Juan 3 more mangoes.',
+    questions: [{
+      type: 'open_response',
+      question: 'How many mangoes did Juan have after Nena gave him more?',
+      passage_evidence: 'Juan had 5 mangoes. Nena gave Juan 3 more mangoes.',
+      solution_steps: '5 + 3 = 8',
+      final_answer: '8'
+    }]
+  };
+  const v = sandbox.validateMathQuestions(legacyShapedQuiz, 1, 'Reading Comprehension', 'printable');
+  if (v.ok) throw new Error('expected failure: a legacy passage/passage_evidence-only response must never pass, even though its content is mathematically correct, got ok');
+  const reasons = v.failures.map((f) => f.reasons.join(' ')).join(' ');
+  if (!/story_facts must be a non-empty array/.test(reasons)) {
+    throw new Error('expected the failure to be attributed to the missing story_facts requirement (proving passage/passage_evidence is never consulted as an alternate valid shape), got: ' + reasons);
+  }
+});
+
+run('MODE GATING: Interactive Math + Reading Comprehension activity string passes as a normal MCQ with NO story_facts/evidence_fact_ids at all', () => {
+  const v = sandbox.validateMathQuestions({ questions: [baseValidQuestion()] }, 1, 'Reading Comprehension', 'interactive');
+  if (!v.ok) throw new Error('Interactive Math must never require story_facts merely because the activity dropdown says Reading Comprehension, got: ' + JSON.stringify(v.failures));
+});
+
+const RC_SENTENCE_1 = 'Nena has 1/2 cup of sugar and 2 cups of flour for her recipe.';
+const RC_SENTENCE_2 = 'She also owns 2 cups of milk.';
+const RC_PASSAGE = RC_SENTENCE_1 + ' ' + RC_SENTENCE_2;
 
 // =====================================================================
 // REV 5: extractSentences -- sentence-boundary splitter
@@ -735,20 +806,7 @@ run('CONTEXT-AWARE a.m./p.m. [3]: "The store closed at 2:00 p.m. Juan counted 5 
   if (sentences[1] !== 'Juan counted 5 boxes.') throw new Error('expected the second sentence preserved verbatim, got: ' + sentences[1]);
 });
 
-run('CONTEXT-AWARE a.m./p.m. [4]: passage_evidence matching ONLY the first (p.m.-ending) sentence validates successfully', () => {
-  const passage = 'The store closed at 2:00 p.m. Juan counted 5 boxes.';
-  const q = {
-    type: 'open_response',
-    question: 'At what hour did the store close?',
-    solution_steps: 'x = 2:00',
-    final_answer: '2:00',
-    passage_evidence: 'The store closed at 2:00 p.m.'
-  };
-  const v = sandbox.validateMathQuestions({ passage, questions: [q] }, 1, 'Reading Comprehension', 'printable');
-  if (!v.ok) throw new Error('expected ok: evidence exactly matches the first complete sentence, got: ' + JSON.stringify(v.failures));
-});
-
-run('CONTEXT-AWARE a.m./p.m. [5]: the passage sentences correctly split so the second, uncited numeric sentence is a SEPARATE extracted sentence (rendering-level "never displayed" check lives in test_printable_math_render.js)', () => {
+run('CONTEXT-AWARE a.m./p.m. [4]: the passage sentences correctly split so the second, uncited numeric sentence is a SEPARATE extracted sentence (rendering-level "never displayed" check for the LEGACY fallback lives in test_printable_math_render.js)', () => {
   const sentences = sandbox.extractSentences('The store closed at 2:00 p.m. Juan counted 5 boxes.');
   if (!sentences.includes('The store closed at 2:00 p.m.')) throw new Error('expected the cited sentence to be independently extractable');
   if (!sentences.includes('Juan counted 5 boxes.')) throw new Error('expected the second sentence to be independently extractable (so the renderer CAN and must choose to exclude it)');
@@ -798,46 +856,76 @@ run('Matching Type: fails when two final_answer values are Math-equivalent (0.75
 });
 
 // =====================================================================
-// REV 5: reported bug -- "15 marbles"/"15 fruits"/"15 pieces" must be
-// treated as duplicate Matching Type answers (same numeric value), even
-// though they are textually distinct and were previously missed because
-// valuesMatch() on the FULL noisy string never parses "15 marbles" as a
-// bare number at all.
+// SECTION A: Matching Type BARE ANSWER CONTRACT -- final_answer must be a
+// single, complete, BARE mathematical value (see parseBareMathValue).
+// ANY surrounding words, units, nouns, or equations are rejected OUTRIGHT
+// at the per-question level, independent of the cross-question uniqueness
+// check below. This replaces the earlier design, which only searched for
+// a numeric token ANYWHERE within a noisy string (so "15 marbles" could
+// previously slip through as "valid" on its own, only failing when it
+// happened to collide with another question's value).
 // =====================================================================
-run('Matching Type: "15 marbles" and "15 fruits" are duplicates (same numeric value, different nouns)', () => {
-  const quiz = { questions: [matchingQuestion('15 marbles'), matchingQuestion('15 fruits'), matchingQuestion('17 notebooks')] };
+run('Matching Type: bare answers (5, -8, 3/4, 25%, peso1,250.50) all pass individually', () => {
+  const PHP = String.fromCharCode(0x20B1);
+  const quiz = { questions: [matchingQuestion('5'), matchingQuestion('-8'), matchingQuestion('3/4'), matchingQuestion('25%'), matchingQuestion(PHP + '1,250.50')] };
+  const v = sandbox.validateMathQuestions(quiz, 5, 'Matching Type', 'printable');
+  if (!v.ok) throw new Error('expected ok, got: ' + JSON.stringify(v.failures));
+});
+
+run('Matching Type: "5 marbles" fails (noun-qualified, not a bare value)', () => {
+  const quiz = { questions: [matchingQuestion('5 marbles'), matchingQuestion('7')] };
+  const v = sandbox.validateMathQuestions(quiz, 2, 'Matching Type', 'printable');
+  if (v.ok) throw new Error('expected failure: "5 marbles" is not a bare mathematical value');
+});
+
+run('Matching Type: "12 / 3 = 4" fails (an equation, not a bare value)', () => {
+  const quiz = { questions: [matchingQuestion('12 / 3 = 4'), matchingQuestion('7')] };
+  const v = sandbox.validateMathQuestions(quiz, 2, 'Matching Type', 'printable');
+  if (v.ok) throw new Error('expected failure: "12 / 3 = 4" is an equation, not a bare value');
+});
+
+run('Matching Type: "The answer is 5" fails (explanatory prose, not a bare value)', () => {
+  const quiz = { questions: [matchingQuestion('The answer is 5'), matchingQuestion('7')] };
+  const v = sandbox.validateMathQuestions(quiz, 2, 'Matching Type', 'printable');
+  if (v.ok) throw new Error('expected failure: "The answer is 5" is explanatory prose, not a bare value');
+});
+
+run('Matching Type: "3/4 cup" fails (unit-qualified fraction, not bare)', () => {
+  const quiz = { questions: [matchingQuestion('3/4 cup'), matchingQuestion('7')] };
+  const v = sandbox.validateMathQuestions(quiz, 2, 'Matching Type', 'printable');
+  if (v.ok) throw new Error('expected failure: "3/4 cup" is not a bare value');
+});
+
+run('Matching Type: "5 and 2 remainder" fails (more than one value / explanatory, not a single bare value)', () => {
+  const quiz = { questions: [matchingQuestion('5 and 2 remainder'), matchingQuestion('7')] };
+  const v = sandbox.validateMathQuestions(quiz, 2, 'Matching Type', 'printable');
+  if (v.ok) throw new Error('expected failure: "5 and 2 remainder" is not a single bare value');
+});
+
+run('Matching Type: five distinct bare answers pass (Grade 2 division plan example: 2, 3, 4, 5, 6)', () => {
+  const quiz = { questions: ['2', '3', '4', '5', '6'].map((v) => matchingQuestion(v)) };
+  const v = sandbox.validateMathQuestions(quiz, 5, 'Matching Type', 'printable');
+  if (!v.ok) throw new Error('expected ok, got: ' + JSON.stringify(v.failures));
+});
+
+run('Matching Type: two mathematically equivalent BARE answers still fail as duplicates (25% vs 0.25)', () => {
+  const quiz = { questions: [matchingQuestion('25%'), matchingQuestion('0.25'), matchingQuestion('7')] };
   const v = sandbox.validateMathQuestions(quiz, 3, 'Matching Type', 'printable');
-  if (v.ok) throw new Error('expected failure: "15 marbles" and "15 fruits" share the same numeric value (15)');
+  if (v.ok) throw new Error('expected failure: "25%" (0.25) and "0.25" are the same value');
 });
 
-run('Matching Type: distinct nouns do NOT make equal numeric values unique -- "15 seashells" also collides with "15 marbles"', () => {
-  const quiz = { questions: [matchingQuestion('15 marbles'), matchingQuestion('15 seashells')] };
-  const v = sandbox.validateMathQuestions(quiz, 2, 'Matching Type', 'printable');
-  if (v.ok) throw new Error('expected failure: "15 seashells" is still numerically 15, same as "15 marbles"');
-});
-
-run('Matching Type: "3/4 cup" and "0.75 kg" are duplicates (fraction vs decimal, same value, different units)', () => {
-  const quiz = { questions: [matchingQuestion('3/4 cup'), matchingQuestion('0.75 kg'), matchingQuestion('2 liters')] };
+run('Matching Type: two mathematically equivalent BARE answers still fail as duplicates (5 vs 5.0)', () => {
+  const quiz = { questions: [matchingQuestion('5'), matchingQuestion('5.0'), matchingQuestion('7')] };
   const v = sandbox.validateMathQuestions(quiz, 3, 'Matching Type', 'printable');
-  if (v.ok) throw new Error('expected failure: "3/4 cup" (0.75) and "0.75 kg" (0.75) are the same value');
+  if (v.ok) throw new Error('expected failure: "5" and "5.0" are the same value');
 });
 
-run('Matching Type: distinct numeric values with distinct nouns pass ("15 marbles" vs "17 notebooks")', () => {
-  const quiz = { questions: [matchingQuestion('15 marbles'), matchingQuestion('17 notebooks')] };
-  const v = sandbox.validateMathQuestions(quiz, 2, 'Matching Type', 'printable');
-  if (!v.ok) throw new Error('expected ok: 15 and 17 are genuinely distinct values, got: ' + JSON.stringify(v.failures));
-});
-
-run('Matching Type: final_answer with ZERO numeric tokens fails ("some marbles" has no number at all)', () => {
-  const quiz = { questions: [matchingQuestion('some marbles'), matchingQuestion('17 notebooks')] };
-  const v = sandbox.validateMathQuestions(quiz, 2, 'Matching Type', 'printable');
-  if (v.ok) throw new Error('expected failure: "some marbles" contains no numeric value at all');
-});
-
-run('Matching Type: final_answer with TWO numeric tokens fails ("15 marbles and 3 friends" is ambiguous)', () => {
-  const quiz = { questions: [matchingQuestion('15 marbles and 3 friends'), matchingQuestion('17 notebooks')] };
-  const v = sandbox.validateMathQuestions(quiz, 2, 'Matching Type', 'printable');
-  if (v.ok) throw new Error('expected failure: exactly one numeric value is required, this final_answer has two (15 and 3)');
+run('Matching Type: cross-question duplicate failure is attributed to the LATER question with a retry-friendly "Question N" message', () => {
+  const quiz = { questions: [matchingQuestion('5'), matchingQuestion('5'), matchingQuestion('7')] };
+  const v = sandbox.validateMathQuestions(quiz, 3, 'Matching Type', 'printable');
+  if (v.ok) throw new Error('expected failure');
+  const attributed = v.failures.some((f) => f.index === 1 && f.reasons.some((r) => /is the same or a mathematically equivalent value as Question 1/.test(r)));
+  if (!attributed) throw new Error('expected the duplicate failure attached to index 1 (Question 2), referencing "Question 1", got: ' + JSON.stringify(v.failures));
 });
 
 run('MODE GATING: Interactive Math + Matching Type activity string passes as a normal MCQ even with duplicate final_answer values', () => {
@@ -928,6 +1016,76 @@ run('extractPrimaryNumericToken: returns null for zero numeric tokens', () => {
 
 run('extractPrimaryNumericToken: returns null for more than one numeric token (ambiguous)', () => {
   if (extractPrimaryNumericToken('15 marbles and 3 friends') !== null) throw new Error('expected null for text with two numbers');
+});
+
+// =====================================================================
+// parseBareMathValue -- the AUTHORITATIVE Matching Type contract: unlike
+// extractPrimaryNumericToken (which searches anywhere within a string),
+// this requires the ENTIRE trimmed string to be exactly one value.
+// =====================================================================
+run('parseBareMathValue: "5" is bare, raw preserved', () => {
+  const token = sandbox.parseBareMathValue('5');
+  if (!token || token.raw !== '5' || token.value !== 5) throw new Error('expected raw "5"/value 5, got ' + JSON.stringify(token));
+});
+
+run('parseBareMathValue: "-8" is bare, raw preserved (not converted)', () => {
+  const token = sandbox.parseBareMathValue('-8');
+  if (!token || token.raw !== '-8' || token.value !== -8) throw new Error('expected raw "-8"/value -8, got ' + JSON.stringify(token));
+});
+
+run('parseBareMathValue: "3/4" is bare, raw preserved as a fraction (never converted to "0.75")', () => {
+  const token = sandbox.parseBareMathValue('3/4');
+  if (!token || token.raw !== '3/4') throw new Error('expected raw "3/4", got ' + JSON.stringify(token));
+  if (Math.abs(token.value - 0.75) > 1e-6) throw new Error('expected value 0.75');
+});
+
+run('parseBareMathValue: "1 1/2" is bare, raw preserved as a mixed number', () => {
+  const token = sandbox.parseBareMathValue('1 1/2');
+  if (!token || token.raw !== '1 1/2') throw new Error('expected raw "1 1/2", got ' + JSON.stringify(token));
+  if (Math.abs(token.value - 1.5) > 1e-6) throw new Error('expected value 1.5');
+});
+
+run('parseBareMathValue: "0.75" is bare', () => {
+  const token = sandbox.parseBareMathValue('0.75');
+  if (!token || token.raw !== '0.75') throw new Error('expected raw "0.75", got ' + JSON.stringify(token));
+});
+
+run('parseBareMathValue: "25%" is bare, raw preserved (never converted to "0.25")', () => {
+  const token = sandbox.parseBareMathValue('25%');
+  if (!token || token.raw !== '25%') throw new Error('expected raw "25%", got ' + JSON.stringify(token));
+  if (Math.abs(token.value - 0.25) > 1e-6) throw new Error('expected value 0.25');
+});
+
+run('parseBareMathValue: peso "1,250.50" is bare, raw preserved (comma/peso kept, never converted to a bare decimal)', () => {
+  const PHP = String.fromCharCode(0x20B1);
+  const token = sandbox.parseBareMathValue(PHP + '1,250.50');
+  if (!token || token.raw !== PHP + '1,250.50') throw new Error('expected raw ' + JSON.stringify(PHP + '1,250.50') + ', got ' + JSON.stringify(token));
+});
+
+run('parseBareMathValue: "5 marbles" is NOT bare -- returns null', () => {
+  if (sandbox.parseBareMathValue('5 marbles') !== null) throw new Error('expected null: surrounding noun makes it not bare');
+});
+
+run('parseBareMathValue: "12 / 3 = 4" is NOT bare -- returns null (an equation)', () => {
+  if (sandbox.parseBareMathValue('12 / 3 = 4') !== null) throw new Error('expected null: an equation is not a bare value');
+});
+
+run('parseBareMathValue: "The answer is 5" is NOT bare -- returns null (explanatory prose)', () => {
+  if (sandbox.parseBareMathValue('The answer is 5') !== null) throw new Error('expected null: explanatory prose is not a bare value');
+});
+
+run('parseBareMathValue: "3/4 cup" is NOT bare -- returns null (unit-qualified)', () => {
+  if (sandbox.parseBareMathValue('3/4 cup') !== null) throw new Error('expected null: a unit-qualified fraction is not bare');
+});
+
+run('parseBareMathValue: "5 and 2 remainder" is NOT bare -- returns null (more than one value)', () => {
+  if (sandbox.parseBareMathValue('5 and 2 remainder') !== null) throw new Error('expected null: more than one value is not a single bare value');
+});
+
+run('parseBareMathValue: empty/whitespace-only/non-string input returns null', () => {
+  if (sandbox.parseBareMathValue('') !== null) throw new Error('expected null for empty string');
+  if (sandbox.parseBareMathValue('   ') !== null) throw new Error('expected null for whitespace-only string');
+  if (sandbox.parseBareMathValue(undefined) !== null) throw new Error('expected null for undefined');
 });
 
 run('extractNumericTokensDetailed: extractAllNumericTokens is a values-only wrapper over the same detailed tokens', () => {
