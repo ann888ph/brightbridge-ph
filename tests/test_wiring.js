@@ -41,4 +41,40 @@ run('generateWorksheet() sends items, quarter, and topicSource in the POST body 
   );
 });
 
+// ---------------------------------------------------------------------
+// REV 4: getMathActivityProfile must be the SINGLE shared source of truth
+// for the mode+activity -> schema/validation profile decision -- app.js
+// and generate.js must both call it rather than each re-deriving the same
+// three booleans with their own (potentially drifting) formula.
+// ---------------------------------------------------------------------
+const path = require('path');
+const fs = require('fs');
+const generateJsSource = fs.readFileSync(path.join(__dirname, '..', 'netlify', 'functions', 'generate.js'), 'utf8');
+
+run('getMathActivityProfile is exported from math-validation.js', () => {
+  assert(typeof mathValidation.getMathActivityProfile === 'function', 'expected getMathActivityProfile to be exported');
+});
+
+run('SOURCE CHECK: app.js calls the SHARED getMathActivityProfile helper rather than re-deriving the profile inline', () => {
+  assert(appJsSource.includes('window.MathValidation.getMathActivityProfile('), 'expected app.js to call the shared helper via window.MathValidation');
+  // Guards against a future edit reintroducing a second, independently
+  // written copy of the FULL three-predicate formula (not the unrelated,
+  // pre-existing `wsMode === 'interactive' || isMath` used elsewhere to
+  // pick the JSON-vs-freehand-HTML prompt path -- this specifically looks
+  // for the activity-profile shape, "printable" && activity ===).
+  assert(!/wsMode === 'interactive' \|\| \(wsMode === 'printable' && activity ===/.test(appJsSource), 'found an inlined requiresMultipleChoice-style formula in app.js -- must go through the shared helper instead');
+});
+
+run('SOURCE CHECK: generate.js calls the SHARED getMathActivityProfile helper rather than re-deriving the profile inline', () => {
+  assert(generateJsSource.includes('getMathActivityProfile(mode, activity)'), 'expected generate.js to call the shared helper');
+  assert(!/mode === ['"]printable['"] && activity ===/.test(generateJsSource), 'found an inlined requiresMultipleChoice-style formula in generate.js -- must go through the shared helper instead');
+});
+
+run('SOURCE CHECK: generate.js requires getMathActivityProfile from the shared math-validation.js module (not a second implementation)', () => {
+  assert(
+    /const\s*\{[^}]*getMathActivityProfile[^}]*\}\s*=\s*require\("\.\.\/\.\.\/math-validation\.js"\)/.test(generateJsSource),
+    'expected getMathActivityProfile to be part of the destructured require of the shared math-validation.js module'
+  );
+});
+
 console.log('\nDone.');

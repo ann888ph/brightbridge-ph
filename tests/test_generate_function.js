@@ -87,6 +87,50 @@ function makeWrongAnswerQuiz(count) {
   return JSON.stringify({ title: 't', directions: 'd', questions });
 }
 
+// REV 4 helpers: open_response-shaped Math (Printable non-MCQ activities).
+function makeValidOpenResponseQuiz(count) {
+  const questions = [];
+  for (let i = 0; i < count; i++) {
+    questions.push({ type: 'open_response', question: (i + 2) + '+2?', solution_steps: (i + 2) + '+2=' + (i + 4), final_answer: String(i + 4) });
+  }
+  return JSON.stringify({ title: 't', directions: 'd', questions });
+}
+
+function makeValidMatchingQuiz(count) {
+  const questions = [];
+  for (let i = 0; i < count; i++) {
+    questions.push({ type: 'open_response', question: 'Item ' + i, solution_steps: 'x=' + (i + 100), final_answer: String(i + 100) }); // all distinct
+  }
+  return JSON.stringify({ title: 't', directions: 'd', questions });
+}
+
+function makeDuplicateAnswerMatchingQuiz(count) {
+  const questions = [];
+  for (let i = 0; i < count; i++) {
+    questions.push({ type: 'open_response', question: 'Item ' + i, solution_steps: 'x=1', final_answer: '1' }); // all identical -- fails uniqueness
+  }
+  return JSON.stringify({ title: 't', directions: 'd', questions });
+}
+
+function makeValidReadingComprehensionQuiz(count) {
+  const passage = 'Nena wrote the numbers 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 in her notebook.';
+  const questions = [];
+  for (let i = 0; i < count; i++) {
+    questions.push({
+      type: 'open_response',
+      question: 'What is ' + (i + 2) + ' + 2?',
+      solution_steps: (i + 2) + '+2=' + (i + 4),
+      final_answer: String(i + 4),
+      passage_evidence: String(i + 2)
+    });
+  }
+  return JSON.stringify({ title: 't', directions: 'd', passage, questions });
+}
+
+const RESERVE_OK_LOCAL = (id) => () => jsonResponse(200, [{ reserved: true, reservation_id: id || 'res-local', reason: null }]);
+const ANTHROPIC_OK_LOCAL = (text) => () => jsonResponse(200, { content: [{ type: 'text', text: text || '<h1>Worksheet</h1>' }], usage: { input_tokens: 10, output_tokens: 20 } });
+const FINALIZE_OK_LOCAL = () => jsonResponse(200, [{ finalized: true, reason: null }]);
+
 (async () => {
 
   await run('missing Authorization header -> 401, no Supabase/Anthropic calls', async () => {
@@ -295,7 +339,7 @@ function makeWrongAnswerQuiz(count) {
       () => jsonResponse(200, { content: [{ type: 'text', text: goodQuizJson }], usage: { input_tokens: 50, output_tokens: 60 } }),
       () => jsonResponse(200, [{ finalized: true, reason: null }])
     ]);
-    const { status, body } = await invoke(mock, { bodyOverrides: { subject: 'Math', mode: 'printable', items: '10' } });
+    const { status, body } = await invoke(mock, { bodyOverrides: { subject: 'Math', mode: 'printable', activity: 'Multiple Choice Quiz', items: '10' } });
     assert(status === 200, 'expected 200, got ' + status + ' body=' + JSON.stringify(body));
     assert(body.result === goodQuizJson, 'expected the valid quiz JSON returned as-is for printable Math too');
     mock.assertExhausted();
@@ -315,7 +359,7 @@ function makeWrongAnswerQuiz(count) {
       () => jsonResponse(200, { content: [{ type: 'text', text: goodQuizJson }], usage: { input_tokens: 15, output_tokens: 25 } }),
       () => jsonResponse(200, [{ finalized: true, reason: null }])
     ]);
-    const { status, body } = await invoke(mock, { bodyOverrides: { subject: 'Math', mode: 'printable', items: '10' } });
+    const { status, body } = await invoke(mock, { bodyOverrides: { subject: 'Math', mode: 'printable', activity: 'Multiple Choice Quiz', items: '10' } });
     assert(status === 200, 'expected 200, got ' + status + ' body=' + JSON.stringify(body));
     assert(retryRpcCalled, 'expected reserve_provider_retry to have been called for printable Math, same as interactive');
     assert(body.result === goodQuizJson, 'expected the SECOND (valid) attempt returned');
@@ -334,7 +378,7 @@ function makeWrongAnswerQuiz(count) {
       () => jsonResponse(200, { content: [{ type: 'text', text: badQuizJson }], usage: { input_tokens: 11, output_tokens: 21 } }),
       () => jsonResponse(200, {}) // finalizeFailed PATCH
     ]);
-    const { status, body } = await invoke(mock, { bodyOverrides: { subject: 'Math', mode: 'printable', items: '10' } });
+    const { status, body } = await invoke(mock, { bodyOverrides: { subject: 'Math', mode: 'printable', activity: 'Multiple Choice Quiz', items: '10' } });
     assert(status === 502, 'expected 502, got ' + status);
     assert(!body.result, 'must never deliver a result on final validation failure, printable or not');
     mock.assertExhausted();
@@ -368,6 +412,195 @@ function makeWrongAnswerQuiz(count) {
     const { status, body } = await invoke(mock, { bodyOverrides: { subject: 'English', mode: 'printable', items: '10' } });
     assert(status === 200, 'expected 200, got ' + status + ' body=' + JSON.stringify(body));
     assert(body.result === '<h1>English Worksheet</h1>', 'expected the normal printable non-Math flow to proceed unblocked');
+    mock.assertExhausted();
+  });
+
+  // =====================================================================
+  // REV 4: mode allowlist -- server-validated, exact-match, no default
+  // =====================================================================
+  await run('MODE: missing mode -> 400 BEFORE any Supabase/Anthropic call beyond auth', async () => {
+    const mock = makeMockFetch([AUTH_OK]);
+    const event = baseEvent();
+    const parsedBody = JSON.parse(event.body);
+    delete parsedBody.mode;
+    event.body = JSON.stringify(parsedBody);
+    delete require.cache[require.resolve(handlerPath)];
+    global.fetch = mock.fetchFn;
+    const { handler } = require(handlerPath);
+    const res = await handler(event);
+    assert(res.statusCode === 400, 'expected 400, got ' + res.statusCode);
+    mock.assertExhausted();
+  });
+
+  await run('MODE: unknown/mis-cased/whitespace-padded values are all rejected -- never trimmed or case-folded', async () => {
+    for (const badMode of ['Printable', 'INTERACTIVE', ' printable', 'printable ', 'pdf', '']) {
+      const mock = makeMockFetch([AUTH_OK]);
+      const { status } = await invoke(mock, { bodyOverrides: { mode: badMode } });
+      assert(status === 400, `expected 400 for mode=${JSON.stringify(badMode)}, got ${status}`);
+      mock.assertExhausted();
+    }
+  });
+
+  await run('MODE: valid "interactive" and valid "printable" both pass this gate', async () => {
+    for (const goodMode of ['interactive', 'printable']) {
+      const mock = makeMockFetch([AUTH_OK, PROFILE_OK, RESERVE_OK_LOCAL(), () => jsonResponse(200, {}), ANTHROPIC_OK_LOCAL(), FINALIZE_OK_LOCAL]);
+      const { status } = await invoke(mock, { bodyOverrides: { subject: 'English', mode: goodMode } });
+      assert(status === 200, `expected 200 for mode=${goodMode}, got ${status}`);
+    }
+  });
+
+  // =====================================================================
+  // REV 4: activity allowlist + Fill in the Blanks for Math
+  // =====================================================================
+  await run('ACTIVITY: missing activity -> 400 BEFORE any Supabase/Anthropic call beyond auth', async () => {
+    const mock = makeMockFetch([AUTH_OK]);
+    const event = baseEvent();
+    const parsedBody = JSON.parse(event.body);
+    delete parsedBody.activity;
+    event.body = JSON.stringify(parsedBody);
+    delete require.cache[require.resolve(handlerPath)];
+    global.fetch = mock.fetchFn;
+    const { handler } = require(handlerPath);
+    const res = await handler(event);
+    assert(res.statusCode === 400, 'expected 400, got ' + res.statusCode);
+    mock.assertExhausted();
+  });
+
+  await run('ACTIVITY: unknown activity string -> 400 BEFORE any Supabase/Anthropic call beyond auth', async () => {
+    const mock = makeMockFetch([AUTH_OK]);
+    const { status } = await invoke(mock, { bodyOverrides: { activity: 'Essay Writing' } });
+    assert(status === 400, 'expected 400, got ' + status);
+    mock.assertExhausted();
+  });
+
+  await run('FILL IN THE BLANKS + MATH: rejected with 400 before any reservation/Anthropic call', async () => {
+    const mock = makeMockFetch([AUTH_OK]);
+    const { status } = await invoke(mock, { bodyOverrides: { subject: 'Math', activity: 'Fill in the Blanks' } });
+    assert(status === 400, 'expected 400, got ' + status);
+    mock.assertExhausted();
+  });
+
+  await run('FILL IN THE BLANKS + ENGLISH: allowed (the rejection is Math-specific, not global)', async () => {
+    const mock = makeMockFetch([AUTH_OK, PROFILE_OK, RESERVE_OK_LOCAL(), () => jsonResponse(200, {}), ANTHROPIC_OK_LOCAL(), FINALIZE_OK_LOCAL]);
+    const { status } = await invoke(mock, { bodyOverrides: { subject: 'English', activity: 'Fill in the Blanks' } });
+    assert(status === 200, 'expected 200, got ' + status);
+  });
+
+  await run('MATH + WORKSHEET: unaffected by the Fill-in-the-Blanks rejection (other Math activities still work)', async () => {
+    const goodQuizJson = makeValidOpenResponseQuiz(5);
+    const mock = makeMockFetch([AUTH_OK, PROFILE_OK, RESERVE_OK_LOCAL(), () => jsonResponse(200, {}), ANTHROPIC_OK_LOCAL(goodQuizJson), FINALIZE_OK_LOCAL]);
+    const { status, body } = await invoke(mock, { bodyOverrides: { subject: 'Math', mode: 'printable', activity: 'Worksheet', items: '5' } });
+    assert(status === 200, 'expected 200, got ' + status + ' body=' + JSON.stringify(body));
+  });
+
+  // =====================================================================
+  // REV 4: non-Math regression -- all 6 activity values still accepted
+  // =====================================================================
+  await run('NON-MATH REGRESSION: all 6 ALLOWED_ACTIVITIES values are accepted for a non-Math (English) request', async () => {
+    const activities = ['Worksheet', 'Multiple Choice Quiz', 'Reading Comprehension', 'Matching Type', 'Fill in the Blanks', 'Parent/Tutor Support Sheet'];
+    for (const activity of activities) {
+      const mock = makeMockFetch([AUTH_OK, PROFILE_OK, RESERVE_OK_LOCAL(), () => jsonResponse(200, {}), ANTHROPIC_OK_LOCAL(), FINALIZE_OK_LOCAL]);
+      const { status } = await invoke(mock, { bodyOverrides: { subject: 'English', activity } });
+      assert(status === 200, `expected 200 for non-Math activity=${activity}, got ${status}`);
+    }
+  });
+
+  await run('NON-MATH REGRESSION: the server-owned Math activity policy text is ABSENT from a non-Math effective prompt', async () => {
+    const captured = {};
+    const mock = makeMockFetch([
+      AUTH_OK, PROFILE_OK, RESERVE_OK_LOCAL(),
+      () => jsonResponse(200, {}),
+      (url, opts) => { captured.content = JSON.parse(opts.body).messages[0].content; return jsonResponse(200, { content: [{ type: 'text', text: '<h1>W</h1>' }], usage: { input_tokens: 1, output_tokens: 1 } }); },
+      FINALIZE_OK_LOCAL
+    ]);
+    await invoke(mock, { bodyOverrides: { subject: 'English', activity: 'Matching Type' } });
+    assert(!captured.content.includes('SERVER-ENFORCED MATH ACTIVITY SCHEMA POLICY'), 'expected no Math activity policy text for a non-Math request');
+  });
+
+  // =====================================================================
+  // REV 4: server-owned Math activity schema policy content
+  // =====================================================================
+  function capturePromptMatcher(captured, text) {
+    return (url, opts) => {
+      captured.content = JSON.parse(opts.body).messages[0].content;
+      return jsonResponse(200, { content: [{ type: 'text', text: text }], usage: { input_tokens: 1, output_tokens: 1 } });
+    };
+  }
+
+  await run('POLICY: Printable Worksheet (Math) gets the open_response schema restatement, cannot be stripped by the client prompt', async () => {
+    const captured = {};
+    const mock = makeMockFetch([AUTH_OK, PROFILE_OK, RESERVE_OK_LOCAL(), () => jsonResponse(200, {}), capturePromptMatcher(captured, makeValidOpenResponseQuiz(5)), FINALIZE_OK_LOCAL]);
+    await invoke(mock, { bodyOverrides: { prompt: 'a bare client prompt with no schema instructions at all', subject: 'Math', mode: 'printable', activity: 'Worksheet', items: '5' } });
+    assert(captured.content.includes('SERVER-ENFORCED MATH ACTIVITY SCHEMA POLICY'), 'expected the server-owned Math activity policy to be present');
+    assert(captured.content.includes('open_response'), 'expected the open_response schema restatement');
+  });
+
+  await run('POLICY: Printable Reading Comprehension (Math) additionally restates the passage_evidence requirement', async () => {
+    const captured = {};
+    const quiz = makeValidReadingComprehensionQuiz(5);
+    const mock = makeMockFetch([AUTH_OK, PROFILE_OK, RESERVE_OK_LOCAL(), () => jsonResponse(200, {}), capturePromptMatcher(captured, quiz), FINALIZE_OK_LOCAL]);
+    await invoke(mock, { bodyOverrides: { subject: 'Math', mode: 'printable', activity: 'Reading Comprehension', items: '5' } });
+    assert(captured.content.includes('passage_evidence'), 'expected the passage_evidence requirement restated in the server-owned policy');
+  });
+
+  await run('POLICY: Printable Matching Type (Math) additionally restates the final-answer-uniqueness requirement', async () => {
+    const captured = {};
+    const mock = makeMockFetch([AUTH_OK, PROFILE_OK, RESERVE_OK_LOCAL(), () => jsonResponse(200, {}), capturePromptMatcher(captured, makeValidMatchingQuiz(5)), FINALIZE_OK_LOCAL]);
+    await invoke(mock, { bodyOverrides: { subject: 'Math', mode: 'printable', activity: 'Matching Type', items: '5' } });
+    assert(/distinguishable from every other question/.test(captured.content), 'expected the Matching Type uniqueness requirement restated in the server-owned policy');
+  });
+
+  await run('POLICY: Printable Multiple Choice Quiz (Math) does NOT get the open_response policy block', async () => {
+    const captured = {};
+    const mock = makeMockFetch([AUTH_OK, PROFILE_OK, RESERVE_OK_LOCAL(), () => jsonResponse(200, {}), capturePromptMatcher(captured, makeValidQuiz(5)), FINALIZE_OK_LOCAL]);
+    await invoke(mock, { bodyOverrides: { subject: 'Math', mode: 'printable', activity: 'Multiple Choice Quiz', items: '5' } });
+    assert(!captured.content.includes('SERVER-ENFORCED MATH ACTIVITY SCHEMA POLICY'), 'expected no open_response policy block for Multiple Choice Quiz');
+  });
+
+  await run('MODE GATING: Interactive Math + "Reading Comprehension" activity does NOT get the RC policy block or requirement (matches multiple_choice schema)', async () => {
+    const captured = {};
+    const mock = makeMockFetch([AUTH_OK, PROFILE_OK, RESERVE_OK_LOCAL(), () => jsonResponse(200, {}), capturePromptMatcher(captured, makeValidQuiz(5)), FINALIZE_OK_LOCAL]);
+    const { status } = await invoke(mock, { bodyOverrides: { subject: 'Math', mode: 'interactive', activity: 'Reading Comprehension', items: '5' } });
+    assert(status === 200, 'expected 200 (Interactive Math must still validate as multiple_choice regardless of activity), got ' + status);
+    assert(!captured.content.includes('SERVER-ENFORCED MATH ACTIVITY SCHEMA POLICY'), 'expected no open_response/RC policy block for Interactive Math');
+  });
+
+  // =====================================================================
+  // REV 4: Reading Comprehension / Matching Type retry behavior (Printable)
+  // =====================================================================
+  await run('READING COMPREHENSION: mocked response missing passage -> validation fails -> retry -> still fails -> 502', async () => {
+    const noPassageQuiz = JSON.stringify({
+      title: 't', directions: 'd',
+      questions: Array.from({ length: 5 }, (_, i) => ({ type: 'open_response', question: 'q' + i, solution_steps: 'x=1', final_answer: '1', passage_evidence: 'e' }))
+    }); // no top-level passage field at all
+    const mock = makeMockFetch([
+      AUTH_OK, PROFILE_OK, RESERVE_OK_LOCAL(),
+      () => jsonResponse(200, {}),
+      () => jsonResponse(200, { content: [{ type: 'text', text: noPassageQuiz }], usage: { input_tokens: 1, output_tokens: 1 } }),
+      () => jsonResponse(200, [{ allowed: true, reason: null }]),
+      () => jsonResponse(200, { content: [{ type: 'text', text: noPassageQuiz }], usage: { input_tokens: 1, output_tokens: 1 } }),
+      () => jsonResponse(200, {})
+    ]);
+    const { status, body } = await invoke(mock, { bodyOverrides: { subject: 'Math', mode: 'printable', activity: 'Reading Comprehension', items: '5' } });
+    assert(status === 502, 'expected 502, got ' + status);
+    assert(!body.result, 'must never deliver a result on final validation failure');
+    mock.assertExhausted();
+  });
+
+  await run('MATCHING TYPE: mocked response with duplicate final_answer values -> fails -> retry -> (second attempt unique) -> 200', async () => {
+    const dupQuiz = makeDuplicateAnswerMatchingQuiz(5);
+    const uniqueQuiz = makeValidMatchingQuiz(5);
+    const mock = makeMockFetch([
+      AUTH_OK, PROFILE_OK, RESERVE_OK_LOCAL(),
+      () => jsonResponse(200, {}),
+      () => jsonResponse(200, { content: [{ type: 'text', text: dupQuiz }], usage: { input_tokens: 1, output_tokens: 1 } }),
+      () => jsonResponse(200, [{ allowed: true, reason: null }]),
+      () => jsonResponse(200, { content: [{ type: 'text', text: uniqueQuiz }], usage: { input_tokens: 1, output_tokens: 1 } }),
+      FINALIZE_OK_LOCAL
+    ]);
+    const { status, body } = await invoke(mock, { bodyOverrides: { subject: 'Math', mode: 'printable', activity: 'Matching Type', items: '5' } });
+    assert(status === 200, 'expected 200 after the retry produces unique final answers, got ' + status + ' body=' + JSON.stringify(body));
+    assert(body.result === uniqueQuiz, 'expected the SECOND (valid) attempt returned');
     mock.assertExhausted();
   });
 

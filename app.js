@@ -99,6 +99,7 @@ function clearSessionState() {
   document.getElementById('topic').innerHTML = '<option value="">Select Topic</option>';
   resetCustomTopicUI();
   document.getElementById('activity').value = '';
+  updateActivityOptionsForSubject('');
   document.getElementById('items').value = '';
   document.getElementById('difficulty').value = '';
   ['dysgraphia', 'simplified', 'attention', 'processing'].forEach(id => {
@@ -654,12 +655,32 @@ function getCurrentTopicList() {
   return gradeData[quarter] || gradeData.all || [];
 }
 
+// Math has no dedicated Fill-in-the-Blanks schema/validator/renderer yet
+// (see math-validation.js) -- rather than silently reinterpreting that
+// selection as something else, hide/disable it while Subject = Math, and
+// safely reset away from it if it was already selected under a different
+// subject. Server-side, generate.js independently rejects this exact
+// subject+activity combination -- this is UX only, not the real gate.
+function updateActivityOptionsForSubject(subject) {
+  const activitySelect = document.getElementById('activity');
+  const fillBlankOption = Array.from(activitySelect.options).find(o => o.value === 'Fill in the Blanks');
+  if (!fillBlankOption) return;
+  const isMath = subject === 'Math';
+  fillBlankOption.disabled = isMath;
+  fillBlankOption.hidden = isMath;
+  if (isMath && activitySelect.value === 'Fill in the Blanks') {
+    activitySelect.value = 'Worksheet';
+  }
+}
+
 function updateTopics() {
   const grade = document.getElementById('grade').value;
   const subject = document.getElementById('subject').value;
   const quarter = document.getElementById('quarter').value;
   const topicSelect = document.getElementById('topic');
   topicSelect.innerHTML = '<option value="">Select Topic</option>';
+
+  updateActivityOptionsForSubject(subject);
 
   // A previously active/open custom topic may not fit the new Grade/
   // Subject/Quarter -- always reset back to the catalog view first.
@@ -876,34 +897,88 @@ function showPrintable(html) {
   document.getElementById('outputTitle').textContent = '\uD83D\uDCC4 Your Generated Worksheet';
 }
 
+// Directions are renderer-owned for Printable Math, not model-owned:
+// quiz.directions is never read here. A model can no longer produce a
+// worksheet whose written directions contradict the actual rendered
+// layout (e.g. claiming choices exist on an open-response worksheet),
+// because the directions text is chosen from the SAME validated activity
+// value that determines the layout, not left to the model to freehand.
+const MATH_DIRECTIONS_BY_ACTIVITY = {
+  'Multiple Choice Quiz': 'Solve each problem carefully. Choose the correct answer.',
+  'Worksheet': 'Solve each problem carefully. Show your work before writing your final answer.',
+  'Reading Comprehension': 'Read the passage carefully. Use the information in the passage to solve each problem. Show your work.',
+  'Matching Type': 'Solve each item, then match it to the correct answer in the answer bank.',
+  'Parent/Tutor Support Sheet': 'Work through each problem with a parent or tutor. Explain your thinking and write your final answer.'
+};
+
+// Parent/Tutor Support Sheet guidance is 100% renderer-owned static text --
+// never model-generated, never validated, never a place for solution_steps
+// or any other model output to leak through.
+const MATH_PARENT_TUTOR_GUIDE_ITEMS = [
+  'Ask the learner what the problem is asking.',
+  'Help the learner identify the important numbers.',
+  'Ask which operation may be useful.',
+  "Let the learner explain the answer in their own words."
+];
+
 // Builds printable Math worksheet HTML directly from server-validated JSON
 // (validation is server-authoritative in generate.js -- see math-validation.js).
 // Renders into the same .worksheet-output container/CSS every other
 // printable subject uses, so print/PDF layout stays consistent.
 //
-// Per product decision: printable Math keeps its open-response worksheet
-// feel by default. The underlying JSON is always multiple_choice (V1
-// restriction, needed for validation), but A/B/C/D choices are only shown
-// on the printed page when the learner actually picked a Multiple Choice
-// Quiz activity -- otherwise this renders a work-space + answer blank, and
-// the choices stay internal-only. The answer key always comes from
-// final_answer, and solution_steps is never read here, so neither a wrong
-// key nor leaked self-correction narration can reach the page.
+// Choice rendering keys off q.type === 'multiple_choice' directly, which
+// now matches the requested/validated schema one-to-one: Multiple Choice
+// Quiz is the only Printable Math activity whose questions are ever
+// type "multiple_choice" (see math-validation.js's getMathActivityProfile);
+// every other activity's questions are type "open_response" and carry no
+// choices/answer fields at all, so there is nothing to accidentally render.
+// The answer key always comes from final_answer, and solution_steps is
+// never read here, so neither a wrong key nor leaked self-correction
+// narration can reach the page.
 function buildPrintableMathHtml(quiz, opts) {
   const dysgraphia = !!(opts && opts.dysgraphia);
-  const isMultipleChoice = !!(opts && opts.isMultipleChoice);
+  const activity = (opts && opts.activity) || '';
+  const isMatchingType = activity === 'Matching Type';
+  const isParentTutor = activity === 'Parent/Tutor Support Sheet';
+  const directions = MATH_DIRECTIONS_BY_ACTIVITY[activity] || MATH_DIRECTIONS_BY_ACTIVITY['Worksheet'];
 
   let html = `<h1>${escapeHtml(quiz.title || 'Math Worksheet')}</h1>`;
   html += `<p>Name: _______________&nbsp;&nbsp;&nbsp;&nbsp;Date: _______________&nbsp;&nbsp;&nbsp;&nbsp;Score: ______</p>`;
-  if (quiz.directions) {
-    html += `<p><strong>Directions:</strong> ${escapeHtml(quiz.directions)}</p>`;
-  }
+  html += `<p><strong>Directions:</strong> ${escapeHtml(directions)}</p>`;
   if (typeof quiz.passage === 'string' && quiz.passage.trim().length > 0) {
     html += `<div style="background:var(--mint); border-radius:10px; padding:14px 18px; margin:14px 0;"><strong>Story:</strong><br>${escapeHtml(quiz.passage)}</div>`;
   }
   html += `<hr>`;
 
-  (quiz.questions || []).forEach((q, i) => {
+  const questions = quiz.questions || [];
+
+  // Matching Type answer bank: built ONLY from validated final_answer
+  // values -- open_response questions carry no choices array at all, so
+  // there is nothing else to build it from, structurally. Reordered by a
+  // fixed left-rotate-by-one (never a sort, which could coincidentally
+  // reproduce question order): [A1,A2,A3,A4,A5] -> [A2,A3,A4,A5,A1].
+  let matchingLetterForIndex = null;
+  let matchingBankHtml = '';
+  if (isMatchingType) {
+    const finalAnswers = questions.map(q => q.final_answer);
+    const bank = finalAnswers.length > 1
+      ? finalAnswers.slice(1).concat(finalAnswers.slice(0, 1))
+      : finalAnswers.slice();
+    matchingLetterForIndex = finalAnswers.map((ans) => {
+      const bankIndex = bank.indexOf(ans);
+      return String.fromCharCode(65 + (bankIndex === -1 ? 0 : bankIndex));
+    });
+    matchingBankHtml = `<div class="matching-bank" style="border:2px solid var(--mint); border-radius:12px; padding:16px 20px;"><strong>Answer Bank</strong><br>` +
+      bank.map((ans, i) => `${String.fromCharCode(65 + i)}. ${escapeHtml(ans != null ? String(ans) : '')}`).join('<br>') +
+      `</div>`;
+  }
+
+  if (isMatchingType) {
+    html += `<div class="matching-columns" style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start;">`;
+    html += `<div style="flex:2; min-width:240px;">`;
+  }
+
+  questions.forEach((q, i) => {
     // Dysgraphia mode: wrap each question in its own spacious, clearly
     // bordered block -- matching the "clear sections / generous spacing /
     // strong visual break between every item" intent that the freehand
@@ -922,7 +997,7 @@ function buildPrintableMathHtml(quiz, opts) {
 
     html += `<p><strong>${i + 1}.</strong> ${escapeHtml(q.question || '')}</p>`;
 
-    if (isMultipleChoice && q.type === 'multiple_choice' && Array.isArray(q.choices)) {
+    if (q.type === 'multiple_choice' && Array.isArray(q.choices)) {
       if (dysgraphia) {
         // Each choice on its own line inside a spacious checkbox area,
         // not compressed onto one inline row like standard mode. The
@@ -936,6 +1011,10 @@ function buildPrintableMathHtml(quiz, opts) {
           q.choices.map((c, ci) => `${String.fromCharCode(65 + ci)}. ${escapeHtml(c)}`).join('&nbsp;&nbsp;&nbsp;&nbsp;') +
           `</p>`;
       }
+    } else if (isMatchingType) {
+      html += dysgraphia
+        ? `<p style="margin-top:14px; font-size:1.05em;">Match: ________</p>`
+        : `<p>Match: ______</p>`;
     } else if (dysgraphia) {
       html += `<p style="line-height:2.4; margin-top:14px;">Show your work:<br>_______________________________________________<br>_______________________________________________</p>`;
       html += `<div class="dysgraphia-final-answer" style="border:2px dashed var(--teal); border-radius:8px; padding:12px 18px; margin-top:14px; display:inline-block;"><strong>Final Answer:</strong> ______________________</div>`;
@@ -949,10 +1028,23 @@ function buildPrintableMathHtml(quiz, opts) {
     }
   });
 
+  if (isMatchingType) {
+    html += `</div>`; // close left (problems) column
+    html += `<div style="flex:1; min-width:180px;">${matchingBankHtml}</div>`;
+    html += `</div>`; // close .matching-columns
+  }
+
+  if (isParentTutor) {
+    html += `<div class="parent-tutor-guide" style="border:2px dashed var(--teal); border-radius:12px; padding:16px 20px; margin-top:20px;">` +
+      `<strong>Parent/Tutor Guide</strong><ul style="margin:10px 0 0 20px; padding:0;">` +
+      MATH_PARENT_TUTOR_GUIDE_ITEMS.map(item => `<li style="margin-bottom:6px;">${escapeHtml(item)}</li>`).join('') +
+      `</ul></div>`;
+  }
+
   html += `<div class="answer-key"><strong>Answer Key</strong><br>`;
-  html += (quiz.questions || [])
-    .map((q, i) => `${i + 1}. ${escapeHtml(q.final_answer != null ? String(q.final_answer) : '')}`)
-    .join('<br>');
+  html += isMatchingType
+    ? questions.map((q, i) => `${i + 1} -- ${matchingLetterForIndex[i]}`).join('<br>')
+    : questions.map((q, i) => `${i + 1}. ${escapeHtml(q.final_answer != null ? String(q.final_answer) : '')}`).join('<br>');
   html += `</div>`;
 
   return html;
@@ -1266,37 +1358,62 @@ async function generateWorksheet() {
   const isMath = subject === 'Math';
   const PHP = String.fromCharCode(0x20B1); // peso sign, built this way to keep app.js ASCII-only
 
-  const mathMcExampleLine = isMath
+  // Shared with generate.js (both call the SAME function from
+  // math-validation.js) -- see that file's banner for why this must never
+  // be independently re-derived per file. Determines whether Math
+  // questions are requested/expected as multiple_choice or open_response.
+  // Interactive Math always requires multiple_choice regardless of which
+  // Activity Type string is attached (out of scope for this change).
+  const mathProfile = isMath
+    ? window.MathValidation.getMathActivityProfile(wsMode, activity)
+    : { requiresMultipleChoice: false, isPrintableReadingComprehension: false, isPrintableMatchingType: false };
+
+  const mathMcExampleLine = (isMath && mathProfile.requiresMultipleChoice)
     ? `{ "type": "multiple_choice", "question": "question text", "solution_steps": "concise semicolon-separated arithmetic, e.g. 2.5 * 45.50 = 113.75; 200 - 113.75 = 86.25", "final_answer": "the complete final answer including any currency symbol, percent sign, fraction, or unit, e.g. ${PHP}86.25", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "answer": 0 }`
     : `{ "type": "multiple_choice", "question": "question text", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "answer": 0 }`;
 
-  // V1: Math worksheets must be 100% multiple_choice -- true_false/fill_blank
-  // are not offered as an option in the example schema at all for Math.
+  // Printable non-Multiple-Choice-Quiz Math activities (Worksheet, Reading
+  // Comprehension, Matching Type, Parent/Tutor Support Sheet) never display
+  // choices/an answer index, so they are never requested at all -- saves
+  // output tokens and avoids spurious distractor-validation failures for a
+  // shape nothing ever reads. Gains "passage_evidence" only for Reading
+  // Comprehension (see math-validation.js's evidence-linkage validation).
+  const mathOpenResponseExampleLine = (isMath && !mathProfile.requiresMultipleChoice)
+    ? `{ "type": "open_response", "question": "question text", "solution_steps": "concise semicolon-separated arithmetic, e.g. 2.5 * 45.50 = 113.75; 200 - 113.75 = 86.25", "final_answer": "the complete final answer including any currency symbol, percent sign, fraction, or unit, e.g. ${PHP}86.25"${mathProfile.isPrintableReadingComprehension ? ', "passage_evidence": "an exact short excerpt or fact copied verbatim from the passage that this question depends on, containing at least one number used in the question or solution_steps"' : ''} }`
+    : '';
+
+  // V1: Math worksheets use exactly one schema shape per the profile above
+  // -- true_false/fill_blank are not offered as an option in the example
+  // schema at all for Math, for either profile.
   const questionsArrayExample = isMath
-    ? `    ${mathMcExampleLine}`
+    ? `    ${mathProfile.requiresMultipleChoice ? mathMcExampleLine : mathOpenResponseExampleLine}`
     : `    { "type": "multiple_choice", "question": "question text", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "answer": 0 },
     { "type": "true_false", "question": "statement here", "answer": true },
     { "type": "fill_blank", "question": "sentence with _____ for the blank", "answer": "correct word", "alternates": ["acceptable variation 1", "acceptable variation 2"] }`;
 
-  const mathIntegrityBlock = isMath ? `
-
-GENERAL MATH INTEGRITY RULES (this worksheet's subject is Math):
+  const mathSchemaRulesBlock = !isMath ? '' : (mathProfile.requiresMultipleChoice ? `
 - Every question in this worksheet MUST be type "multiple_choice". Do NOT generate true_false or fill_blank questions for Math -- this overrides the general "mix question types" instruction above for this subject only.
-- Read and understand the complete question before computing.
-- Compute every answer line by line before creating answer choices.
-- Keep solution_steps concise as one semicolon-separated string.
-- final_answer must contain the complete final answer, including any relevant currency symbol, percent sign, fraction, or unit.
 - choices[answer] must match final_answer.
 - The correct answer must appear exactly once in choices.
 - All choices must be unique after normalization.
 - answer must be the zero-based index of the correct choice.
 - Distractors must represent plausible student errors.
-- No distractor may equal the correct answer after normalization.
+- No distractor may equal the correct answer after normalization.` : `
+- Every question in this worksheet MUST be type "open_response". Do NOT include a "choices" field or an "answer" field -- they will never be shown to the learner and are not requested.${mathProfile.isPrintableReadingComprehension ? `
+- This is a Reading Comprehension activity: every question MUST also include a "passage_evidence" field that is an exact, verbatim excerpt copied from the "passage" field, containing at least one number actually used in that question or its solution_steps. Do not fabricate an excerpt that does not appear in the passage, and do not include an excerpt whose numbers are never used.` : ''}${mathProfile.isPrintableMatchingType ? `
+- This is a Matching Type activity: every question's final_answer MUST be numerically and textually distinguishable from every other question's final_answer in this worksheet. Do not generate two problems whose final answers are the same or mathematically equivalent (e.g. "0.75" and "3/4").` : ''}`);
+
+  const mathIntegrityBlock = isMath ? `
+
+GENERAL MATH INTEGRITY RULES (this worksheet's subject is Math):${mathSchemaRulesBlock}
+- Read and understand the complete question before computing.
+- Compute every answer line by line before finalizing the result.
+- Keep solution_steps concise as one semicolon-separated string.
+- final_answer must contain the complete final answer, including any relevant currency symbol, percent sign, fraction, or unit.
 - Do not round unless the question explicitly requires rounding.
-- When rounding is required, apply it exactly as instructed and ensure solution_steps, final_answer, choices, and answer are consistent.
+- When rounding is required, apply it exactly as instructed and ensure solution_steps and final_answer are consistent.
 - Never invent or alter a final result after completing the computation.
 - Keep solution_steps compact to respect the existing 8000 max_tokens budget.
-- solution_steps and final_answer only apply to multiple_choice questions. true_false and fill_blank questions keep their existing shape.
 
 DECIMAL WORD-PROBLEM RULES:
 - Decimal quantities are expected when the selected lesson involves decimals. Do not force all values to be whole numbers.
@@ -1377,7 +1494,7 @@ Rules:
 - "answer" for true_false is boolean true or false
 - "answer" for fill_blank is the expected word/phrase (keep it to 1-2 words for fair checking)
 - "alternates" for fill_blank: list acceptable variations a child might reasonably type (singular/plural forms, with or without "mga"/"ang", synonyms, symbol forms like ">" for "greater"). Be generous - the goal is to assess understanding, not exact wording.
-- If Activity Type is Reading Comprehension: you MUST include the "passage" field with the COMPLETE story. Every question must be answerable from the passage alone. Never reference a story that is not included.
+- If Activity Type is Reading Comprehension: you MUST include the "passage" field with the COMPLETE story. Every question must be answerable from the passage alone. Never reference a story that is not included. For Math, also see the Reading Comprehension "passage_evidence" requirement below.
 - Mix question types appropriately for the activity type requested
 - Exactly ${items} questions total
 - Use Filipino-friendly context (names like Nena, Juan, Aling Rosa; places like Maynila, Cebu; foods like adobo, sinigang)
@@ -1503,11 +1620,10 @@ Use normal handwritten-answer formatting \u2014 standard blank lines for answers
         // never read here, so it has no path into the rendered worksheet.
         const html = buildPrintableMathHtml(quiz, {
           dysgraphia: document.getElementById('dysgraphia').checked,
-          // Exact match against the literal <option> value in index.html's
-          // #activity dropdown -- not a substring/regex test -- so this can
-          // never be tripped by an unrelated activity name that happens to
-          // contain the words "multiple" or "choice".
-          isMultipleChoice: activity === 'Multiple Choice Quiz'
+          // The renderer derives choice-vs-open-response presentation from
+          // the validated data itself (q.type), not from this value; activity
+          // here only selects directions/Matching-Type/Parent-Tutor layout.
+          activity: activity
         });
         showPrintable(html);
         await saveWorksheet(wsTitle, grade, subject, topic, html, 'printable');

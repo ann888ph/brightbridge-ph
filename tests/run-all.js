@@ -27,7 +27,8 @@ const SUITES = [
   'test_topic_validation.js',
   'test_generate_topic.js',
   'test_topic_ui.js',
-  'test_catalog_compatibility.js'
+  'test_catalog_compatibility.js',
+  'test_activity_ui.js'
 ];
 
 function runSuite(fileName) {
