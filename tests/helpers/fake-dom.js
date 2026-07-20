@@ -86,23 +86,38 @@ function makeDocument(seed) {
   const checkedIds = seed.checkedIds || [];
   const elements = {};
 
-  return {
+  const doc = {
     _elements: elements,
+    activeElement: null,
+    body: makeElement('body'),
     getElementById(id) {
       if (!elements[id]) {
         elements[id] = makeElement(id, { value: values[id], checked: checkedIds.includes(id) });
+        wireFocusTracking(doc, elements[id]);
       }
       return elements[id];
     },
     createElement(tag) {
       const el = makeElement(null);
       el.tagName = tag;
+      wireFocusTracking(doc, el);
       return el;
     },
     querySelector() { return null; },
     querySelectorAll() { return []; },
     addEventListener() {}
   };
+  return doc;
+}
+
+// Real .focus()/.blur() are no-ops in makeElement() (no layout, so nothing
+// to render focus around) -- this wires them to actually update the owning
+// document's .activeElement, which is enough fidelity for tests that check
+// focus-return/focus-trap behavior (e.g. a modal restoring focus to its
+// trigger on close) without needing a real browser.
+function wireFocusTracking(doc, el) {
+  el.focus = function () { doc.activeElement = this; };
+  el.blur = function () { if (doc.activeElement === this) doc.activeElement = null; };
 }
 
 module.exports = { makeElement, makeDocument, escapeForInnerHtml };

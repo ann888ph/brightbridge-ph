@@ -146,6 +146,69 @@ function togglePassword() {
   eye.title = showing ? 'Show password' : 'Hide password';
 }
 
+/* ============ PRICING PLANS MODAL (login screen) ============ */
+// Login-page UI only -- no auth/Supabase/pricing-logic changes. Tracks the
+// element that had focus before opening so it can be restored on close
+// (WCAG focus-return), and traps Tab/Shift+Tab inside the modal while open
+// so keyboard focus never disappears behind it.
+let pricingModalPreviousFocus = null;
+
+function isPricingModalOpen() {
+  const overlay = document.getElementById('pricingModalOverlay');
+  return !!(overlay && overlay.classList.contains('visible'));
+}
+
+function openPricingModal() {
+  const overlay = document.getElementById('pricingModalOverlay');
+  if (!overlay) return;
+  pricingModalPreviousFocus = document.activeElement;
+  overlay.classList.add('visible');
+  document.body.classList.add('pricing-modal-open');
+  const closeBtn = document.getElementById('pricingModalCloseBtn');
+  if (closeBtn && typeof closeBtn.focus === 'function') closeBtn.focus();
+}
+
+function closePricingModal() {
+  const overlay = document.getElementById('pricingModalOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('visible');
+  document.body.classList.remove('pricing-modal-open');
+  const returnTo = pricingModalPreviousFocus;
+  pricingModalPreviousFocus = null;
+  if (returnTo && typeof returnTo.focus === 'function') returnTo.focus();
+}
+
+// Only closes when the click lands on the overlay itself (the backdrop),
+// never when it bubbles up from clicking inside the modal card/image.
+function handlePricingOverlayClick(event) {
+  if (event && event.target && event.target.id === 'pricingModalOverlay') {
+    closePricingModal();
+  }
+}
+
+// Global Escape-to-close + focus-trap handler. Registered once below; no-ops
+// entirely whenever the modal isn't open, so it never interferes with any
+// other keyboard behavior in the app. The modal's only interactive control
+// is the close button, so trapping focus is simply "Tab/Shift+Tab always
+// keeps focus there" -- there is nothing else inside the modal to cycle to,
+// and this guarantees focus can never escape to whatever is behind it.
+function handlePricingModalKeydown(event) {
+  if (!isPricingModalOpen() || !event) return;
+  if (event.key === 'Escape' || event.key === 'Esc') {
+    closePricingModal();
+    return;
+  }
+  if (event.key === 'Tab') {
+    const closeBtn = document.getElementById('pricingModalCloseBtn');
+    if (closeBtn && typeof closeBtn.focus === 'function') {
+      if (typeof event.preventDefault === 'function') event.preventDefault();
+      closeBtn.focus();
+    }
+  }
+}
+
+document.addEventListener('keydown', handlePricingModalKeydown);
+
 async function handleForgotPassword() {
   const email = document.getElementById('authEmail').value.trim();
   if (!email) {
