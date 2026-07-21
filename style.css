@@ -651,6 +651,14 @@
   }
 
   /* ===== Sample Worksheets showcase (login page) ===== */
+  /* The [hidden] attribute is the AUTHORITATIVE authenticated/unauthenticated
+     state (see setPublicSamplesVisibility() in app.js) -- this rule is a
+     defensive backstop only, so no future display/flex/grid rule added to
+     .samples-section (at any viewport) can ever override it and leave the
+     public section visibly stuck open above the authenticated app. */
+  .samples-section[hidden] {
+    display: none !important;
+  }
   .samples-section {
     max-width: 1080px;
     margin: 0 auto;

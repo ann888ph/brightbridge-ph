@@ -35,11 +35,32 @@ let topicSource = 'catalog';
 let activeCustomTopic = '';
 
 /* ============ AUTH ============ */
+// CENTRALIZED public-UI toggle: the public Sample Worksheets section
+// (#publicSamplesSection) must be visible if and only if there is no
+// authenticated user, regardless of device/viewport. Called from every
+// path that can change auth state (see showApp()/showAuth() below) so no
+// individual handler ever needs its own separate show/hide logic. `hidden`
+// is the authoritative state (see the defensive CSS backstop in style.css);
+// aria-hidden is kept in lockstep so assistive tech never announces
+// content the visual hidden attribute has already removed.
+function setPublicSamplesVisibility(isAuthenticated) {
+  const section = document.getElementById('publicSamplesSection');
+  if (!section) return;
+  section.hidden = isAuthenticated;
+  if (isAuthenticated) {
+    section.setAttribute('aria-hidden', 'true');
+  } else {
+    section.removeAttribute('aria-hidden');
+  }
+}
+
 async function initAuth() {
   const { data: { session } } = await db.auth.getSession();
   if (session) {
     currentUser = session.user;
     showApp();
+  } else {
+    showAuth();
   }
   db.auth.onAuthStateChange((_event, session) => {
     if (_event === 'PASSWORD_RECOVERY') {
@@ -63,6 +84,7 @@ async function initAuth() {
 function showApp() {
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
+  setPublicSamplesVisibility(true);
   document.getElementById('userEmail').textContent = currentUser.email;
   loadWorksheets();
   loadPlanAndUsage();
@@ -116,6 +138,7 @@ function showAuth() {
   clearSessionState();
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
+  setPublicSamplesVisibility(false);
 }
 
 function toggleAuthMode() {
