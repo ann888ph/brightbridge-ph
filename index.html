@@ -149,6 +149,27 @@
 
   </div>
 
+  <!-- ============ INTERACTIVE WORKSHEET DEMO (static, client-side only) ============ -->
+  <div class="interactive-demo-teaser">
+    <p class="interactive-demo-eyebrow">INTERACTIVE SAMPLE</p>
+    <h3 class="interactive-demo-heading">Try an Interactive Worksheet</h3>
+    <p class="interactive-demo-support">Answer a few sample questions and experience how BrightBridge supports learning &mdash; no sign-up needed.</p>
+    <button type="button" class="interactive-demo-start-btn" id="interactiveDemoStartBtn" onclick="openInteractiveDemo()">Start Interactive Sample</button>
+  </div>
+
+  <div class="interactive-demo-overlay" id="interactiveDemoOverlay" onclick="handleInteractiveDemoOverlayClick(event)">
+    <div class="interactive-demo-modal" role="dialog" aria-modal="true" aria-labelledby="interactiveDemoTitle" id="interactiveDemoModal">
+      <div class="interactive-demo-modal-header">
+        <div class="interactive-demo-modal-header-text">
+          <h2 class="interactive-demo-modal-title" id="interactiveDemoTitle">Grade 1 Math &mdash; Addition Within 20</h2>
+          <p class="interactive-demo-progress" id="interactiveDemoProgress">Question 1 of 5</p>
+        </div>
+        <button type="button" class="interactive-demo-close-btn" id="interactiveDemoCloseBtn" onclick="closeInteractiveDemo()" aria-label="Close interactive sample">&times;</button>
+      </div>
+      <div class="interactive-demo-body" id="interactiveDemoBody"></div>
+    </div>
+  </div>
+
   <div class="samples-cta">
     <p class="samples-cta-text">Liked what you saw? Create worksheets tailored to your child.</p>
     <button type="button" class="samples-cta-btn" id="samplesCtaBtn" onclick="handleSamplesCta()">&#x2728; Create Your Own Worksheet</button>

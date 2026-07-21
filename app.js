@@ -85,6 +85,7 @@ function showApp() {
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   setPublicSamplesVisibility(true);
+  resetPublicInteractiveDemo();
   document.getElementById('userEmail').textContent = currentUser.email;
   loadWorksheets();
   loadPlanAndUsage();
@@ -247,6 +248,289 @@ function handleSamplesCta() {
   if (firstSignupInput && typeof firstSignupInput.focus === 'function') {
     firstSignupInput.focus();
   }
+}
+
+/* ============ PUBLIC INTERACTIVE WORKSHEET DEMO (login screen) ============ */
+// Static, client-side only -- no /.netlify/functions/generate call, no
+// Anthropic, no Supabase, no quota reservation/finalization, no auth API
+// of any kind. Costs zero tokens and works with no account. Lives entirely
+// inside #publicSamplesSection in index.html, so it is shown/hidden by the
+// SAME setPublicSamplesVisibility() toggle as the printable sample cards
+// (see PUBLIC INTERACTIVE WORKSHEET DEMO auth-state note on showApp() below).
+const INTERACTIVE_DEMO_QUESTIONS = [
+  {
+    question: '5 + 3 = ?',
+    choices: ['6', '7', '8', '9'],
+    correctIndex: 2,
+    explanation: '5 + 3 = 8! Count up 3 from 5: 6, 7, 8.'
+  },
+  {
+    question: '7 + 6 = ?',
+    choices: ['11', '12', '13', '14'],
+    correctIndex: 2,
+    explanation: '7 + 6 = 13! Try making 10 first: 7 + 3 = 10, then add 3 more.'
+  },
+  {
+    question: '9 + 4 = ?',
+    choices: ['13', '14', '15', '12'],
+    correctIndex: 0,
+    explanation: '9 + 4 = 13! Count up 4 from 9: 10, 11, 12, 13.'
+  },
+  {
+    question: '8 + 8 = ?',
+    choices: ['15', '16', '17', '14'],
+    correctIndex: 1,
+    explanation: '8 + 8 = 16! Doubles are easy to remember.'
+  },
+  {
+    question: '6 + 9 = ?',
+    choices: ['14', '15', '16', '17'],
+    correctIndex: 1,
+    explanation: '6 + 9 = 15! Make 10 first: 9 + 1 = 10, then add 5 more.'
+  }
+];
+
+let interactiveDemoIndex = 0;
+let interactiveDemoScore = 0;
+let interactiveDemoAnswered = false;
+let interactiveDemoPreviousFocus = null;
+// Dynamically-created controls for the CURRENT render (question or results
+// view) -- tracked directly here rather than re-queried via
+// document.getElementById(), since these buttons are created fresh on every
+// render via document.createElement()/appendChild(), not present in the
+// static index.html markup.
+let interactiveDemoCurrentControls = {};
+
+function isInteractiveDemoOpen() {
+  const overlay = document.getElementById('interactiveDemoOverlay');
+  return !!(overlay && overlay.classList.contains('visible'));
+}
+
+function openInteractiveDemo() {
+  const overlay = document.getElementById('interactiveDemoOverlay');
+  if (!overlay) return;
+  interactiveDemoIndex = 0;
+  interactiveDemoScore = 0;
+  interactiveDemoPreviousFocus = document.activeElement;
+  overlay.classList.add('visible');
+  document.body.classList.add('interactive-demo-open');
+  renderInteractiveDemoQuestion();
+  const closeBtn = document.getElementById('interactiveDemoCloseBtn');
+  if (closeBtn && typeof closeBtn.focus === 'function') closeBtn.focus();
+}
+
+function closeInteractiveDemo() {
+  const overlay = document.getElementById('interactiveDemoOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('visible');
+  document.body.classList.remove('interactive-demo-open');
+  interactiveDemoCurrentControls = {};
+  const returnTo = interactiveDemoPreviousFocus;
+  interactiveDemoPreviousFocus = null;
+  if (returnTo && typeof returnTo.focus === 'function') returnTo.focus();
+}
+
+// Only closes when the click lands on the overlay itself (the backdrop),
+// never when it bubbles up from clicking inside the modal card.
+function handleInteractiveDemoOverlayClick(event) {
+  if (event && event.target && event.target.id === 'interactiveDemoOverlay') {
+    closeInteractiveDemo();
+  }
+}
+
+// The set of focusable controls changes between the question view (close +
+// 4 choice buttons + Next) and the results view (close + Try Again + Create
+// Account) -- built from the tracked references above, never from a DOM
+// query, so it stays correct across re-renders.
+function getInteractiveDemoFocusable() {
+  const closeBtn = document.getElementById('interactiveDemoCloseBtn');
+  const list = [closeBtn];
+  const c = interactiveDemoCurrentControls;
+  if (c.choiceButtons) list.push.apply(list, c.choiceButtons);
+  if (c.nextBtn) list.push(c.nextBtn);
+  if (c.tryAgainBtn) list.push(c.tryAgainBtn);
+  if (c.createAccountBtn) list.push(c.createAccountBtn);
+  return list.filter(Boolean);
+}
+
+// Global Escape-to-close + focus-trap handler, independent of the pricing
+// modal's own listener (handlePricingModalKeydown) -- each checks its own
+// isXOpen() guard first, so the two never interfere whether opened at
+// different times or (defensively) even if somehow both were open at once.
+function handleInteractiveDemoKeydown(event) {
+  if (!isInteractiveDemoOpen() || !event) return;
+  if (event.key === 'Escape' || event.key === 'Esc') {
+    closeInteractiveDemo();
+    return;
+  }
+  if (event.key === 'Tab') {
+    const focusable = getInteractiveDemoFocusable();
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      if (typeof event.preventDefault === 'function') event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      if (typeof event.preventDefault === 'function') event.preventDefault();
+      first.focus();
+    }
+  }
+}
+
+document.addEventListener('keydown', handleInteractiveDemoKeydown);
+
+function renderInteractiveDemoQuestion() {
+  const body = document.getElementById('interactiveDemoBody');
+  if (!body) return;
+  body.innerHTML = '';
+  interactiveDemoAnswered = false;
+  interactiveDemoCurrentControls = {};
+
+  const q = INTERACTIVE_DEMO_QUESTIONS[interactiveDemoIndex];
+  const progress = document.getElementById('interactiveDemoProgress');
+  if (progress) progress.textContent = 'Question ' + (interactiveDemoIndex + 1) + ' of ' + INTERACTIVE_DEMO_QUESTIONS.length;
+
+  const questionEl = document.createElement('p');
+  questionEl.className = 'interactive-demo-question';
+  questionEl.textContent = q.question;
+  body.appendChild(questionEl);
+
+  const choicesWrap = document.createElement('div');
+  choicesWrap.className = 'interactive-demo-choices';
+  const choiceButtons = q.choices.map((choiceText, i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'interactive-demo-choice-btn';
+    btn.textContent = choiceText;
+    btn.onclick = function () { selectInteractiveDemoAnswer(i); };
+    choicesWrap.appendChild(btn);
+    return btn;
+  });
+  body.appendChild(choicesWrap);
+
+  const feedbackEl = document.createElement('div');
+  feedbackEl.className = 'interactive-demo-feedback';
+  body.appendChild(feedbackEl);
+
+  const nextBtn = document.createElement('button');
+  nextBtn.type = 'button';
+  nextBtn.className = 'interactive-demo-next-btn';
+  nextBtn.textContent = interactiveDemoIndex === INTERACTIVE_DEMO_QUESTIONS.length - 1 ? 'See My Score' : 'Next Question';
+  nextBtn.disabled = true;
+  nextBtn.onclick = function () { advanceInteractiveDemo(); };
+  body.appendChild(nextBtn);
+
+  interactiveDemoCurrentControls = { questionEl, choiceButtons, nextBtn, feedbackEl };
+}
+
+// Locks the answer (no changing it afterward), scores it, shows
+// correct/incorrect + the correct answer + a short explanation, and
+// enables the Next button.
+function selectInteractiveDemoAnswer(choiceIndex) {
+  if (interactiveDemoAnswered) return;
+  interactiveDemoAnswered = true;
+  const q = INTERACTIVE_DEMO_QUESTIONS[interactiveDemoIndex];
+  const isCorrect = choiceIndex === q.correctIndex;
+  if (isCorrect) interactiveDemoScore++;
+
+  const c = interactiveDemoCurrentControls;
+  (c.choiceButtons || []).forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correctIndex) btn.classList.add('interactive-demo-choice-correct');
+    if (i === choiceIndex && !isCorrect) btn.classList.add('interactive-demo-choice-incorrect');
+  });
+
+  if (c.feedbackEl) {
+    const resultLabel = isCorrect ? (String.fromCharCode(0x2705) + ' Correct!') : 'Not quite.';
+    const correctAnswerLine = isCorrect ? '' : ' The correct answer is ' + q.choices[q.correctIndex] + '.';
+    c.feedbackEl.textContent = resultLabel + correctAnswerLine + ' ' + q.explanation;
+    c.feedbackEl.classList.add(isCorrect ? 'interactive-demo-feedback-correct' : 'interactive-demo-feedback-incorrect');
+  }
+  if (c.nextBtn) c.nextBtn.disabled = false;
+}
+
+function advanceInteractiveDemo() {
+  if (!interactiveDemoAnswered) return;
+  if (interactiveDemoIndex < INTERACTIVE_DEMO_QUESTIONS.length - 1) {
+    interactiveDemoIndex++;
+    renderInteractiveDemoQuestion();
+    const c = interactiveDemoCurrentControls;
+    if (c.choiceButtons && c.choiceButtons[0]) c.choiceButtons[0].focus();
+  } else {
+    renderInteractiveDemoResults();
+  }
+}
+
+function renderInteractiveDemoResults() {
+  const body = document.getElementById('interactiveDemoBody');
+  if (!body) return;
+  body.innerHTML = '';
+  const progress = document.getElementById('interactiveDemoProgress');
+  if (progress) progress.textContent = 'Complete!';
+
+  const scoreEl = document.createElement('p');
+  scoreEl.className = 'interactive-demo-score';
+  scoreEl.textContent = 'You got ' + interactiveDemoScore + ' out of ' + INTERACTIVE_DEMO_QUESTIONS.length + '!';
+  body.appendChild(scoreEl);
+
+  const encourageEl = document.createElement('p');
+  encourageEl.className = 'interactive-demo-encourage';
+  encourageEl.textContent = interactiveDemoScore === INTERACTIVE_DEMO_QUESTIONS.length
+    ? 'Amazing work! You are an addition superstar!'
+    : 'Great effort! Every try helps you learn and grow.';
+  body.appendChild(encourageEl);
+
+  const actionsWrap = document.createElement('div');
+  actionsWrap.className = 'interactive-demo-results-actions';
+
+  const tryAgainBtn = document.createElement('button');
+  tryAgainBtn.type = 'button';
+  tryAgainBtn.className = 'interactive-demo-try-again-btn';
+  tryAgainBtn.textContent = 'Try Again';
+  tryAgainBtn.onclick = function () { tryAgainInteractiveDemo(); };
+  actionsWrap.appendChild(tryAgainBtn);
+
+  const createAccountBtn = document.createElement('button');
+  createAccountBtn.type = 'button';
+  createAccountBtn.className = 'interactive-demo-create-account-btn';
+  createAccountBtn.textContent = 'Create Your Free Account';
+  createAccountBtn.onclick = function () { handleInteractiveDemoCreateAccount(); };
+  actionsWrap.appendChild(createAccountBtn);
+
+  body.appendChild(actionsWrap);
+  interactiveDemoCurrentControls = { scoreEl, encourageEl, tryAgainBtn, createAccountBtn };
+}
+
+function tryAgainInteractiveDemo() {
+  interactiveDemoIndex = 0;
+  interactiveDemoScore = 0;
+  interactiveDemoAnswered = false;
+  renderInteractiveDemoQuestion();
+  const c = interactiveDemoCurrentControls;
+  if (c.choiceButtons && c.choiceButtons[0]) c.choiceButtons[0].focus();
+}
+
+// Reuses the EXACT same Sign Up switch/scroll/focus behavior as the
+// printable-samples CTA -- no separate/duplicated auth-UI logic.
+function handleInteractiveDemoCreateAccount() {
+  closeInteractiveDemo();
+  handleSamplesCta();
+}
+
+// Defensive reset: called from showApp() (see below) so a still-open demo
+// modal, mid-question state, or scroll lock can never remain visible over
+// the authenticated app, even if #publicSamplesSection's own [hidden]
+// somehow didn't apply in time.
+function resetPublicInteractiveDemo() {
+  const overlay = document.getElementById('interactiveDemoOverlay');
+  if (overlay) overlay.classList.remove('visible');
+  document.body.classList.remove('interactive-demo-open');
+  interactiveDemoIndex = 0;
+  interactiveDemoScore = 0;
+  interactiveDemoAnswered = false;
+  interactiveDemoCurrentControls = {};
+  interactiveDemoPreviousFocus = null;
 }
 
 async function handleForgotPassword() {
