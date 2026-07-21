@@ -36,6 +36,7 @@ function makeElement(id, seed) {
     set value(v) { this._value = v; },
     checked: !!seed.checked,
     disabled: false,
+    hidden: !!seed.hidden,
     style: { display: '' },
     options: [],
     classList: {
@@ -71,8 +72,12 @@ function makeElement(id, seed) {
     insertAdjacentHTML() {},
     addEventListener() {},
     removeEventListener() {},
-    setAttribute() {},
-    getAttribute() { return null; },
+    _attributes: {},
+    setAttribute(name, value) { this._attributes[name] = String(value); },
+    getAttribute(name) {
+      return Object.prototype.hasOwnProperty.call(this._attributes, name) ? this._attributes[name] : null;
+    },
+    removeAttribute(name) { delete this._attributes[name]; },
     remove() {}
   };
   return el;

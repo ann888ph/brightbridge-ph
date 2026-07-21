@@ -31,7 +31,8 @@ const SUITES = [
   'test_activity_ui.js',
   'test_generate_dormant_helpers.js',
   'test_pricing_modal.js',
-  'test_samples_section.js'
+  'test_samples_section.js',
+  'test_public_samples_auth_state.js'
 ];
 
 function runSuite(fileName) {
