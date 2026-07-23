@@ -33,7 +33,8 @@ const SUITES = [
   'test_pricing_modal.js',
   'test_samples_section.js',
   'test_public_samples_auth_state.js',
-  'test_interactive_demo.js'
+  'test_interactive_demo.js',
+  'test_required_fields.js'
 ];
 
 function runSuite(fileName) {
