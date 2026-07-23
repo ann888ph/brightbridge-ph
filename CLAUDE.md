@@ -18,7 +18,7 @@ An AI-powered worksheet generator for Filipino elementary learners (Grade 1–6)
 - **Frontend:** Split into three files as of the July 2026 refactor — `index.html` (structure only, ~240 lines), `style.css` (all styling), `app.js` (all JS logic). Previously a single 1,700+ line `index.html` with inline `<style>`/`<script>`; split for maintainability once the file got risky to edit (one missing comma or misplaced brace could silently break the whole app). No build step, no framework — the three files just need to sit together in the same folder; `index.html` links them via `<link rel="stylesheet" href="style.css">` and `<script src="app.js"></script>`.
 - **AI:** Anthropic API, model `claude-haiku-4-5-20251001` (chosen for speed — Sonnet timed out on Netlify's function limits even on paid plan). `max_tokens: 8000`.
 - **Backend:** Two Netlify serverless functions:
-  - `netlify/functions/generate.js` — proxies worksheet generation to the Anthropic API. Now does **server-side auth + quota enforcement** (see "Usage tracking & Quotas" below) — this replaced an earlier client-side-only quota check that a technically savvy user could bypass via DevTools.
+  - `netlify/functions/generate.js` — proxies worksheet generation to the Anthropic API. Does **server-side auth + quota enforcement** (see "Usage tracking, Quotas & Provider-Attempt Accounting" below) and **server-authoritative Math validation** (see "Math Generation & Validation Architecture" below) — this replaced an earlier client-side-only quota check that a technically savvy user could bypass via DevTools.
   - `netlify/functions/admin-stats.js` — returns aggregated analytics (see "Admin Analytics Dashboard" below), gated server-side to Ann's email only.
 - **Auth + DB:** Supabase (Postgres + Auth + RLS). Email/password auth.
 - **Hosting:** Netlify, connected to GitHub for continuous deployment (drag-and-drop deploys were unreliable for detecting the `netlify/functions` folder — GitHub integration is required, not optional).
@@ -32,8 +32,11 @@ brightbridge-ph/                  (GitHub repo root = Netlify publish root)
 ├── app.js                        # all frontend JS logic, extracted from index.html
 ├── admin.html                    # admin analytics dashboard (Ann-only, email-gated)
 ├── netlify.toml                  # points Netlify at netlify/functions
-├── netlify/functions/generate.js      # server-side Claude API proxy + quota enforcement
+├── netlify/functions/generate.js      # server-side Claude API proxy + quota enforcement + Math validation
 ├── netlify/functions/admin-stats.js   # server-side analytics aggregation, admin-only
+├── math-validation.js             # shared Math validation + JSON-repair parser (loaded by both index.html and generate.js)
+├── migrations/
+│   └── 2026_add_math_validation_reservations.sql   # quota/attempt reservation RPCs (applied to production)
 ├── login-hero.jpg                # hero photo on the login screen
 ├── grade1-topics.json            # curriculum data, Grade 1
 ├── grade2-topics.json            # curriculum data, Grade 2
@@ -88,9 +91,10 @@ Naming was normalized during merge: `"GMRC (EsP)"` → `"GMRC / Values"`, `"EPP 
 ## Core Features
 
 ### 1. Worksheet Generation — two modes, one toggle
-- **Printable mode:** Claude returns clean HTML (headers, MC choices, answer key, dysgraphia-friendly checkboxes when requested). Rendered via `innerHTML`, printable via `window.print()`.
-- **Interactive mode:** Claude returns strict JSON (`{ title, directions, passage?, questions: [...] }`). Rendered as clickable buttons/inputs with instant checking, scoring, confetti at ≥85%. Uses `parseQuizJson()` which has truncation-repair logic (finds last complete `}` and tries to close the JSON structure) since Haiku occasionally cuts off long responses.
-- Both modes are saved to Supabase `worksheets` table as the SAME JS object shape they were rendered from, so reopening from "My Worksheets" replays identically — zero additional AI tokens.
+- **Printable mode (non-Math):** Claude returns clean HTML (headers, MC choices, answer key, dysgraphia-friendly checkboxes when requested). Rendered via `innerHTML`, printable via `window.print()`.
+- **Interactive mode (all subjects):** Claude returns strict JSON (`{ title, directions, passage?, questions: [...] }`). Rendered as clickable buttons/inputs with instant checking, scoring, confetti at ≥85%. Uses `parseQuizJson()` which has truncation-repair logic (finds last complete `}` and tries to close the JSON structure) since Haiku occasionally cuts off long responses.
+- **Math (both modes):** always uses the structured JSON path — there is no "return clean HTML" prompt path for Math at all. See "Math Generation & Validation Architecture" below.
+- Both modes are saved to Supabase `worksheets` table as the SAME content shape they were rendered from (for Math printable, the client-built HTML string), so reopening from "My Worksheets" replays identically — zero additional AI tokens.
 
 ### 2. Reading Comprehension passages
 Interactive-mode JSON schema includes an optional `passage` field. Rendered in a distinct styled box above the questions, with its own Read Aloud button (independent from per-question Read Aloud). Missing passage on a Reading Comprehension activity shows a friendly fallback message instead of a blank gap or crash.
@@ -115,13 +119,19 @@ Split-screen premium login: photo hero (left) + form (right, "Welcome Back"/"Cre
 ### 8. Saved Worksheets ("My Worksheets")
 Supabase `worksheets` table, RLS-scoped per user. Stores `mode` (`printable`/`interactive`) so reopening renders correctly. View = zero tokens (just replays saved content). Delete with confirm.
 
-### 9. Usage tracking & Quotas (subscription model)
-- `usage_logs` table: one row per successful generate. Core columns: `user_id`, `email`, `subject`, `mode`, `created_at`. **Expanded July 2026** with analytics columns: `grade`, `topic`, `difficulty`, `activity_type`, `dysgraphia_support`, `simplified_support`, `attention_support`, `processing_support` (booleans, one per learning-support checkbox). Rows logged before the expansion have `NULL` in the new columns — expected, not a bug, no retroactive backfill possible.
+### 9. Usage tracking, Quotas & Provider-Attempt Accounting (subscription model)
+- `usage_logs` table: one row per generation **attempt**, not just successes (see reservation columns below). Core columns: `user_id`, `email`, `subject`, `mode`, `created_at`, plus analytics columns `grade`, `topic`, `difficulty`, `activity_type`, `dysgraphia_support`, `simplified_support`, `attention_support`, `processing_support` (booleans, nullable — pre-expansion rows have `NULL`, expected, no retroactive backfill possible).
+- **Reservation columns** (migration `migrations/2026_add_math_validation_reservations.sql`, already applied to production): `provider_call_count`, `input_tokens`, `output_tokens`, `validation_status`, `is_chargeable`, `reservation_expires_at`. See "Database Security" below for the RPCs that manage these atomically.
 - `profiles` table: `user_id`, `email`, `plan` (`free`/`parent`/`family_plus`/`teacher`), `cycle_start` (timestamptz). Auto-created via a Postgres trigger (`handle_new_user()`) on every new `auth.users` signup — defaults to `plan='free'`, `cycle_start=now()`.
 - **Plan limits** (hardcoded in `PLAN_LIMITS`, mirrored in both `app.js` and `generate.js`): Free=5, Parent=20 (₱149/mo), Family Plus=60 (₱249/mo), Teacher=150 (₱399/mo) generations per cycle.
 - **Quota is billing-cycle-based, not calendar-month-based** — usage is counted from each user's own `cycle_start`, not the 1st of the month. This matters because payment can happen any day.
-- **Quota enforcement is now server-side (July 2026 fix).** Previously, `hasQuotaRemaining()` only ran in the browser — a user could open DevTools and call the Netlify function directly to bypass the free-tier limit entirely, generating unlimited worksheets for free. Now `generate.js` independently re-verifies the user's identity (via their Supabase session token) and re-counts their usage against the same `cycle_start` logic **before** calling the Anthropic API, and logs the usage server-side after a successful generation (the client can no longer skip logging either). The frontend's `hasQuotaRemaining()` check still runs first for instant UI feedback (disabling the button, showing the quota bar), but it's UX sugar now, not the real gate — a 429 response from `generate.js` is the actual enforcement, and `app.js` handles that response by re-syncing the quota bar.
-- Quota bar shows live progress + a "🔄 Renews {date}" label computed as `cycle_start + 1 month`. **The quota-exceeded warning message and the "Renews {date}" badge are computed from the same `renewDate` value** (fixed July 2026 — they used to disagree: the badge showed the real billing date while the warning box said the generic "resets on the 1st of next month," which is confusing/untrustworthy for customers on a mid-month billing cycle).
+- **Quota enforcement is server-side.** `generate.js` independently re-verifies the user's identity (via their Supabase session token) and re-counts usage against the same `cycle_start` logic **before** calling the Anthropic API. The frontend's `hasQuotaRemaining()` check still runs first for instant UI feedback (disabling the button, showing the quota bar), but it's UX sugar, not the real gate — a 429 response from `generate.js` is the actual enforcement, and `app.js` re-syncs the quota bar from that response.
+- **One delivered, user-visible worksheet consumes at most one quota unit — even if Math needed an internal retry.** Quota and provider-attempt spend are tracked separately and never conflated:
+  - **Quota** (`is_chargeable = true`) is only ever set by `finalize_validated_generation`, after a worksheet has been validated (or is non-Math) and is about to be delivered. A retry that fails validation, or a request that errors out, never becomes chargeable — internal retries must never double-charge a user.
+  - **Provider-attempt accounting** (`provider_call_count`, checked against `MAX_PROVIDER_ATTEMPTS_PER_DAY` in `generate.js`) tracks every real or reserved Anthropic call, independent of whether it ends up chargeable — this bounds worst-case API spend/abuse even when most attempts are free retries.
+  - Failed-validation and provider-error rows stay in `usage_logs` for cost monitoring with `is_chargeable = false` — never deleted, never silently dropped.
+- **Client quota display must count only `is_chargeable = true` rows** (`app.js`'s `loadPlanAndUsage()` filters on this) — counting every row would over-count a user's usage by their failed/retried attempts.
+- Quota bar shows live progress + a "🔄 Renews {date}" label computed as `cycle_start + 1 month`. The quota-exceeded warning message and the "Renews {date}" badge are computed from the same `renewDate` value (see Known Quirks #7 — they must never be independently (re)written strings).
 - To reset someone's quota after they pay again mid-cycle: update their `cycle_start` to `now()` in the `profiles` table (Ann has this saved as a query in the Supabase SQL Editor already). Their usage count recalculates from that new date automatically — no need to touch or delete `usage_logs` (history stays intact for Ann's own records).
 
 ### 10. Admin Analytics Dashboard (`admin.html` + `admin-stats.js`)
@@ -130,6 +140,37 @@ Added July 2026 to answer "which subjects/topics/grades are actually being used"
 - `netlify/functions/admin-stats.js` — the real gate. Verifies the caller's Supabase session token, then checks `user.email` against a **hardcoded** `ADMIN_EMAIL` constant (`888annph@gmail.com`) before returning any data. This is a server-side check, not a frontend hide — even someone who finds the `/admin.html` URL and knows a valid login gets a 403 with no data unless their email matches exactly. Aggregation is done in-function over raw rows fetched with the service-role key (not a Postgres view/RPC — fine at current data volume, revisit if `usage_logs` grows very large).
 - `index.html`/`app.js` and `admin.html`/`admin-stats.js` are otherwise **fully independent** — editing the customer-facing app doesn't require touching the admin dashboard, except when: (a) Supabase keys/URL rotate (hardcoded in both), (b) new `usage_logs` columns are added and should show up in analytics (need to update the aggregation in `admin-stats.js`), or (c) Ann wants matching visual branding (admin.html has its own inline `<style>`, not linked to `style.css`).
 - **No payment gateway is integrated yet.** Plan changes and quota resets are manual: Ann updates the `plan` and/or `cycle_start` cell for a user directly in Supabase Table Editor. This is intentionally simple until PayMongo/Xendit (or similar PH-friendly gateway) gets integrated.
+
+---
+
+## Math Generation & Validation Architecture
+
+Math is a special case across the whole stack: every other subject trusts the model's output as-is, but Math is validated server-side before it's ever delivered, in both Printable and Interactive mode.
+
+### Generation architecture
+- Math (`subject === "Math"`) always requests the same structured JSON question schema, regardless of `mode` — there is no separate "freehand HTML" prompt path for Math, and no separate model-authored prose answer-key section. Non-Math subjects are unaffected: Printable mode for every other subject still gets the freehand-HTML prompt as usual.
+- `netlify/functions/generate.js` is the authoritative validator. It runs `validateMathQuestions()` (from the shared `math-validation.js` module) on every Math response before returning anything to the client — **Math output must pass validation before delivery, in both modes.**
+- On validation failure, generate.js allows **at most one internal retry** (a second Anthropic call). If the retry also fails validation, the request fails outright — a partial or invalid Math worksheet is never delivered.
+- `math-validation.js` is a UMD module loaded both as `<script src="math-validation.js">` in `index.html` (browser) and via `require()` in `generate.js` (Node) — this keeps the JSON-repair parser (`parseQuizJson`) and the validation rules (`validateMathQuestions`) identical on both sides; there is no separate client-side copy of the validation logic that could drift out of sync.
+
+### Printable Math rendering
+- Printable Math HTML is built **programmatically in `app.js`**, by `buildPrintableMathHtml(quiz, opts)`, from the server-validated JSON — the model never generates printable Math HTML directly.
+- The learner-facing worksheet keeps its **open-response** look by default: A/B/C/D choices are shown only when the selected activity is **exactly** `"Multiple Choice Quiz"` (exact string match against the `#activity` dropdown value in `index.html` — not a substring/regex test). The underlying JSON is always `multiple_choice`-shaped internally (required for validation), but those choices stay invisible to the learner otherwise, and the worksheet renders a work-space + answer blank instead.
+- The printable answer key is built **only** from each question's `final_answer` field — never a separate model-authored answer-key section — and `solution_steps` is never read by the renderer at all, so neither a wrong answer key nor leaked model self-correction narration has any path into the page.
+- Dysgraphia-friendly formatting (checkboxes for MC, larger work-space spacing, a boxed "Final Answer" line) is preserved in the Math-specific renderer the same way it's requested for other subjects.
+- Saved Printable Math worksheets use the same `worksheets.content` (HTML string) / `mode: 'printable'` storage contract as every other printable subject — reopening from "My Worksheets" needs no special-casing.
+
+### Output safety (HTML escaping)
+- Every model-generated field that reaches printable Math HTML — `title`, `directions`, `passage`, each question's `question` text, `choices`, and `final_answer` — is treated as untrusted text and passed through `escapeHtml()` before being inserted into the page.
+- Only `buildPrintableMathHtml()` itself constructs HTML markup; model output must never be trusted to create tags, attributes, `<script>` blocks, event handlers (`onerror=`, etc.), or URLs. A malformed or adversarial model response should render as inert visible text, not executable markup.
+
+### Math integrity rules (enforced by `validateMathQuestions()`)
+- Every Math question must be `multiple_choice` (V1 restriction — `true_false`/`fill_blank` are rejected outright for Math, not silently skipped).
+- The question count must match the requested item count exactly.
+- `final_answer`, `choices[answer]`, and the last computed value in `solution_steps` must all agree — compute before generating choices or selecting the answer index, never the reverse.
+- The correct answer must appear in `choices` exactly once.
+- Currency results must not contain a fraction of a centavo unless the question explicitly asks for rounding — an unstated rounding requirement is a validation failure, not something the model should introduce on its own.
+- These rules apply to Math only; non-Math generation (schema, prompts, validation) is completely unaffected.
 
 ---
 
@@ -206,17 +247,34 @@ create trigger on_auth_user_created
 
 ---
 
+## Database Security: Math Validation Reservation RPCs
+
+Migration: `migrations/2026_add_math_validation_reservations.sql` — **already applied to the BrightBridge Supabase production database.** Adds the reservation columns listed under "Usage tracking, Quotas & Provider-Attempt Accounting" above, plus three RPCs:
+
+- **`reserve_usage_slot`** — atomically checks the quota limit AND the daily provider-attempt ceiling, then inserts a `'reserved'`, non-chargeable row in one transaction (prevents two concurrent requests from both seeing "quota available" and double-booking the last slot).
+- **`reserve_provider_retry`** — allows exactly one `reserved → retrying` transition after a Math validation failure, re-checking both the attempt budget and that the reservation hasn't already expired.
+- **`finalize_validated_generation`** — the only path that may ever set `is_chargeable = true`. Re-verifies the reservation hasn't expired before granting; a late success after expiry is recorded (tokens logged) but never charged or delivered.
+
+**Security rules for all three (and for any future RPC of this kind):**
+- All three are `SECURITY DEFINER` with `set search_path = ''` and fully schema-qualified references (`public.usage_logs`, `pg_catalog.now()`, etc.) — never rely on the default search path inside a `SECURITY DEFINER` function.
+- `EXECUTE` is revoked from `PUBLIC`, `anon`, and `authenticated`, and granted only to `service_role`. `netlify/functions/generate.js` (using the service-role key) is the sole legitimate caller — a client cannot call these directly even with a valid session token.
+- Every RPC that takes a `reservation_id` also takes and checks `user_id`, and verifies ownership (`where id = p_reservation_id and user_id = p_user_id`) before doing anything — a reservation ID alone is never sufficient authorization.
+- Per-user serialization uses `pg_advisory_xact_lock(hashtext(user_id))`, not a table-wide lock — concurrent requests from *different* users never block each other.
+
+---
+
 ## Netlify Functions
 
 ### `netlify/functions/generate.js`
-- POST-only, expects `{ prompt, subject, mode, grade, topic, difficulty, activity, supportFlags }`, returns `{ result: "..." }` or `{ error: "..." }`.
-- **Auth required (July 2026):** expects an `Authorization: Bearer <supabase_access_token>` header. Verifies it against Supabase's `/auth/v1/user` endpoint before doing anything else — no valid session, no generation, 401.
-- **Server-side quota enforcement (July 2026):** re-derives the user's `plan` + `cycle_start` from `profiles` (using the service-role key, bypassing RLS) and re-counts their `usage_logs` rows since `cycle_start`, independently of whatever the browser claims. Returns `429` if the user is at/over their limit — this happens **before** the Anthropic API is called, so it also protects against wasted API spend. The client-side `hasQuotaRemaining()` check in `app.js` still runs first purely for instant UI feedback; this is the real gate.
-- Reads `ANTHROPIC_API_KEY`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` from Netlify environment variables — the service-role key is new as of the quota-enforcement fix and must never be referenced from `app.js`/`index.html`, server-side only.
-- Logs usage server-side into `usage_logs` (including the new analytics columns) after a successful generation — the client no longer logs usage itself, so this can't be skipped by a client that bypasses the frontend.
+- POST-only, expects `{ prompt, subject, mode, grade, topic, difficulty, activity, items, supportFlags }` — `items` (requested question count) is required and validated against a fixed allowlist `[5, 10, 15, 20]` before anything else happens. Returns `{ result: "..." }` or `{ error: "..." }`.
+- **Auth required:** expects an `Authorization: Bearer <supabase_access_token>` header. Verifies it against Supabase's `/auth/v1/user` endpoint before doing anything else — no valid session, no generation, 401.
+- **Server-side quota + provider-attempt enforcement, via atomic Postgres RPCs** — see "Usage tracking, Quotas & Provider-Attempt Accounting" and "Database Security" above. This happens **before** the Anthropic API is called, so it also protects against wasted API spend. The client-side `hasQuotaRemaining()` check in `app.js` still runs first purely for instant UI feedback; this is the real gate.
+- **Math validation is authoritative here, for both Interactive and Printable mode** — see "Math Generation & Validation Architecture" above. Uses the shared `math-validation.js` module (`parseQuizJson`, `validateMathQuestions`).
+- Reads `ANTHROPIC_API_KEY`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` from Netlify environment variables — the service-role key must never be referenced from `app.js`/`index.html`, server-side only.
+- Logs usage server-side into `usage_logs` after every attempt, chargeable or not (see Quota section) — the client cannot skip or forge this.
 - CORS headers included; handles `OPTIONS` preflight.
 - `netlify.toml` just needs `[build] functions = "netlify/functions"` — do NOT set `node_bundler = "esbuild"`, it broke an earlier `require("https")` call.
-- **⚠️ Watch this one:** an earlier version of this file used Node's built-in `https` module instead of `fetch()` because `fetch` was reportedly unreliable in this function runtime. The July 2026 rewrite (adding auth + quota enforcement) uses `fetch()` throughout for both the Supabase REST calls and the Anthropic API call, since it was simpler to read/maintain and testing after deploy showed no issue — but if generations start failing with a JSON-parse error like `"Unexpected token '<'"` again (a sign Netlify returned an HTML error page instead of JSON), revisit switching the Anthropic call back to `https.request()`.
+- **⚠️ Watch this one:** uses `fetch()` throughout for both the Supabase REST calls and the Anthropic API call, rather than Node's built-in `https` module (which an earlier version used, over a since-resolved reliability concern). If generations ever start failing with a JSON-parse error like `"Unexpected token '<'"` (a sign Netlify returned an HTML error page instead of JSON), revisit switching the Anthropic call back to `https.request()`.
 
 ### `netlify/functions/admin-stats.js`
 - GET-only. Same Supabase-token auth pattern as `generate.js`, plus an extra authorization check: `user.email` must exactly match the hardcoded `ADMIN_EMAIL` constant (`888annph@gmail.com`) or it returns 403 with no data.
@@ -238,17 +296,46 @@ create trigger on_auth_user_created
 
 ## Deployment Workflow
 
-For any change to `index.html`, `style.css`, `app.js`, `admin.html`, `netlify/functions/generate.js`, `netlify/functions/admin-stats.js`, `netlify.toml`, or any `grade{N}-topics.json`:
+Ann uploads changes to GitHub manually through the browser (not `git push`); Netlify auto-deploys on every commit to `main`.
 
-1. Edit the file(s) locally / here in chat.
-2. Go to `github.com/ann888ph/brightbridge-ph`.
-3. Open the file → pencil icon (Edit) → Ctrl+A, Delete → paste new content → "Commit changes".
-4. Netlify auto-deploys from the GitHub push (~1–2 minutes). No manual Netlify action needed.
-5. For brand-new files (e.g. a new grade JSON), use "Add file → Create new file" or "Upload files".
+**For a single simple file** (e.g. one `grade{N}-topics.json` edit): the direct-edit path is fine —
+1. Go to `github.com/ann888ph/brightbridge-ph`.
+2. Open the file → pencil icon (Edit) → Ctrl+A, Delete → paste new content → "Commit changes" directly to `main`.
+3. Netlify auto-deploys (~1–2 minutes). No manual Netlify action needed.
+4. For brand-new files, use "Add file → Create new file" or "Upload files".
 
-**⚠️ Since the July 2026 split, `index.html`, `style.css`, and `app.js` are interdependent** — deploying a change to only one of them is usually fine (they're loaded independently at runtime), but a change to `app.js` that renamed/added an element ID needs the matching `index.html` update deployed in the same push, or the two will be out of sync live. Same logic applies to `generate.js` and `app.js`: the July 2026 auth/quota rewrite required both to change together (frontend sends the Bearer token + extra fields, backend expects them) — deploying only one half would have broken generation entirely.
+**For anything touching more than one file, or anything nontrivial** (Math generation/validation logic, quota/RPC changes, or any change where `app.js` and `generate.js`/`index.html` must change together): use a feature branch + Pull Request instead of editing `main` file-by-file. This avoids the files ever being at different points mid-edit, and gives a Netlify Deploy Preview to test against before merging (where environment variables permit — the Deploy Preview needs the same Netlify env vars as production).
 
-Environment variables (`ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) are set once in Netlify dashboard, not touched per-deploy. The service-role key was added July 2026 specifically to support server-side quota enforcement and admin analytics — it's scoped to Builds/Functions/Runtime, marked as a secret value.
+**Exporting an exact upload-ready ZIP for a set of committed files** (needed because manually uploading Windows working-tree copies has previously produced noisy, corrupted diffs — `core.autocrlf=true` converts line endings on checkout, and a naive re-zip can silently alter content):
+1. Export each file directly from the commit object: `git show <commit>:<path>` — never `git archive`, which re-applies checkout-style CRLF conversion and can corrupt a file that's genuinely stored with different line endings than its neighbors (this repo has at least one such case — `netlify/functions/generate.js` is genuinely committed as CRLF while several other files are genuinely LF; this is a real, standing inconsistency, not something to "fix" by normalizing).
+2. Verify each exported file against the real commit blob: `git hash-object --no-filters <file>` compared against the blob SHA from `git ls-tree <commit> -- <path>` (or byte-for-byte `cmp` against `git cat-file -p <blob-sha>`). Plain `git hash-object` *without* `--no-filters` applies the same autocrlf conversion and can report a false mismatch — always use `--no-filters` for this check.
+3. Zip with a tool that doesn't itself re-encode line endings (PowerShell `Compress-Archive` has worked reliably here).
+4. Re-extract the ZIP and re-run the same `hash-object --no-filters` check to confirm the archive round-trip didn't alter anything.
+
+**⚠️ `index.html`, `style.css`, and `app.js` are interdependent** — a change to `app.js` that renamed/added an element ID needs the matching `index.html` update deployed in the same push/PR, or the two will be out of sync live. Same logic applies to `generate.js` and `app.js` for any change to the request/response contract between them (e.g. the auth/quota rewrite, the Math `items` field, the reservation flow) — deploying only one half breaks generation entirely.
+
+Environment variables (`ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) are set once in Netlify dashboard, not touched per-deploy. The service-role key supports server-side quota enforcement and admin analytics — it's scoped to Builds/Functions/Runtime, marked as a secret value.
+
+---
+
+## Test Expectations
+
+There is no CI pipeline or test framework — tests are plain Node scripts, run manually, consistent with the rest of the project's no-build-step philosophy. Before changing Math generation, Math validation, or Printable Math rendering, re-run and confirm no regressions in:
+
+- Math validation logic (`validateMathQuestions`, `parseQuizJson`, arithmetic/currency/rounding rules)
+- The prompt builder (Math and non-Math prompts, Interactive and Printable)
+- `generate.js` control flow (auth, quota/attempt refusals, single-attempt success, retry-then-success, both-attempts-fail, expired-reservation handling, provider errors)
+- The `app.js`/`math-validation.js` wiring (no duplicate/drifted copy of the shared validation logic in the client)
+- Client quota display (must count only `is_chargeable = true` rows)
+- Printable Math rendering: HTML escaping for every model-generated field, `solution_steps` never reaching the output, exact (not substring) `"Multiple Choice Quiz"` activity matching
+
+Also manually verify, since these aren't (yet) covered by an automated check:
+- Math Interactive still renders and scores correctly
+- Math Printable renders and prints correctly
+- Printable non-Math subjects are unaffected (prompts/behavior unchanged)
+- Dysgraphia-friendly formatting still applies correctly in both modes
+- Saved worksheets (Math and non-Math, both modes) still reopen correctly from "My Worksheets"
+- Print/PDF layout is intact (`.worksheet-output` CSS, `@media print` rules)
 
 ---
 
@@ -265,7 +352,7 @@ This shows up as: dysgraphia-friendly checkbox formats, lenient/generous answer-
 ## Pending / Not Yet Built
 
 - Real payment gateway integration (PayMongo or Xendit likely, for GCash/card support) — currently plan upgrades are manual via Supabase Table Editor.
-- **Output quality control.** No validation currently exists on whether Claude's generated answer key is actually correct or whether content is fully grade-appropriate — every generation is trusted as-is. Flagged as a priority before wider rollout, since a wrong answer key is a fast way to lose a parent's or teacher's trust. Not yet designed or built.
+- **Output quality control.** Math answer-key correctness is now validated server-side for both Interactive and Printable mode (see "Math Generation & Validation Architecture"). Every other subject (English, Science, Filipino, etc.) still has no validation of correctness or grade-appropriateness — every non-Math generation is trusted as-is. Extending structured validation to other subjects is a candidate for future work, but is not yet designed or built.
 - **Abandonment tracking.** Analytics currently only capture successful generations — there's no visibility into users who start filling the form (pick a grade/subject) but never generate. Would need new frontend event logging; not yet built.
 - Grade+Subject combos beyond what's in the 6 JSON files may still hit the "type your own topic" fallback if Ann hasn't researched that specific combination yet — this is expected, not a bug.
 - Mobile app store distribution (Apple App Store / Google Play) — discussed as a future path via Capacitor (wraps the existing web app into a native shell, reuses all current code) rather than a full native rewrite. Not started. Key consideration if pursued: Apple requires In-App Purchase for digital subscriptions sold inside an iOS app (15–30% cut), so the current direct-payment plan (once a gateway is added) would need to be web-only or restructured for iOS specifically.

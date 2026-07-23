@@ -13,7 +13,7 @@ snapshot of production logic.
 node tests/run-all.js
 ```
 
-Runs all 10 suites, prints each suite's output as it runs, then a summary
+Runs all 15 suites, prints each suite's output as it runs, then a summary
 table and a total pass/fail count. Exits with a non-zero status code if any
 suite has a failing assertion or crashes, and names the failing suite in
 the summary.
@@ -54,26 +54,56 @@ machine or user account.
     hardcoded file count, no hardcoded topic count. It reports the current
     total and longest topic for visibility but never asserts an exact
     number, so legitimate future catalog growth can't break the suite.
+  - Auth-state tests (`test_public_samples_auth_state.js`, `test_quota_display.js`)
+    replace `window.supabase.createClient()` with a small controllable fake
+    (`auth.getSession`/`auth.onAuthStateChange`/etc.) so login, logout,
+    restored-session, and expired-session flows can all be driven directly
+    and deterministically — no real Supabase project or network call is
+    ever involved.
+  - `index.html`/`style.css` markup that has no corresponding app.js
+    function to call directly (page copy, card structure, CSS rules) is
+    verified via SOURCE CHECKS — reading the raw file and asserting against
+    its text/regex — since the fake DOM has no real HTML parser. See
+    `test_wiring.js`, `test_pricing_modal.js`, `test_samples_section.js` for
+    the pattern.
 
 ## Files
 
 ```
 tests/
-  run-all.js                       - runs all suites, prints a summary, exits non-zero on failure
-  test_math_validation.js          - math-validation.js unit tests
-  test_topic_validation.js         - topic-validation.js unit tests
-  test_catalog_compatibility.js    - every grade*-topics.json topic against the real validator
-  test_prompt_build.js             - executes real app.js generateWorksheet(), captures the real prompt
-  test_wiring.js                   - app.js <-> shared-module wiring (no duplicate/drifted logic)
-  test_quota_display.js            - client quota display counts only is_chargeable=true rows
-  test_printable_math_render.js    - buildPrintableMathHtml() rendering + XSS/escaping behavior
-  test_generate_function.js        - netlify/functions/generate.js control-flow (mocked fetch)
-  test_generate_topic.js           - generate.js custom-topic validation/policy/analytics tagging
-  test_topic_ui.js                 - custom-topic UI state machine (catalog/editing/active states)
+  run-all.js                            - runs all suites, prints a summary, exits non-zero on failure
+  test_math_validation.js               - math-validation.js unit tests (incl. Math activity profile,
+                                           story_facts/evidence_fact_ids, Matching Type bare-value rules)
+  test_prompt_build.js                  - executes real app.js generateWorksheet(), captures the real prompt
+  test_generate_function.js             - netlify/functions/generate.js control-flow (mocked fetch),
+                                           incl. the Math activity containment gate (400s, zero cost)
+  test_wiring.js                        - app.js <-> shared-module wiring (no duplicate/drifted logic)
+  test_quota_display.js                 - client quota display counts only is_chargeable=true rows
+  test_printable_math_render.js         - buildPrintableMathHtml() rendering + XSS/escaping behavior
+  test_topic_validation.js              - topic-validation.js unit tests
+  test_generate_topic.js                - generate.js custom-topic validation/policy/analytics tagging
+  test_topic_ui.js                      - custom-topic UI state machine (catalog/editing/active states)
+  test_catalog_compatibility.js         - every grade*-topics.json topic against the real validator
+  test_activity_ui.js                   - Math Activity Type containment: Reading Comprehension/Matching
+                                           Type/Fill in the Blanks hidden+reset for Math, restored for
+                                           non-Math and on logout
+  test_generate_dormant_helpers.js      - direct unit tests for generate.js's dormant Math Reading
+                                           Comprehension/Matching Type policy, retry-repair, and sanitized
+                                           logging helpers (parked behind the containment gate above, but
+                                           still verified while dormant)
+  test_pricing_modal.js                 - login-page pricing teaser + modal (open/close/Escape/backdrop,
+                                           focus trap + focus-return, no quota/AI/backend calls)
+  test_samples_section.js               - login-page public Sample Worksheets cards (content, local PDF
+                                           Preview/Download links, CTA -> Sign Up handoff)
+  test_public_samples_auth_state.js     - public Sample Worksheets section visibility is driven ONLY by
+                                           auth state (login/logout/restored session/expiry), never by
+                                           viewport or device
+  test_required_fields.js               - field-specific required-dropdown messages, highlighting,
+                                           focus, clearing, and label/control associations
   helpers/
-    load-app-sandbox.js            - loads/executes real app.js in a vm context with stubs
-    fake-dom.js                    - minimal fake document/element sufficient to run app.js
-    run.js                         - shared run()/assert() test primitives (sync + async safe)
+    load-app-sandbox.js                 - loads/executes real app.js in a vm context with stubs
+    fake-dom.js                         - minimal fake document/element sufficient to run app.js
+    run.js                              - shared run()/assert() test primitives (sync + async safe)
 ```
 
 ## Adding a future suite

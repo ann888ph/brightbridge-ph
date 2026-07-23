@@ -1277,6 +1277,7 @@ function useCustomTopic() {
 
   topicSource = 'custom';
   activeCustomTopic = result.normalized;
+  clearRequiredFieldError('topic');
 
   document.getElementById('topic').style.display = 'none';
   document.getElementById('showCustomTopicBtn').style.display = 'none';
@@ -1809,6 +1810,69 @@ function launchConfetti() {
 }
 
 /* ============ GENERATE ============ */
+const REQUIRED_WORKSHEET_FIELDS = [
+  { id: 'grade', label: 'Grade Level' },
+  { id: 'subject', label: 'Subject' },
+  { id: 'topic', label: 'Topic / Lesson' },
+  { id: 'activity', label: 'Activity Type' },
+  { id: 'items', label: 'Number of Items' },
+  { id: 'difficulty', label: 'Difficulty' }
+];
+
+function clearRequiredFieldError(fieldId) {
+  const field = document.getElementById(fieldId);
+  if (!field || !field.classList.contains('field-invalid')) return;
+
+  field.classList.remove('field-invalid');
+  field.removeAttribute('aria-invalid');
+
+  const stillInvalid = REQUIRED_WORKSHEET_FIELDS.some(({ id }) => {
+    const el = document.getElementById(id);
+    return el && el.classList.contains('field-invalid');
+  });
+  if (!stillInvalid) hideError();
+}
+
+function formatRequiredFieldList(labels) {
+  if (labels.length === 1) return labels[0];
+  if (labels.length === 2) return labels[0] + ' and ' + labels[1];
+  return labels.slice(0, -1).join(', ') + ', and ' + labels[labels.length - 1];
+}
+
+function showMissingRequiredFields(values) {
+  REQUIRED_WORKSHEET_FIELDS.forEach(({ id }) => {
+    const field = document.getElementById(id);
+    if (!field) return;
+    field.classList.remove('field-invalid');
+    field.removeAttribute('aria-invalid');
+  });
+
+  const missing = REQUIRED_WORKSHEET_FIELDS.filter(({ id }) => !values[id]);
+  if (missing.length === 0) return false;
+
+  missing.forEach(({ id }) => {
+    const field = document.getElementById(id);
+    if (!field) return;
+    field.classList.add('field-invalid');
+    field.setAttribute('aria-invalid', 'true');
+  });
+
+  const labels = missing.map(({ label }) => label);
+  const message = labels.length === 1
+    ? 'Please select ' + labels[0] + ' before generating. \uD83C\uDF3F'
+    : 'Please complete: ' + formatRequiredFieldList(labels) + '. \uD83C\uDF3F';
+  showError(message);
+
+  const firstField = document.getElementById(missing[0].id);
+  if (firstField) {
+    if (typeof firstField.focus === 'function') firstField.focus();
+    if (typeof firstField.scrollIntoView === 'function') {
+      firstField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+  return true;
+}
+
 async function generateWorksheet() {
   const grade = document.getElementById('grade').value;
   const quarter = document.getElementById('quarter').value;
@@ -1820,8 +1884,7 @@ async function generateWorksheet() {
   const items = document.getElementById('items').value;
   const difficulty = document.getElementById('difficulty').value;
 
-  if (!grade || !subject || !topic || !activity || !items || !difficulty) {
-    showError('Please fill in all required fields before generating. \uD83C\uDF3F');
+  if (showMissingRequiredFields({ grade, subject, topic, activity, items, difficulty })) {
     return;
   }
 

@@ -229,8 +229,8 @@
     <div class="card-title">&#x1F4DA; Learner Settings</div>
     <div class="grid-3 settings-row">
       <div class="field">
-        <label>Grade Level</label>
-        <select id="grade" onchange="updateSubjects()">
+        <label for="grade">Grade Level</label>
+        <select id="grade" onchange="clearRequiredFieldError('grade'); updateSubjects()">
           <option value="">Select Grade</option>
           <option>Grade 1</option>
           <option>Grade 2</option>
@@ -241,7 +241,7 @@
         </select>
       </div>
       <div class="field">
-        <label>Quarter</label>
+        <label for="quarter">Quarter</label>
         <select id="quarter" onchange="updateTopics()">
           <option>Quarter 1</option>
           <option>Quarter 2</option>
@@ -250,16 +250,16 @@
         </select>
       </div>
       <div class="field">
-        <label>Subject</label>
-        <select id="subject" onchange="updateTopics()">
+        <label for="subject">Subject</label>
+        <select id="subject" onchange="clearRequiredFieldError('subject'); updateTopics()">
           <option value="">Select Grade First</option>
         </select>
       </div>
     </div>
     <div class="grid-3 settings-row">
       <div class="field">
-        <label>Topic / Lesson</label>
-        <select id="topic" onchange="onCatalogTopicSelected()">
+        <label for="topic">Topic / Lesson</label>
+        <select id="topic" onchange="clearRequiredFieldError('topic'); onCatalogTopicSelected()">
           <option value="">Select Topic</option>
         </select>
         <button type="button" class="topic-link-btn" id="showCustomTopicBtn" onclick="showCustomTopicInput()">Can't find your topic? Type a custom topic</button>
@@ -284,8 +284,8 @@
         </div>
       </div>
       <div class="field">
-        <label>Activity Type</label>
-        <select id="activity">
+        <label for="activity">Activity Type</label>
+        <select id="activity" onchange="clearRequiredFieldError('activity')">
           <option value="">Select Type</option>
           <option>Worksheet</option>
           <option>Multiple Choice Quiz</option>
@@ -296,8 +296,8 @@
         </select>
       </div>
       <div class="field">
-        <label>Number of Items</label>
-        <select id="items">
+        <label for="items">Number of Items</label>
+        <select id="items" onchange="clearRequiredFieldError('items')">
           <option value="">Select Count</option>
           <option>5</option>
           <option>10</option>
@@ -308,8 +308,8 @@
     </div>
     <div class="grid-3 settings-row">
       <div class="field">
-        <label>Difficulty</label>
-        <select id="difficulty">
+        <label for="difficulty">Difficulty</label>
+        <select id="difficulty" onchange="clearRequiredFieldError('difficulty')">
           <option value="">Select Difficulty</option>
           <option>Gentle / Simplified</option>
           <option>Standard</option>

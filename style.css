@@ -367,6 +367,16 @@
   }
   .error-msg.visible { max-height: 200px; opacity: 1; margin-top: 12px; padding: 14px 18px; }
 
+  .field select.field-invalid {
+    border-color: #dc2626;
+    background: #fff7f7;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+  }
+  .field select.field-invalid:focus {
+    border-color: #b91c1c;
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.18);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .error-msg { transition: none; }
   }
