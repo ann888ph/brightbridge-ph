@@ -313,8 +313,37 @@
         "Health: Safety Guidelines and Basic First Aid for Emergencies or Disasters"
       ]
     }
+  },
+"Technology": {
+    "Grade 4": {
+      "Quarter 1": [
+        "Digital citizenship",
+        "Care of school laptops and devices",
+        "Google Drive organization",
+        "Microsoft Office Suite basics",
+        "Google Suite applications"
+      ],
+      "Quarter 2": [
+        "Google Sheets for data analysis",
+        "Coding fundamentals with Scratch",
+        "Making a simple game",
+        "Understanding algorithms"
+      ],
+      "Quarter 3": [
+        "JavaScript basics",
+        "TinkerCad for 3D design",
+        "Artistic expression through technology",
+        "Engineering Week exploration"
+      ],
+      "Quarter 4": [
+        "Engineering design process",
+        "Building projects: knee brace, solar car",
+        "Science fair presentation",
+        "Art Show digital designs",
+        "Review and portfolio creation"
+      ]
+    }
   }
-
 
 
 
